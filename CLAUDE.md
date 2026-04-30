@@ -84,6 +84,50 @@ out to `open::that(url)`. On macOS that lands in the native WhatsApp app via
 its URL handler; on Windows / Linux in the user's default browser. Without these
 handlers the embedded webview would try (and fail) to render wa.me itself.
 
+## Windows WebView2 quirks
+
+wry's WebView2 backend on Windows behaves differently from WKWebView (macOS) and
+WebKitGTK (Linux) in three load-bearing ways. Each has a corresponding workaround
+in this codebase — keep them in mind when touching anything navigation- or
+asset-fetch-adjacent.
+
+1. **Pages are served via an internal `http://parados.localhost/...` proxy URL**,
+   not under the `parados://` custom scheme directly. WebView2 doesn't allow
+   custom-scheme URLs as the top-level frame URL, so wry rewrites them.
+   Consequences:
+   - `window.location.protocol` is `http:` — the upstream `shareOnWhatsApp()`
+     regex `/^(file|parados):$/` misses, leaking the internal URL into the share
+     text. `patch_share_url_check` in `main.rs` extends that test at serve time
+     (HTML response rewrite) to also match `window.location.host === "parados.localhost"`,
+     which makes the public `game.ywesee.com` URL get generated correctly. We patch
+     at serve time instead of editing the game HTML so `assets/games/*.html` stays
+     byte-identical with the upstream games repo.
+   - `with_navigation_handler` is called with `http://parados.localhost/...` as
+     the URL on the page's own loads. The handler must NOT route those out to
+     `open::that()` — that would open a useless tab and cancel the in-app
+     navigation, leaving the window blank. `is_external_http` in `main.rs`
+     guards against this by rejecting any `localhost` or `*.localhost` host
+     before considering an http(s) URL "external".
+   - Absolute custom-scheme URLs in HTML markup (e.g.
+     `<img src="parados://localhost/foo.jpg">`, `data-href="parados://localhost/games/bar.html"`,
+     `window.location.href = 'parados://localhost/'`) don't resolve under the
+     proxy form. **Always use root-relative URLs** (`/foo.jpg`, `/games/bar.html`,
+     `/`) for in-app navigation and asset fetches. The browser resolves them
+     against the page's base URL on every backend (proxy form on Windows,
+     real custom scheme on macOS / Linux), so the same HTML works everywhere.
+
+2. **The Rust binary defaults to the console subsystem** unless `windows_subsystem`
+   is set, which means a black `cmd.exe`-style window flashes behind the GUI on
+   every launch. Fixed via `#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]`
+   at the top of `main.rs` — release builds get the GUI subsystem (PE Subsystem
+   field = 2), debug builds keep the console so `eprintln!` warnings remain
+   visible. No-op on macOS / Linux.
+
+3. **Build-time file lock**: a running `parados.exe` holds an exclusive handle
+   on its own `.exe`, so `cargo build --release` fails with `os error 5 — Access
+   is denied` while the app is open. Kill it first:
+   `Get-Process parados -EA SilentlyContinue | Stop-Process -Force`.
+
 ## Mac App Store private-API status
 
 `tao` 0.30.x does **not** import `_CGSSetWindowBackgroundBlurRadius` (the symbol that

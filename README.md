@@ -25,8 +25,16 @@ URL is rewritten from the in-app `parados://...` / `file://...` scheme to a publ
 `https://game.ywesee.com/parados/<game>` link so the recipient can actually follow it,
 plus a block of store links (Apple App Store / Mac App Store, Google Play, Microsoft Store).
 
-The window title bar shows the running version (e.g. `Parados 1.0.3`) on every platform,
+The window title bar shows the running version (e.g. `Parados 1.0.4`) on every platform,
 so users can see at a glance which build they're on without an About dialog.
+
+On Windows the binary uses the GUI subsystem (`windows_subsystem = "windows"`) so launching
+from Explorer / a Start-menu shortcut doesn't flash a console window behind the app.
+A handful of WebView2-specific quirks around in-app navigation, sub-resource fetches and
+the `shareOnWhatsApp` URL rewrite are documented in `CLAUDE.md` — short version: in-app
+links use root-relative URLs (`/games/foo.html`, not `parados://localhost/games/foo.html`)
+so they work the same under WebView2's internal proxy form as under the real custom
+scheme on macOS / Linux.
 
 The kangaroo icon appears in the macOS Dock, Windows taskbar and Linux Activities; on
 macOS the unbundled binary needs `[NSApp setActivationPolicy:Regular]` first which the

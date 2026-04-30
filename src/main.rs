@@ -1,3 +1,10 @@
+// Windows GUI subsystem in release builds: no console window flashes
+// behind the app when launched from Explorer / a Start-menu shortcut /
+// `Start-Process`.  Debug builds keep the console so `eprintln!`
+// warnings (IPC errors, "Spiele aktualisieren" failures) stay visible
+// during development.  No-op on non-Windows targets.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
+
 //! Parados desktop GUI — embeds the seven Think Ahead board games
 //! in a single native window via `tao` (window) + `wry` (webview).
 //!
@@ -144,7 +151,7 @@ const BACK_BUTTON_JS: &str = r#"
         ].join(';');
         btn.onmouseenter = function () { btn.style.opacity = '1.0'; };
         btn.onmouseleave = function () { btn.style.opacity = '0.85'; };
-        btn.onclick = function () { window.location.href = 'parados://localhost/'; };
+        btn.onclick = function () { window.location.href = '/'; };
         document.body.appendChild(btn);
     }
     if (document.body) installBackButton();
@@ -222,20 +229,22 @@ fn main() -> wry::Result<()> {
         // webview, which fails because PeerJS / WhatsApp Web require
         // browser features we don't expose.
         .with_navigation_handler(|url: String| {
-            if url.starts_with("http://") || url.starts_with("https://") {
+            if is_external_http(&url) {
                 if let Err(e) = open::that(&url) {
                     eprintln!("parados: failed to open {url} externally: {e}");
                 }
                 return false; // cancel in-webview navigation
             }
-            true // allow parados:// internal navigation
+            true // allow parados:// internal navigation (and wry's
+                 // internal http://parados.localhost/... proxy form on
+                 // Windows WebView2)
         })
         // Same logic for `window.open(url, '_blank')` calls — those go
         // through wry's new-window handler.  `shareOnWhatsApp()` tries
         // `window.open` first, falls back to `window.location.href`, so
         // we have to catch both sites.
         .with_new_window_req_handler(|url: String| {
-            if url.starts_with("http://") || url.starts_with("https://") {
+            if is_external_http(&url) {
                 if let Err(e) = open::that(&url) {
                     eprintln!("parados: failed to open {url} externally: {e}");
                 }
@@ -371,15 +380,18 @@ fn handle_request(
 
     // Game HTML / CSV — `parados://localhost/games/<file>`.  Check
     // the overlay (downloaded refreshes) first, fall back to the
-    // embedded bundle.
+    // embedded bundle.  HTML responses are run through
+    // `patch_share_url_check` to fix up `shareOnWhatsApp()` for
+    // wry's Windows proxy form (see that fn for context).
     if let Some(rest) = trimmed.strip_prefix("games/") {
+        let mime = guess_mime(rest);
         if let Ok(guard) = overlay().lock() {
             if let Some(bytes) = guard.get(rest) {
-                return ok(bytes.clone(), guess_mime(rest));
+                return ok(maybe_patch(bytes.clone(), mime), mime);
             }
         }
         if let Some(file) = GAMES_DIR.get_file(rest) {
-            return ok(file.contents().to_vec(), guess_mime(rest));
+            return ok(maybe_patch(file.contents().to_vec(), mime), mime);
         }
     }
 
@@ -427,6 +439,65 @@ fn guess_mime(filename: &str) -> &'static str {
         "webp"         => "image/webp",
         _              => "application/octet-stream",
     }
+}
+
+/// Run `bytes` through `patch_share_url_check` if `mime` is HTML.
+/// Otherwise return the bytes unchanged.
+fn maybe_patch(bytes: Vec<u8>, mime: &str) -> Vec<u8> {
+    if mime.starts_with("text/html") {
+        patch_share_url_check(bytes)
+    } else {
+        bytes
+    }
+}
+
+/// Extend the upstream `shareOnWhatsApp()` "running locally?" regex so
+/// it also matches wry's Windows proxy form.
+///
+/// Every game HTML defines a share button whose handler picks the URL
+/// to share via:
+/// ```js
+/// /^(file|parados):$/.test(window.location.protocol) ? PUBLIC : window.location.href
+/// ```
+/// On macOS / Linux the page really is loaded at `parados://localhost/`
+/// so the regex matches and the public game.ywesee.com URL is shared.
+/// On Windows wry's WebView2 backend serves the page through an
+/// internal `http://parados.localhost/...` proxy URL, the protocol is
+/// `http:`, the regex misses, and the share text leaks the useless
+/// internal URL.  We extend the check at serve time (not in the
+/// committed game HTML — those are kept byte-identical with the
+/// upstream `~/software/parados/` repo so all four ports stay in
+/// lockstep) by appending an additional host check that catches the
+/// proxy form.  No-op on macOS / Linux where the regex already matched.
+fn patch_share_url_check(bytes: Vec<u8>) -> Vec<u8> {
+    const NEEDLE: &str = "/^(file|parados):$/.test(window.location.protocol)";
+    const REPLACE: &str = "(/^(file|parados):$/.test(window.location.protocol)||window.location.host===\"parados.localhost\")";
+    match std::str::from_utf8(&bytes) {
+        Ok(text) if text.contains(NEEDLE) => text.replace(NEEDLE, REPLACE).into_bytes(),
+        _ => bytes,
+    }
+}
+
+/// True if `url` is an http(s):// URL that should be handed off to the
+/// user's default browser instead of loaded inside the embedded webview.
+///
+/// We deliberately exclude `localhost` and `*.localhost` hosts because
+/// wry's WebView2 backend on Windows can serve our `parados://localhost/`
+/// pages via an internal `http://parados.localhost/` proxy URL — the
+/// navigation handler must NOT route those out to the system browser
+/// (doing so cancels the webview navigation, leaving the window blank,
+/// AND opens a useless browser tab pointing at a non-public hostname).
+fn is_external_http(url: &str) -> bool {
+    let rest = if let Some(r) = url.strip_prefix("http://") {
+        r
+    } else if let Some(r) = url.strip_prefix("https://") {
+        r
+    } else {
+        return false;
+    };
+    let host = rest.split('/').next().unwrap_or("")
+        .split(':').next().unwrap_or("");
+    !(host == "localhost" || host.ends_with(".localhost"))
 }
 
 /// Decode `assets/icon.png` into a `tao::window::Icon`.  Returns

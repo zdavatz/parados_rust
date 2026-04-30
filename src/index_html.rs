@@ -285,7 +285,7 @@ fn render_button(idx: usize, label: &str, filename: &str, url: Option<&str>) -> 
             url = html_escape::encode_quoted_attribute(u),
         ),
         None => format!(
-            r#"<button class="btn" data-color="{color}" data-href="parados://localhost/games/{file}">{label}</button>"#,
+            r#"<button class="btn" data-color="{color}" data-href="/games/{file}">{label}</button>"#,
             file = html_escape::encode_quoted_attribute(filename),
         ),
     }

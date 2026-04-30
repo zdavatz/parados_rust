@@ -1,6 +1,6 @@
 [package]
 name = "parados"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 rust-version = "1.75"
 description = "Parados — Think Ahead Games desktop GUI (Linux, macOS, Windows)"
@@ -37,6 +37,18 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png"]
 # the user's default browser, matching iOS (`UIApplication.open(_:)`)
 # and Android (`Intent.ACTION_VIEW`) behaviour.
 open = "5"
+
+# HTTP client for the "Spiele aktualisieren" feature — pulls fresh
+# game HTML from raw.githubusercontent.com when the user clicks the
+# kangaroo logo.  ureq is sync + tiny (~250 KB) which keeps the
+# release binary small.
+ureq = { version = "2", features = ["tls"], default-features = false }
+
+# Cross-platform per-app data directory for the downloaded-games
+# overlay cache.  ~/Library/Application Support/Parados/games on
+# macOS, %APPDATA%\Parados\games on Windows, ~/.local/share/parados
+# on Linux.
+dirs = "5"
 
 # HTML-escape user-visible strings when generating the index page.
 html-escape = "0.2"

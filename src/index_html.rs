@@ -57,12 +57,53 @@ pub fn render() -> String {
     letter-spacing: 2px;
     color: #ffd700;
   }}
-  header img.logo {{
+  header button.kangy {{
+    appearance: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    background: transparent;
+    line-height: 0;
+    position: relative;
+  }}
+  header button.kangy img.logo {{
     width: 40px;
     height: 40px;
     border-radius: 8px;
     object-fit: cover;
     background: #f5f0e8;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+  }}
+  header button.kangy:hover img.logo {{ transform: scale(1.05); }}
+  header button.kangy.updating img.logo {{
+    opacity: 0.5;
+    animation: kangy-spin 0.9s linear infinite;
+  }}
+  @keyframes kangy-spin {{
+    from {{ transform: rotate(0deg); }}
+    to   {{ transform: rotate(360deg); }}
+  }}
+  #toast {{
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(40px);
+    background: #37474f;
+    color: #ffd700;
+    padding: 10px 18px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    z-index: 100;
+  }}
+  #toast.show {{
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }}
   main {{
     max-width: 720px;
@@ -130,8 +171,11 @@ pub fn render() -> String {
 <body>
   <header>
     <h1>PARADOS</h1>
-    <img class="logo" src="parados://localhost/assets/kangy.jpg" alt="Parados">
+    <button class="kangy" id="updateBtn" title="Spiele aktualisieren">
+      <img class="logo" src="parados://localhost/assets/kangy.jpg" alt="Parados">
+    </button>
   </header>
+  <div id="toast"></div>
   <main>
 {cards}  </main>
   <footer>
@@ -156,6 +200,51 @@ pub fn render() -> String {
     const href = el.getAttribute('data-href');
     if (href) {{ window.location.href = href; }}
   }});
+
+  // "Spiele aktualisieren" — kangaroo top-right kicks off a
+  // background download of every game HTML from
+  // raw.githubusercontent.com/zdavatz/parados/main/.  Same UX as the
+  // iOS Menu / Android toolbar.  Rust's worker thread fires
+  // `window.parados_update_done(updated, total, error)` when done.
+  const updateBtn = document.getElementById('updateBtn');
+  const toast = document.getElementById('toast');
+  let updateBusy = false;
+
+  function showToast(msg, ms) {{
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () {{
+      toast.classList.remove('show');
+    }}, ms || 3000);
+  }}
+
+  updateBtn.addEventListener('click', function () {{
+    if (updateBusy) return;
+    updateBusy = true;
+    updateBtn.classList.add('updating');
+    showToast('Spiele werden aktualisiert…', 30000);
+    try {{ window.ipc.postMessage('update-games'); }}
+    catch (e) {{
+      updateBusy = false;
+      updateBtn.classList.remove('updating');
+      showToast('Update fehlgeschlagen: IPC nicht verfügbar', 4000);
+    }}
+  }});
+
+  window.parados_update_done = function (updated, total, error) {{
+    updateBusy = false;
+    updateBtn.classList.remove('updating');
+    if (error && updated === 0) {{
+      showToast('Update fehlgeschlagen: ' + error, 5000);
+    }} else if (updated === total) {{
+      showToast(updated + ' Spiele aktualisiert');
+    }} else if (updated > 0) {{
+      showToast(updated + ' / ' + total + ' aktualisiert (' + (error || '?') + ')', 5000);
+    }} else {{
+      showToast('Keine Updates verfügbar');
+    }}
+  }};
 </script>
 </body>
 </html>

@@ -20,11 +20,14 @@
 //!    is plentiful.
 
 use std::borrow::Cow;
+use std::collections::HashMap;
+use std::io::Read;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use include_dir::{include_dir, Dir};
 use tao::{
     event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
+    event_loop::{ControlFlow, EventLoopBuilder},
     window::{Icon, WindowBuilder},
 };
 use wry::{http::Response, WebViewBuilder};
@@ -36,6 +39,51 @@ mod index_html;
 /// embedded directly into the binary at compile time.  Keeps the
 /// release artefact a single executable on every platform.
 static GAMES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets/games");
+
+/// Optional disk overlay loaded from `<data_dir>/Parados/games/`.
+/// "Spiele aktualisieren" downloads fresh HTML from
+/// `raw.githubusercontent.com/zdavatz/parados/main/<file>` into this
+/// directory; the custom-protocol handler reads from the overlay
+/// first, falls back to the embedded `GAMES_DIR`.  Same UX as the
+/// iOS / Android ports' menu refresh.
+type Overlay = Arc<Mutex<HashMap<String, Vec<u8>>>>;
+static OVERLAY: OnceLock<Overlay> = OnceLock::new();
+
+fn overlay() -> &'static Overlay {
+    OVERLAY.get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
+}
+
+/// `<data_dir>/Parados/games/`.  ~/Library/Application Support on macOS,
+/// %APPDATA% on Windows, ~/.local/share on Linux.
+fn games_cache_dir() -> Option<std::path::PathBuf> {
+    Some(dirs::data_dir()?.join("Parados").join("games"))
+}
+
+/// Read every file in the games cache directory into the overlay.
+/// Called once at startup so a previously-downloaded refresh
+/// survives across launches.
+fn load_overlay_from_disk() {
+    let Some(dir) = games_cache_dir() else { return };
+    let Ok(entries) = std::fs::read_dir(&dir) else { return };
+    let map = overlay();
+    let mut guard = map.lock().expect("overlay lock");
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+            if let Ok(bytes) = std::fs::read(&p) {
+                guard.insert(name.to_string(), bytes);
+            }
+        }
+    }
+}
+
+/// Custom event the worker thread fires once "Spiele aktualisieren"
+/// finishes — picked up by the main event loop, forwarded into the
+/// webview as a `parados_update_done` JS callback.
+#[derive(Debug, Clone)]
+enum UserEvent {
+    UpdateDone { updated: usize, total: usize, error: Option<String> },
+}
 
 /// Kangaroo logo used in the top-right of the menu page (and as the
 /// window icon).  Same JPEG as the iOS `kangy.imageset` — keeps the
@@ -125,7 +173,11 @@ fn main() -> wry::Result<()> {
         }
     }
 
-    let event_loop = EventLoop::new();
+    load_overlay_from_disk();
+
+    let event_loop: tao::event_loop::EventLoop<UserEvent> =
+        EventLoopBuilder::<UserEvent>::with_user_event().build();
+    let proxy = event_loop.create_proxy();
 
     let icon = decode_icon(ICON_PNG);
     let mut window_builder = WindowBuilder::new()
@@ -152,28 +204,113 @@ fn main() -> wry::Result<()> {
             handle_request(request)
         })
         .with_initialization_script(&init_script)
-        .with_ipc_handler(|request| {
-            // Single supported message: `open-external:<url>` from the
-            // menu page's footer / remote-multiplayer variants.  The
-            // iOS / Android ports do this with `UIApplication.open` /
-            // `Intent.ACTION_VIEW`; on desktop we hand off to the
-            // user's default browser via `open`.
-            let body = request.body();
-            if let Some(url) = body.strip_prefix("open-external:") {
-                if let Err(e) = open::that(url) {
-                    eprintln!("parados: failed to open {url} in default browser: {e}");
+        .with_ipc_handler({
+            let proxy = proxy.clone();
+            move |request| {
+                let body = request.body();
+                // `open-external:<url>` — remote-multiplayer variants +
+                // the menu footer link, routed to the default browser.
+                if let Some(url) = body.strip_prefix("open-external:") {
+                    if let Err(e) = open::that(url) {
+                        eprintln!("parados: failed to open {url} in default browser: {e}");
+                    }
+                    return;
                 }
+                // `update-games` — download fresh HTML from GitHub
+                // into the overlay cache.  Spawn a worker thread so
+                // the IPC callback returns immediately; signal
+                // completion via the EventLoopProxy so the main
+                // thread can drive the webview's JS-side toast.
+                if body == "update-games" {
+                    let proxy = proxy.clone();
+                    std::thread::spawn(move || {
+                        let outcome = update_games_blocking();
+                        let _ = proxy.send_event(outcome);
+                    });
+                    return;
+                }
+                eprintln!("parados: ignoring unknown IPC message: {body}");
             }
         })
         .build()?;
-    let _ = webview; // kept alive in the event loop closure
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
-        if let Event::WindowEvent { event: WindowEvent::CloseRequested, .. } = event {
-            *control_flow = ControlFlow::Exit;
+        match event {
+            Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+                *control_flow = ControlFlow::Exit;
+            }
+            Event::UserEvent(UserEvent::UpdateDone { updated, total, error }) => {
+                // Forward to the webview's JS-side toast handler.
+                let err = error.unwrap_or_default()
+                    .replace('\\', "\\\\").replace('"', "\\\"");
+                let js = format!(
+                    "if (typeof window.parados_update_done === 'function') {{ \
+                        window.parados_update_done({updated}, {total}, \"{err}\"); \
+                     }}"
+                );
+                let _ = webview.evaluate_script(&js);
+            }
+            _ => {}
         }
     });
+}
+
+/// Blocking implementation of "Spiele aktualisieren".  Downloads
+/// every entry in `games::ALL_FILENAMES` from
+/// `raw.githubusercontent.com/zdavatz/parados/main/<file>`, writes
+/// them under `<data_dir>/Parados/games/`, and updates the in-memory
+/// overlay so subsequent navigations see the fresh content.  Returns
+/// a `UserEvent::UpdateDone` describing the outcome.
+fn update_games_blocking() -> UserEvent {
+    const BASE: &str = "https://raw.githubusercontent.com/zdavatz/parados/main/";
+    let total = games::ALL_FILENAMES.len();
+    let dir = match games_cache_dir() {
+        Some(d) => d,
+        None => return UserEvent::UpdateDone {
+            updated: 0, total, error: Some("no data directory".into())
+        },
+    };
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        return UserEvent::UpdateDone {
+            updated: 0, total, error: Some(format!("mkdir failed: {e}"))
+        };
+    }
+
+    let agent = ureq::AgentBuilder::new()
+        .timeout(std::time::Duration::from_secs(30))
+        .build();
+
+    let mut updated = 0;
+    let mut last_error = None;
+    for name in games::ALL_FILENAMES {
+        let url = format!("{BASE}{name}");
+        match agent.get(&url).call() {
+            Ok(resp) if resp.status() == 200 => {
+                let mut bytes = Vec::new();
+                if let Err(e) = resp.into_reader().read_to_end(&mut bytes) {
+                    last_error = Some(format!("{name}: read body failed: {e}"));
+                    continue;
+                }
+                let target = dir.join(name);
+                if let Err(e) = std::fs::write(&target, &bytes) {
+                    last_error = Some(format!("{name}: write failed: {e}"));
+                    continue;
+                }
+                if let Ok(mut guard) = overlay().lock() {
+                    guard.insert((*name).to_string(), bytes);
+                    updated += 1;
+                }
+            }
+            Ok(resp) => {
+                last_error = Some(format!("{name}: HTTP {}", resp.status()));
+            }
+            Err(e) => {
+                last_error = Some(format!("{name}: {e}"));
+            }
+        }
+    }
+    UserEvent::UpdateDone { updated, total, error: last_error }
 }
 
 /// Resolve a `parados://` URL against the embedded resources and
@@ -192,8 +329,15 @@ fn handle_request(
         return ok(body.into_bytes(), "text/html; charset=utf-8");
     }
 
-    // Game HTML / CSV — `parados://localhost/games/<file>`.
+    // Game HTML / CSV — `parados://localhost/games/<file>`.  Check
+    // the overlay (downloaded refreshes) first, fall back to the
+    // embedded bundle.
     if let Some(rest) = trimmed.strip_prefix("games/") {
+        if let Ok(guard) = overlay().lock() {
+            if let Some(bytes) = guard.get(rest) {
+                return ok(bytes.clone(), guess_mime(rest));
+            }
+        }
         if let Some(file) = GAMES_DIR.get_file(rest) {
             return ok(file.contents().to_vec(), guess_mime(rest));
         }

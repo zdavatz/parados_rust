@@ -23,6 +23,23 @@ pub struct Game {
     pub variants: &'static [Variant],
 }
 
+/// Every HTML / CSV file the app ships, used by "Spiele aktualisieren"
+/// to know which files to refresh from GitHub.  Mirrors
+/// `GameInfo.allFilenames` in the iOS / Android sources.
+pub const ALL_FILENAMES: &[&str] = &[
+    "index.html",
+    "kangaroo.html", "kangaroo_en.html", "kangaroo_jp.html",
+    "kangaroo_cn.html", "kangaroo_ua.html",
+    "capovolto.html",
+    "divided_loyalties.html",
+    "democracy.html", "democracy_remote.html",
+    "frankenstein.html",
+    "rainbow_blackjack.html", "rainbow_blackjack_en.html",
+    "rainbow_blackjack_remote.html",
+    "makalaina.html", "makalaina_remote.html",
+    "makalaina_starting_positions.csv",
+];
+
 /// Used by the index-page renderer.  Keep the order identical to
 /// `GameInfo.allGames()` in the iOS / Android sources.
 pub const GAMES: &[Game] = &[

@@ -585,7 +585,10 @@ jobs:
             listings = @{
               "en-us" = @{
                 baseListing = @{
-                  title = "Parados"
+                  # Microsoft requires the listing title to match the
+                  # Partner Center reservation exactly — "Parados -
+                  # Think Ahead!" (with the exclamation mark).
+                  title = "Parados - Think Ahead!"
                   description = $descriptionEn
                   releaseNotes = $releaseNotesEn
                   # Microsoft Store API caps `keywords` at 7 entries
@@ -608,7 +611,10 @@ jobs:
               }
               "de-de" = @{
                 baseListing = @{
-                  title = "Parados"
+                  # Microsoft requires the listing title to match the
+                  # Partner Center reservation exactly — "Parados -
+                  # Think Ahead!" (with the exclamation mark).
+                  title = "Parados - Think Ahead!"
                   description = $descriptionDe
                   releaseNotes = $releaseNotesDe
                   keywords = @("Parados", "ThinkAhead", "Brettspiele", "Puzzle", "Strategie", "Memory", "Offline")

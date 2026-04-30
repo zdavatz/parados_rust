@@ -632,7 +632,12 @@ jobs:
               sales = @()
               priceId = "Free"
             }
-            applicationCategory = "Games_BoardAndCard"
+            # Microsoft devcenter REST API enum: must be one of the
+            # `GamesAndEntertainment_*` / `Education_*` / etc. values
+            # from https://learn.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#submission-object
+            # `Strategy` covers Capovolto / Divided Loyalties / Democracy
+            # / Rainbow Blackjack / MAKA LAINA — five of seven games.
+            applicationCategory = "GamesAndEntertainment_Strategy"
             allowTargetFutureDeviceFamilies = @{
               Desktop = $true; Mobile = $false; Xbox = $false; Holographic = $false
             }

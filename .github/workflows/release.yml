@@ -588,7 +588,9 @@ jobs:
                   title = "Parados"
                   description = $descriptionEn
                   releaseNotes = $releaseNotesEn
-                  keywords = @("Parados", "ThinkAhead", "BoardGames", "Puzzle", "Strategy", "Memory", "Offline", "Kangaroo", "Othello", "Connect4")
+                  # Microsoft Store API caps `keywords` at 7 entries
+                  # (`The size of Keywords must be 7 or less`).
+                  keywords = @("Parados", "ThinkAhead", "BoardGames", "Puzzle", "Strategy", "Memory", "Offline")
                   copyrightAndTrademarkInfo = "Copyright Think Ahead Games / ywesee GmbH"
                   licenseTerms = "GNU General Public License v3.0"
                   privacyPolicy = "https://ywesee.com/Parados/Parados"
@@ -609,7 +611,7 @@ jobs:
                   title = "Parados"
                   description = $descriptionDe
                   releaseNotes = $releaseNotesDe
-                  keywords = @("Parados", "ThinkAhead", "Brettspiele", "Puzzle", "Strategie", "Memory", "Offline", "Kaenguru", "Othello", "VierGewinnt")
+                  keywords = @("Parados", "ThinkAhead", "Brettspiele", "Puzzle", "Strategie", "Memory", "Offline")
                   copyrightAndTrademarkInfo = "Copyright Think Ahead Games / ywesee GmbH"
                   licenseTerms = "GNU General Public License v3.0"
                   privacyPolicy = "https://ywesee.com/Parados/Parados"

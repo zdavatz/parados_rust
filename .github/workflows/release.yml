@@ -545,7 +545,14 @@ jobs:
             Invoke-RestMethod -Method Delete `
               -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$pendingId" `
               -Headers $headers
-            Start-Sleep -Seconds 2
+            # Microsoft's backend takes ~20-30s to fully clean up a
+            # deleted submission.  Creating a new one too soon makes
+            # the new submission inherit the previous one's stuck
+            # state ("Angehalten" in Partner Center; Microsoft's
+            # MSIX validator never picks it up).  60s is overkill but
+            # this step runs once per release, so the latency cost is
+            # negligible compared to the cost of a stuck submission.
+            Start-Sleep -Seconds 60
           }
 
           # Same source of truth as the iOS / Android store listings.
@@ -683,6 +690,15 @@ jobs:
             fileStatus = "PendingUpload"
             minimumDirectXVersion = "None"
             minimumSystemRam = "None"
+            # Explicit targetDeviceFamilies — Microsoft normally
+            # auto-derives this from the AppxManifest's
+            # `<TargetDeviceFamily>` element after upload, but if
+            # their manifest parser doesn't run in time we end up with
+            # an empty list and the package is rejected as "supports
+            # no families".  Stating it explicitly here matches the
+            # manifest's MinVersion=10.0.17763.0 so the listing
+            # validates as soon as the metadata PUT completes.
+            targetDeviceFamilies = @("Windows.Desktop min version 10.0.17763.0")
           }
           $updateBody = $submission | ConvertTo-Json -Depth 20 -Compress
           Invoke-RestMethod -Method Put `

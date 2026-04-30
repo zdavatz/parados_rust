@@ -19,6 +19,19 @@ Three games offer optional PeerJS / WebRTC multiplayer; those variants open in y
 browser at `https://game.ywesee.com/parados/`. All other games run entirely offline inside
 the embedded webview (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux).
 
+## Refreshing games at runtime
+
+Click the kangaroo logo in the top-right of the menu page to download fresh game HTML from
+`raw.githubusercontent.com/zdavatz/parados/main/` into a per-app data directory:
+
+- macOS: `~/Library/Application Support/Parados/games/`
+- Windows: `%APPDATA%\Parados\games\`
+- Linux: `~/.local/share/parados/games/`
+
+The custom `parados://` protocol handler reads from this overlay first, falling back to
+the bundle baked into the binary at compile time. Refreshes survive across launches. Same
+UX as the iOS Menu / Android toolbar entry "Spiele aktualisieren".
+
 ## Build
 
 ```sh
@@ -52,10 +65,10 @@ Release flow:
 
 ```sh
 # bump version in Cargo.toml first, then:
-git commit -am "Release v1.0.1"
+git commit -am "Release vX.Y.Z"
 git push
-git tag v1.0.1
-git push origin v1.0.1
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 ## License

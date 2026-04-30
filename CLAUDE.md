@@ -9,8 +9,10 @@ Rust desktop port of the Parados Think Ahead board games. Same seven HTML games 
 running cross-platform on Linux / macOS / Windows via `tao` (window) + `wry` (webview).
 GPL-3.0.
 
-Bundle ID: `com.ywesee.parados` · Microsoft Store reservation: `yweseeGmbH.parados` · same
-bundle ID and asset set as the iOS / Android editions, deliberately, so all three stores
+Bundle ID: `com.ywesee.parados` · Microsoft Store reservation
+`yweseeGmbH.Parados-ThinkAhead` (Store-ID `9N7RTWZQQ0K7`) · App Store Connect
+record `6760842713` (Universal Purchase: same bundle ID across iOS + macOS).
+Asset set is identical to the iOS / Android editions so all three stores
 list the same product family.
 
 ## Architecture
@@ -20,16 +22,35 @@ Single binary (`parados`) — no library, no helper crates. Runtime structure:
 - `src/main.rs` — opens a `tao` window with the kangaroo PNG decoded into a native icon,
   mounts a `wry` webview pointing at `parados://localhost/`. The custom-protocol handler
   serves the menu page (rendered by `index_html::render`) and every `assets/games/*.html`
-  file (embedded via `include_dir!`). An IPC handler accepts `open-external:<url>` messages
-  from the menu page and hands them to the user's default browser via the `open` crate —
-  this is how the three remote-multiplayer variants reach `https://game.ywesee.com/parados/`.
+  file (embedded via `include_dir!`). The IPC handler accepts two messages:
+  - `open-external:<url>` — routes the three remote-multiplayer variants and the menu
+    footer to the user's default browser via the `open` crate.
+  - `update-games` — spawns a worker thread that downloads every entry in
+    `games::ALL_FILENAMES` from `raw.githubusercontent.com/zdavatz/parados/main/<file>`
+    via `ureq`, writes them under `<data_dir>/Parados/games/` (XDG-resolved per-platform
+    via the `dirs` crate), and updates an in-memory `OVERLAY` so the next navigation
+    serves fresh content. Completion is signalled to the main event loop through an
+    `EventLoopProxy<UserEvent>` which evaluates a JS callback (`window.parados_update_done`)
+    on the menu page to drive the spinner + toast UI. Mirrors the iOS Menu / Android
+    toolbar "Spiele aktualisieren" UX.
+  - The custom-protocol handler checks `OVERLAY` before falling back to the embedded
+    `GAMES_DIR`, so refreshed games override bundled ones. On startup the overlay is
+    re-loaded from disk so refreshes persist across launches.
+  - A `--url <parados://...>` CLI arg deep-links into a specific game (used by
+    `screenshots/macos/capture.sh`); a `--screenshot` CLI arg additionally injects
+    `RULES_DISMISS_JS` to auto-close every game's rules modal so screenshots show
+    actual gameplay.
 - `src/games.rs` — direct port of `GameInfo.swift` / `GameInfo.kt`. Keep titles /
   descriptions / variant lists byte-identical with the iOS and Android sources so the App
-  Store / Play Store / Microsoft Store listings stay coherent.
+  Store / Play Store / Microsoft Store listings stay coherent. Also exposes
+  `ALL_FILENAMES` — the list of files the "Spiele aktualisieren" worker downloads.
 - `src/index_html.rs` — pure function that renders the game-list "menu" page. Same colour
   palette as iOS / Android (`#263238` background, `#37474F` cards, `#FFD700` accent,
-  five-color cycling buttons). Kangaroo logo in the top-right via
-  `parados://localhost/assets/kangy.jpg`.
+  five-color cycling buttons). The kangaroo logo in the top-right is wrapped in a button
+  that fires the `update-games` IPC; while the worker thread runs, the logo gets a spinner
+  CSS animation and a bottom toast announces "Spiele werden aktualisiert…", then "X
+  Spiele aktualisiert" / "Update fehlgeschlagen: …" once `window.parados_update_done`
+  fires.
 - `BACK_BUTTON_JS` (in `main.rs`) — injected at document start by wry into every page
   *except* the menu (`/` and `/index.html`). Renders a fixed-position "← Menu" pill that
   navigates back to `parados://localhost/`. Mirrors the auto-hiding back FAB on iOS /
@@ -62,8 +83,10 @@ recipe used in `swissdamed2sqlite` / `eudamed2firstbase` / `rust2xml`: vendor a
 ## Build / run
 
 ```sh
-cargo build --release           # produces target/release/parados (~2.5 MB stripped)
+cargo build --release           # produces target/release/parados (~4.5 MB stripped)
 target/release/parados          # opens the menu window
+target/release/parados --url parados://localhost/games/capovolto.html   # deep-link
+target/release/parados --screenshot                                    # auto-dismiss rules modals
 ```
 
 Linux dev deps (CI installs the same set in `release.yml`):
@@ -145,15 +168,23 @@ new game or renames an existing one:
 
 1. Add the HTML file to `assets/games/` (copy from `parados_ios/Parados/Resources/Games/`).
 2. Append a `Game { ... }` literal to `GAMES` in `src/games.rs` matching the iOS / Android
-   entries character-for-character.
+   entries character-for-character; also extend `ALL_FILENAMES` so the runtime
+   "Spiele aktualisieren" worker downloads the new file.
 3. Re-run `cargo build --release` (no codegen step needed — `include_dir!` picks up the
    new file at compile time).
 
-There's no "Spiele aktualisieren" GitHub-update path on desktop — users get new games via
-the next signed release, the same way they get app updates from any store. Keeping the
-runtime simple here is intentional; the iOS / Android live-update path exists because the
-mobile stores have multi-week review queues, and that pressure doesn't apply to a desktop
-binary the user can refresh in 30 seconds.
+For *content-only* updates (HTML game logic changes — no new files, no metadata changes),
+users on already-installed builds can hit the kangaroo top-right and pull fresh HTML from
+GitHub at runtime; for new files / metadata changes a fresh signed release is still
+needed.
+
+## Mac App Store screenshots
+
+`screenshots/macos/` holds the eight 2560×1600 PNGs uploaded to App Store Connect (one
+menu + one per game). `screenshots/macos/capture.sh` regenerates them by launching parados
+eight times with `--url <game> --screenshot`, resizing to 1280×800 logical (= 2560×1600
+physical on Retina) via System Events, and `screencapture`-ing the window. Re-run after
+any UI change in `index_html.rs` or any visible game-HTML change.
 
 ## Related projects in this workspace
 

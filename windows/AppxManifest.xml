@@ -5,8 +5,14 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
+  <!-- Identity values come from the Microsoft Partner Center
+       reservation page (Allgemein → Produktidentität).  The Name
+       must match the reserved Package/Identity/Name verbatim or
+       the makeappx output is rejected at submission time.
+       Store-ID for the same reservation: 9N7RTWZQQ0K7 — set as
+       repo variable `MSSTORE_APP_ID` to enable the upload step. -->
   <Identity
-    Name="yweseeGmbH.parados"
+    Name="yweseeGmbH.Parados-ThinkAhead"
     Publisher="CN=3F71A827-F362-4FF2-A406-EA63C19EA85B"
     Version="1.0.0.0"
     ProcessorArchitecture="x64" />

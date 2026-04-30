@@ -47,6 +47,32 @@ static KANGY_JPG: &[u8] = include_bytes!("../assets/kangy.jpg");
 /// have; decoding once at startup is cheap.
 static ICON_PNG: &[u8] = include_bytes!("../assets/icon.png");
 
+/// Auto-dismiss the rules modal on every game when `--screenshot` is
+/// passed.  Lets `screenshots/macos/capture.sh` produce gameplay
+/// screenshots instead of "rules" screenshots.  Strategy: try the
+/// well-known global `closeRules()` / `closeModal()` functions every
+/// game defines, then fall back to clicking any modal close-button,
+/// then to brute-force `display:none` on any visible modal.
+const RULES_DISMISS_JS: &str = r#"
+(function () {
+    function dismiss() {
+        try { if (typeof closeRules === 'function') { closeRules(); return; } } catch (e) {}
+        try { if (typeof closeModal === 'function') { closeModal(); return; } } catch (e) {}
+        var modals = document.querySelectorAll('#rulesModal, .rules-modal, .modal');
+        modals.forEach(function (m) {
+            if (getComputedStyle(m).display !== 'none') {
+                var close = m.querySelector('.close, [onclick*="closeRules"], [onclick*="closeModal"]');
+                if (close) close.click();
+                else m.style.display = 'none';
+            }
+        });
+    }
+    function schedule() { setTimeout(dismiss, 350); setTimeout(dismiss, 900); }
+    if (document.readyState !== 'loading') schedule();
+    else document.addEventListener('DOMContentLoaded', schedule);
+})();
+"#;
+
 /// Injected into every *game* page (not the menu) at document start.
 /// Renders an always-on-screen "← Menu" pill in the top-left so the
 /// user can leave a game without keyboard shortcuts.  We deliberately
@@ -79,6 +105,26 @@ const BACK_BUTTON_JS: &str = r#"
 "#;
 
 fn main() -> wry::Result<()> {
+    // Optional `--url <url>` arg deep-links into a specific game on
+    // launch.  Used by `screenshots/macos/capture.sh` to pre-load each
+    // game and grab a screenshot without scripting button clicks; also
+    // useful for ad-hoc smoke tests.
+    let args: Vec<String> = std::env::args().collect();
+    let mut initial_url = "parados://localhost/".to_string();
+    let mut screenshot_mode = false;
+    let mut i = 1;
+    while i < args.len() {
+        if args[i] == "--url" && i + 1 < args.len() {
+            initial_url = args[i + 1].clone();
+            i += 2;
+        } else if args[i] == "--screenshot" {
+            screenshot_mode = true;
+            i += 1;
+        } else {
+            i += 1;
+        }
+    }
+
     let event_loop = EventLoop::new();
 
     let icon = decode_icon(ICON_PNG);
@@ -91,12 +137,21 @@ fn main() -> wry::Result<()> {
     }
     let window = window_builder.build(&event_loop).expect("window");
 
+    // Build the init-script chain.  Always include the back-to-menu
+    // button; in `--screenshot` mode also inject the rules-dismiss
+    // helper so screenshots show gameplay, not the rules modal.
+    let init_script = if screenshot_mode {
+        format!("{}\n{}", BACK_BUTTON_JS, RULES_DISMISS_JS)
+    } else {
+        BACK_BUTTON_JS.to_string()
+    };
+
     let webview = WebViewBuilder::new(&window)
-        .with_url("parados://localhost/")
+        .with_url(&initial_url)
         .with_custom_protocol("parados".into(), move |request| {
             handle_request(request)
         })
-        .with_initialization_script(BACK_BUTTON_JS)
+        .with_initialization_script(&init_script)
         .with_ipc_handler(|request| {
             // Single supported message: `open-external:<url>` from the
             // menu page's footer / remote-multiplayer variants.  The

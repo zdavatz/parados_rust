@@ -208,6 +208,37 @@ fn main() -> wry::Result<()> {
         .with_custom_protocol("parados".into(), move |request| {
             handle_request(request)
         })
+        // Any http(s):// navigation triggered from inside a game (the
+        // `Share on WhatsApp` button in particular — that calls
+        // `window.location.href = "https://wa.me/?text=..."`) needs to
+        // hand off to the user's default browser, which on macOS routes
+        // wa.me URLs into the native WhatsApp app via its URL handler,
+        // and on Windows / Linux into the browser tab the user expects.
+        // Without this, wry would load wa.me inside our embedded
+        // webview, which fails because PeerJS / WhatsApp Web require
+        // browser features we don't expose.
+        .with_navigation_handler(|url: String| {
+            if url.starts_with("http://") || url.starts_with("https://") {
+                if let Err(e) = open::that(&url) {
+                    eprintln!("parados: failed to open {url} externally: {e}");
+                }
+                return false; // cancel in-webview navigation
+            }
+            true // allow parados:// internal navigation
+        })
+        // Same logic for `window.open(url, '_blank')` calls — those go
+        // through wry's new-window handler.  `shareOnWhatsApp()` tries
+        // `window.open` first, falls back to `window.location.href`, so
+        // we have to catch both sites.
+        .with_new_window_req_handler(|url: String| {
+            if url.starts_with("http://") || url.starts_with("https://") {
+                if let Err(e) = open::that(&url) {
+                    eprintln!("parados: failed to open {url} externally: {e}");
+                }
+                return false; // don't open a new wry window
+            }
+            true
+        })
         .with_initialization_script(&init_script)
         .with_ipc_handler({
             let proxy = proxy.clone();

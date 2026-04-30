@@ -1457,11 +1457,13 @@ dependencies = [
 name = "parados"
 version = "1.0.3"
 dependencies = [
+ "cocoa",
  "dirs",
  "html-escape",
  "ico",
  "image",
  "include_dir",
+ "objc",
  "open",
  "tao",
  "ureq",

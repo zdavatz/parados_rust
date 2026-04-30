@@ -194,6 +194,10 @@ fn main() -> wry::Result<()> {
     }
     let window = window_builder.build(&event_loop).expect("window");
 
+    // macOS Dock icon (no-op on Linux / Windows — those use the
+    // `with_window_icon` we just set above).
+    set_macos_dock_icon();
+
     // Build the init-script chain.  Always include the back-to-menu
     // button; in `--screenshot` mode also inject the rules-dismiss
     // helper so screenshots show gameplay, not the rules modal.
@@ -433,3 +437,40 @@ fn decode_icon(bytes: &[u8]) -> Option<Icon> {
     let (w, h) = img.dimensions();
     Icon::from_rgba(img.into_raw(), w, h).ok()
 }
+
+/// macOS-only: set the running NSApplication's Dock icon to
+/// `assets/icon.png`.  `WindowBuilder::with_window_icon` does the
+/// right thing on Linux (X11/Wayland) and Windows (taskbar +
+/// title-bar minimap), but on macOS the Dock icon comes from
+/// `NSApplication.applicationIconImage`, which `tao` does not
+/// expose.  When the app is launched from a properly bundled
+/// `.app` the Dock reads the icon from `Contents/Resources/icon.icns`
+/// and this call is redundant; when launched from the bare release
+/// binary (`cargo run`, `target/release/parados`) it's the only
+/// thing that puts the kangaroo in the Dock.
+#[cfg(target_os = "macos")]
+#[allow(deprecated)]   // the cocoa crate is deprecated in favour of objc2-*; keep
+                       // using it because tao still pins cocoa transitively, so
+                       // adding objc2-app-kit would balloon the dep graph for a
+                       // five-line call site.
+fn set_macos_dock_icon() {
+    use cocoa::appkit::{NSApp, NSApplication, NSImage};
+    use cocoa::base::{id, nil};
+    use cocoa::foundation::NSData;
+    unsafe {
+        let data: id = NSData::dataWithBytes_length_(
+            nil,
+            ICON_PNG.as_ptr() as *const std::ffi::c_void,
+            ICON_PNG.len() as u64,
+        );
+        let image: id = NSImage::alloc(nil);
+        let image: id = NSImage::initWithData_(image, data);
+        if image != nil {
+            let app: id = NSApp();
+            app.setApplicationIconImage_(image);
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn set_macos_dock_icon() {}

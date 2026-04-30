@@ -98,8 +98,11 @@ Tagging `vX.Y.Z` triggers `.github/workflows/release.yml` which builds binaries 
 …and (when the store gates are enabled) signs a Mac App Store `.pkg` and uploads it to App
 Store Connect via `iTMSTransporter` / `altool`, plus a Microsoft Store `.msix` uploaded via
 the Partner Center REST API. Listing copy (description / keywords / privacy URL / etc.) is
-shared with the iOS / Android stores via `.github/scripts/appstore_metadata.py` and the
-inline `windows-msix` step.
+mirrored from the iOS App Store Connect listing (App ID `6760842713`) — that record is the
+single source of truth, propagated to the Mac App Store via
+`.github/scripts/appstore_metadata.py` and to the Microsoft Store via the inline
+`windows-msix` step. iOS, Mac, Windows and the upstream `game.ywesee.com/parados/` web
+build all read identically as a result.
 
 Release flow:
 

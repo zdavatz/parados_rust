@@ -258,13 +258,102 @@ and the GitHub Release is unchanged — the store steps simply skip.
 
 ## Listing copy — single source of truth
 
-The same description / keyword / URL / copyright strings appear in three places. Update all
-three when the wording changes:
+**Canonical source: iOS App Store Connect** (App ID `6760842713`, locale `de-DE`,
+appStoreVersion in `READY_FOR_SALE`). Everything else mirrors that:
 
-- `.github/scripts/appstore_metadata.py` — Mac App Store (REST API).
+- `.github/scripts/appstore_metadata.py` — pushes the same strings to **Mac App Store**
+  (App Store Connect REST). The Apple universal-purchase pair (iOS + macOS) shares the
+  app record so listings naturally stay aligned.
 - `.github/workflows/release.yml`, `windows-msix → submit to Microsoft Store` step —
-  Microsoft Store (devcenter REST API).
-- iOS / Android `README.md` files — Apple Search keywords + Google Play descriptions.
+  same description, keywords, URLs translated into Microsoft's submission body shape
+  (devcenter REST API).
+- iOS / Android `README.md` files — Apple Search keywords + Google Play description.
+
+To re-pull the iOS source after Walter Prossnitz updates the listing:
+
+```sh
+# All metadata fields for the live iOS listing
+python3 - <<'PY'
+import base64, json, os, time, subprocess, urllib.request
+cred = json.load(open(os.path.expanduser("~/.apple/credentials.json")))
+key_id, issuer = cred["apple"]["api_key_id"], cred["apple"]["api_issuer_id"]
+key_path = os.path.expanduser(cred["apple"]["api_key_path"])
+def b64u(d): return base64.urlsafe_b64encode(d).rstrip(b"=").decode()
+header  = {"alg":"ES256","kid":key_id,"typ":"JWT"}
+payload = {"iss":issuer,"iat":int(time.time()),"exp":int(time.time())+1200,"aud":"appstoreconnect-v1"}
+msg = b64u(json.dumps(header).encode()) + "." + b64u(json.dumps(payload).encode())
+sig = subprocess.check_output(["openssl","dgst","-sha256","-sign",key_path], input=msg.encode())
+i=2; lr=sig[i+1]; r=sig[i+2:i+2+lr].lstrip(b"\x00"); i+=2+lr; ls=sig[i+1]; s=sig[i+2:i+2+ls].lstrip(b"\x00")
+token = msg + "." + b64u(r.rjust(32,b"\x00") + s.rjust(32,b"\x00"))
+H = {"Authorization": f"Bearer {token}"}
+def get(p):
+    return json.loads(urllib.request.urlopen(urllib.request.Request("https://api.appstoreconnect.apple.com" + p, headers=H), timeout=30).read())
+v = get("/v1/apps/6760842713/appStoreVersions?filter[platform]=IOS&limit=5")["data"][0]["id"]
+print(json.dumps(get(f"/v1/appStoreVersions/{v}/appStoreVersionLocalizations"), indent=2, ensure_ascii=False))
+PY
+```
+
+## Microsoft Store gotchas — submitting via the v1 devcenter API
+
+(Compiled from a long iteration cycle on Microsoft Partner Center; each gotcha cost a
+release until we found it.)
+
+- **`<Properties><DisplayName>`** in AppxManifest.xml must match the **Partner Center
+  reservation name** verbatim, including punctuation: `Parados - Think Ahead!` (with the
+  exclamation mark). A short form like `Parados` triggers `Die Manifestdatei dieses Pakets
+  verwendet einen nicht reservierten Anzeigenamen`. Same string is required for the
+  per-listing `title` field on the submission body.
+- **Listing `keywords` array is capped at 7 entries.** Longer arrays return `The size of
+  Keywords must be 7 or less`. Strip the least-searchable entries; brand + category +
+  3-4 genre keywords is the workable shape.
+- **Category enum is `Games_<Genre>`**, not `GamesAndEntertainment_*`. The genre comes
+  from the table at
+  `https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/categories-and-subcategories?pivots=store-installer-msix`
+  — `CardAndBoard` for our seven board games. Wrong values get rejected with
+  `'Games_BoardAndCard' is not a valid 'ApplicationCategory' value` style errors.
+- **Pause 60 seconds between deleting a pending submission and creating a new one.**
+  Microsoft's backend takes ~20-30 s to fully clean up; create-too-soon makes the new
+  submission inherit the previous one's stuck state ("Angehalten" in Partner Center,
+  Microsoft's MSIX validator never picks the package up). The 60 s overhead is per-release
+  and trivial.
+- **Set `targetDeviceFamilies` explicitly on the package metadata.** Microsoft normally
+  auto-derives this from the AppxManifest's `<TargetDeviceFamily>` after upload, but if
+  their parser doesn't run in time the package reads as "supports no families" and the
+  listing rejects with the misleading `Sie müssen mindestens ein Paket hochladen`. Stating
+  `Windows.Desktop min version 10.0.17763.0` explicitly avoids the race.
+- **Per-listing device-family availability is set via Partner Center web UI**, not the
+  submission API — the `allowTargetFutureDeviceFamilies` field in our submission body is
+  forward-looking only. The default reservation often ships with Mobile + Xbox +
+  Holographic checked; uncheck them once at
+  `https://partner.microsoft.com/dashboard/products/<storeId>/properties` so submissions
+  don't fail with "Xbox-Gerätefamilie ein neutrales Paket erforderlich".
+- **MSIX-only products use the v1 devcenter API**
+  (`manage.devcenter.microsoft.com/v1.0/my/applications/...`). The newer v2 Submission
+  API at `api.store.microsoft.com/submission/v1/...` is **MSI/EXE-only** — it returns
+  `404 No Product Found` for our MSIX product ID. Don't try to migrate.
+- **Stuck submissions sometimes need manual "Delete" in Partner Center** even after the
+  workflow's automated delete-pending step. If a submission sits at "Angehalten" /
+  "CommitStarted" longer than ~30 minutes with `statusDetails.errors=[]`, click Delete on
+  the Submission page, then re-tag a higher version (`v1.0.x+1`) — Microsoft's queue
+  treats the old version as poisoned and won't re-process it.
+
+## Listing field reference (Microsoft submission body)
+
+Field shape consistent with what we set today (commit `5c010b7`):
+
+| Per-listing field         | Comes from           |
+|---------------------------|----------------------|
+| `title`                   | Partner Center reservation name (verbatim) |
+| `description`             | iOS App Store Connect description (~1.4 KB) |
+| `shortDescription`        | hand-written one-liner derived from iOS subtitle |
+| `keywords` (≤ 7)          | iOS keywords + brand entries |
+| `releaseNotes`            | per-version "what's new" |
+| `copyrightAndTrademarkInfo` | iOS `copyright` field (`GPLv3.0`) |
+| `licenseTerms`            | constant: `GNU General Public License v3.0` |
+| `privacyPolicy`           | iOS `privacyPolicyUrl` (`ywesee.com/Parados/Privacy`) |
+| `websiteUrl`              | upstream game URL (`game.ywesee.com/parados/`) |
+| `supportContact`          | iOS `supportUrl` (`ywesee.com/Parados/Support`) |
+| `features` (≤ 20)         | hand-written 6-bullet feature list |
 
 ## Game catalog sync
 

@@ -43,46 +43,54 @@ API_BASE = "https://api.appstoreconnect.apple.com/v1"
 #   - .github/workflows/release.yml  (Microsoft Store)
 # ---------------------------------------------------------------------
 
+# Pulled verbatim from the iOS App Store Connect listing for Parados
+# (App ID 6760842713, appStoreVersion 1.0 / READY_FOR_SALE).  Same
+# copy is used for the Mac App Store listing so the universal-purchase
+# pair (iOS + macOS) reads identically.
 DESCRIPTION_EN = (
-    "Parados is a collection of seven original board games — playable offline, "
-    "fully embedded, no internet connection required.\n\n"
-    "DUK — The Impatient Kangaroo (1 player, puzzle, DE/EN/JP/CN/UA)\n"
-    "Capovolto (2 players, strategy)\n"
-    "Divided Loyalties (2 players, strategy)\n"
-    "Democracy in Space (2+ players, strategy; remote multiplayer optional)\n"
-    "Frankenstein — Where's that green elbow? (1–4 players, memory)\n"
-    "Rainbow Blackjack (2 players, strategy; remote multiplayer optional)\n"
-    "MAKA LAINA (2 players, strategy; remote multiplayer optional)\n\n"
-    "Three games offer optional cross-device PeerJS / WebRTC multiplayer; "
-    "those open in your default browser. All other games run entirely offline.\n\n"
-    "Open Source (GPL v3) — by Walter Prossnitz / Think Ahead Games / ywesee GmbH."
+    "Parados — Think Ahead!\n\n"
+    "Board Games Collection — use your Brain to think ahead!\n\n"
+    "Parados is a collection of 7 original board games playable on macOS.\n"
+    "All games are fully embedded and playable offline — no internet "
+    "connection required.\n\n"
+    " Included Games:\n"
+    " - DUK — The Impatient Kangaroo (1 Player) — A puzzle game inspired by "
+    "Rush Hour. Hop through the outback collecting goodies. Available in 5 "
+    "languages (DE, EN, JP, CN, UA).\n"
+    " - Capovolto (2 Players) — Othello reinvented with area control, "
+    "numbered discs, and a new flipping mechanism on a random board.\n"
+    " - Divided Loyalties (2 Players) — Connect 4 with 6 colours and "
+    "shifting allegiances. Every move is both offensive and defensive.\n"
+    " - Democracy in Space (2+ Players) — Area majority game inspired by "
+    "the Electoral College concept. Also available as a remote multiplayer "
+    "variant.\n"
+    " - Frankenstein (1–4 Players) — A quick memory game for ages 7 and up. "
+    "Short, sweet, and surprisingly competitive.\n"
+    " - Rainbow Blackjack (2 Players) — Build coloured towers to reach 21. "
+    "Available in German and English, with a remote multiplayer variant.\n"
+    " - MAKA LAINA (2 Players) — A fast-paced strategy game with constantly "
+    "shifting disc placement. Also available as a remote multiplayer variant.\n\n"
+    "Three games offer optional remote multiplayer via your default browser, "
+    "allowing you to play with friends online. Games can be updated directly "
+    "from GitHub within the app."
 )
-DESCRIPTION_DE = (
-    "Parados ist eine Sammlung von sieben originalen Brettspielen — offline "
-    "spielbar, vollständig eingebettet, kein Internet nötig.\n\n"
-    "DUK — Das ungeduldige Känguru (1 Spieler, Puzzle, DE/EN/JP/CN/UA)\n"
-    "Capovolto (2 Spieler, Strategie)\n"
-    "Divided Loyalties (2 Spieler, Strategie)\n"
-    "Democracy in Space (2+ Spieler, Strategie; optional Remote-Multiplayer)\n"
-    "Frankenstein — Wo ist der grüne Ellbogen? (1–4 Spieler, Memory)\n"
-    "Rainbow Blackjack (2 Spieler, Strategie; optional Remote-Multiplayer)\n"
-    "MAKA LAINA (2 Spieler, Strategie; optional Remote-Multiplayer)\n\n"
-    "Drei Spiele bieten optional PeerJS / WebRTC Mehrspieler-Modus; "
-    "diese öffnen im Standard-Browser. Alle anderen Spiele laufen komplett offline.\n\n"
-    "Open Source (GPL v3) — von Walter Prossnitz / Think Ahead Games / ywesee GmbH."
-)
-KEYWORDS_EN = "Parados,Think Ahead,Board Games,Puzzle,Strategy,Memory,Offline,Kangaroo,Othello"
-KEYWORDS_DE = "Parados,Think Ahead,Brettspiele,Puzzle,Strategie,Memory,Offline,Känguru,Othello"
-SUBTITLE_EN = "Seven Think Ahead Board Games"
-SUBTITLE_DE = "Sieben Think-Ahead-Brettspiele"
-PROMOTIONAL_EN = "Seven original Think Ahead board games — embedded, offline, no ads."
-PROMOTIONAL_DE = "Sieben originale Think-Ahead-Brettspiele — eingebettet, offline, ohne Werbung."
+# Apple's de-DE listing is published with English text (same wording);
+# we mirror that here so iOS / macOS read the same on every locale.
+DESCRIPTION_DE = DESCRIPTION_EN
+KEYWORDS_EN = "Think Ahead,Parados,Board Games,Puzzle,Strategy,Memory,Offline"
+KEYWORDS_DE = "Think Ahead,Denk voraus,Denkspiel,Strategiespiel"
+SUBTITLE_EN = "think ahead!"
+SUBTITLE_DE = "think ahead!"
+PROMOTIONAL_EN = "Seven original Think Ahead board games — offline, no ads."
+PROMOTIONAL_DE = "Sieben originale Think-Ahead-Brettspiele — offline, ohne Werbung."
 WHATS_NEW_EN = "Initial release of the Parados desktop port (macOS Mac App Store)."
 WHATS_NEW_DE = "Erstveröffentlichung der Parados-Desktop-Version (macOS Mac App Store)."
-SUPPORT_URL = "https://ywesee.com/Parados/Parados"
-MARKETING_URL = "https://game.ywesee.com/parados/"
-PRIVACY_URL = "https://ywesee.com/Parados/Parados"
-COPYRIGHT = "Think Ahead Games / ywesee GmbH"
+# All three URLs come from the iOS App Store Connect listing — keep
+# in lockstep so refunds / privacy queries land at the same page.
+SUPPORT_URL = "https://ywesee.com/Parados/Support"
+MARKETING_URL = "https://ywesee.com/Parados/Support"
+PRIVACY_URL = "https://ywesee.com/Parados/Privacy"
+COPYRIGHT = "GPLv3.0"
 
 
 # ---------------------------------------------------------------------

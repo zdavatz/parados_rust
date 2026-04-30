@@ -25,7 +25,7 @@ URL is rewritten from the in-app `parados://...` / `file://...` scheme to a publ
 `https://game.ywesee.com/parados/<game>` link so the recipient can actually follow it,
 plus a block of store links (Apple App Store / Mac App Store, Google Play, Microsoft Store).
 
-The window title bar shows the running version (e.g. `Parados 1.0.4`) on every platform,
+The window title bar shows the running version (e.g. `Parados 1.0.5`) on every platform,
 so users can see at a glance which build they're on without an About dialog.
 
 On Windows the binary uses the GUI subsystem (`windows_subsystem = "windows"`) so launching

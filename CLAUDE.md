@@ -191,6 +191,28 @@ eight times with `--url <game> --screenshot`, resizing to 1280×800 logical (= 2
 physical on Retina) via System Events, and `screencapture`-ing the window. Re-run after
 any UI change in `index_html.rs` or any visible game-HTML change.
 
+## Microsoft Store screenshots
+
+`screenshots/windows/` holds nine 1366×768 PNGs uploaded to the Microsoft Store partner
+center (menu top, menu scrolled, one per game). `screenshots/windows/orchestrate.ps1`
+regenerates them — same strategy as the macOS script: a single launch for the two menu
+shots (with one mouse-wheel scroll between them) plus seven per-game launches with
+`--url <game> --screenshot`. Resizing uses Win32 `SetWindowPos` and the capture is a
+`Graphics.CopyFromScreen` over the window rect. Re-run from a PowerShell prompt after
+any UI change:
+
+```powershell
+pwsh -NoProfile -File screenshots\windows\orchestrate.ps1
+```
+
+Note: the menu page's kangaroo logo intentionally uses a *relative* URL
+(`<img src="/assets/kangy.jpg">`) rather than `parados://localhost/assets/kangy.jpg`.
+WebView2 on Windows resolves absolute custom-scheme sub-resources through a different
+path than navigations, and the literal `parados://` URL renders as a broken-image
+placeholder there. Relative URLs resolve against the page's base URL on every platform
+(WebKit on macOS, WebView2 on Windows, WebKitGTK on Linux) so the icon renders
+consistently — keep new bundled-asset references relative for the same reason.
+
 ## Related projects in this workspace
 
 - `parados_ios` — SwiftUI / WKWebView source of the game catalog.

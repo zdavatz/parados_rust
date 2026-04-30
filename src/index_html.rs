@@ -172,7 +172,7 @@ pub fn render() -> String {
   <header>
     <h1>PARADOS</h1>
     <button class="kangy" id="updateBtn" title="Spiele aktualisieren">
-      <img class="logo" src="parados://localhost/assets/kangy.jpg" alt="Parados">
+      <img class="logo" src="/assets/kangy.jpg" alt="Parados">
     </button>
   </header>
   <div id="toast"></div>

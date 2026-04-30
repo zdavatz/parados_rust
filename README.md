@@ -49,6 +49,23 @@ sudo apt install libwebkit2gtk-4.1-dev libsoup-3.0-dev libxkbcommon-dev \
                  libgtk-3-dev libayatana-appindicator3-dev
 ```
 
+## Store screenshots
+
+`screenshots/macos/` and `screenshots/windows/` hold the PNGs uploaded to App Store
+Connect and the Microsoft Store partner center. Regenerate after any UI change:
+
+```sh
+# macOS — 2560×1600 Retina shots via screencapture
+./screenshots/macos/capture.sh
+
+# Windows — 1366×768 shots via PowerShell + Graphics.CopyFromScreen
+pwsh -NoProfile -File screenshots\windows\orchestrate.ps1
+```
+
+Both scripts launch `parados --url <game> --screenshot` once per shot (the
+`--screenshot` flag injects a tiny JS snippet that auto-dismisses each game's rules
+modal so the captures show actual gameplay).
+
 ## Releases
 
 Tagging `vX.Y.Z` triggers `.github/workflows/release.yml` which builds binaries for:

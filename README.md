@@ -25,8 +25,14 @@ URL is rewritten from the in-app `parados://...` / `file://...` scheme to a publ
 `https://game.ywesee.com/parados/<game>` link so the recipient can actually follow it,
 plus a block of store links (Apple App Store / Mac App Store, Google Play, Microsoft Store).
 
-The window title bar shows the running version (e.g. `Parados 1.0.2`) on every platform,
+The window title bar shows the running version (e.g. `Parados 1.0.3`) on every platform,
 so users can see at a glance which build they're on without an About dialog.
+
+The kangaroo icon appears in the macOS Dock, Windows taskbar and Linux Activities; on
+macOS the unbundled binary needs `[NSApp setActivationPolicy:Regular]` first which the
+app does at startup, otherwise macOS would keep showing the generic "exec" tile.
+`assets/icon.png` is pre-baked with Apple-style ~22.5% rounded corners
+(`cargo run --release --example round_icon` regenerates it from a square source).
 
 ## Refreshing games at runtime
 

@@ -119,10 +119,48 @@ sudo apt install libwebkit2gtk-4.1-dev libsoup-3.0-dev libxkbcommon-dev \
                  libgtk-3-dev libayatana-appindicator3-dev
 ```
 
-`cargo run --release --example make_ico` regenerates `assets/icon.ico` from
-`assets/icon.png` (multi-resolution PNG-encoded ICO container, sizes 16/24/32/48/64/128/256).
-Re-run this whenever the kangaroo source PNG changes; `build.rs` then embeds the .ico into
-`parados.exe` via `winresource` on the Windows target.
+## Icon pipeline
+
+Single source of truth: `assets/icon.png` (512×512 RGBA, kangaroo
+on beige with **pre-baked Apple-style rounded corners** at ~22.5%
+radius). All platforms read from this:
+
+- **macOS Dock** (runtime, unbundled binary): `set_macos_dock_icon()`
+  in `main.rs` calls `[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular]`
+  followed by `[NSApp setApplicationIconImage:]` on an `NSImage`
+  decoded from `ICON_PNG` bytes. Without `setActivationPolicy:Regular`
+  macOS keeps unbundled binaries in "exec" mode and shows the
+  generic black tile in the Dock — that gate has to flip first.
+- **macOS .app bundle** (DMG / Mac App Store): the workflow runs
+  `sips` + `iconutil` over `assets/icon.png` to produce
+  `Contents/Resources/icon.icns`, picked up at launch by
+  `Info.plist`'s `CFBundleIconFile=icon`.
+- **Windows taskbar + Explorer**: `cargo run --release --example make_ico`
+  regenerates `assets/icon.ico` (multi-res PNG-in-ICO, sizes
+  16/24/32/48/64/128/256) and `build.rs` embeds it into
+  `parados.exe` via `winresource`.
+- **Windows Microsoft Store tiles**: workflow's `windows-msix` job
+  resizes `assets/icon.png` via `sips` into the five required PNG
+  sizes (44/150/310/Wide310x150/StoreLogo).
+- **Linux .desktop**: the workflow ships `assets/icon.png` alongside
+  `parados.desktop` in the tarball; `install-linux.sh` copies it
+  into `~/.local/share/icons/hicolor/512x512/apps/parados.png`.
+- **In-app menu top-right**: `<img class="logo" src="/assets/kangy.jpg">`
+  in `index_html.rs`. Custom-protocol handler serves `kangy.jpg`
+  (the original 1024×1024 photo). The `:hover` and `.updating`
+  CSS animations use the same image — the rounded-rect shape comes
+  from CSS `border-radius: 8px`, not from the source.
+
+Whenever Walter Prossnitz updates the source kangaroo, replace
+`assets/icon.png` with a new 512² square PNG (no transparency
+needed in the source; `round_icon.rs` adds the alpha channel) and
+re-run:
+
+```sh
+cargo run --release --example round_icon   # apply 22.5% rounded mask
+cargo run --release --example make_ico     # regenerate icon.ico
+./screenshots/macos/capture.sh             # refresh App Store screenshots
+```
 
 ## Releasing
 

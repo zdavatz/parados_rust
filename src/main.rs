@@ -454,10 +454,24 @@ fn decode_icon(bytes: &[u8]) -> Option<Icon> {
                        // adding objc2-app-kit would balloon the dep graph for a
                        // five-line call site.
 fn set_macos_dock_icon() {
-    use cocoa::appkit::{NSApp, NSApplication, NSImage};
+    use cocoa::appkit::{
+        NSApp, NSApplication, NSApplicationActivationPolicy, NSImage,
+    };
     use cocoa::base::{id, nil};
     use cocoa::foundation::NSData;
     unsafe {
+        let app: id = NSApp();
+
+        // Without `Regular` activation policy macOS keeps the unbundled
+        // `target/release/parados` binary in the generic-exec mode that
+        // shows the black "exec" tile in the Dock instead of honouring
+        // `setApplicationIconImage:`.  Forcing Regular makes the app
+        // appear in the Dock + Cmd-Tab as a normal GUI app, which is
+        // the prerequisite for the icon-image override below to stick.
+        app.setActivationPolicy_(
+            NSApplicationActivationPolicy::NSApplicationActivationPolicyRegular,
+        );
+
         let data: id = NSData::dataWithBytes_length_(
             nil,
             ICON_PNG.as_ptr() as *const std::ffi::c_void,
@@ -466,8 +480,9 @@ fn set_macos_dock_icon() {
         let image: id = NSImage::alloc(nil);
         let image: id = NSImage::initWithData_(image, data);
         if image != nil {
-            let app: id = NSApp();
             app.setApplicationIconImage_(image);
+        } else {
+            eprintln!("parados: NSImage::initWithData_ returned nil — Dock icon not set");
         }
     }
 }

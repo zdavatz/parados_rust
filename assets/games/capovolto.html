@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capovolto</title>
+<style>
+:root {
+    --bg: #263238;
+    --board-bg: #1a2027;
+    --panel-bg: #37474f;
+    --cell-size: 42px;
+    --cell-poly: #4e342e;
+    --cell-empty-spot: #2c3e50;
+    --cell-outside: transparent;
+    --black-disc: #212121;
+    --white-disc: #f5f5f5;
+    --golden: #ffd700;
+    --ring-glow: #ffd700;
+    --accent: #ff9800;
+    --valid-highlight: rgba(100, 255, 218, 0.25);
+    --valid-glow: rgba(100, 255, 218, 0.4);
+    --flip-highlight: rgba(255, 82, 82, 0.4);
+    --modal-bg: rgba(0, 0, 0, 0.9);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: #eceff1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+    user-select: none;
+}
+
+h1 {
+    font-size: 2em;
+    color: var(--golden);
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    margin: 5px 0;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    font-size: 0.9em;
+    color: #90a4ae;
+    margin-bottom: 8px;
+}
+
+#statusBar {
+    background: var(--panel-bg);
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1em;
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+#phaseInfo { color: var(--accent); }
+#turnInfo { color: #e0e0e0; }
+#roundInfo { color: #90a4ae; }
+
+.main-area {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 1100px;
+}
+
+.board-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(11, var(--cell-size));
+    grid-template-rows: repeat(11, var(--cell-size));
+    gap: 2px;
+    background-color: var(--board-bg);
+    padding: 6px;
+    border-radius: 6px;
+    border: 3px solid #5d4037;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+.cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.15s, box-shadow 0.15s;
+    font-size: 0.7em;
+    color: #555;
+}
+
+.cell-outside {
+    background: transparent;
+    cursor: default;
+}
+
+.cell-poly {
+    background-color: var(--cell-poly);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.cell-empty-spot {
+    background-color: var(--cell-empty-spot);
+    border: 1px dashed rgba(255,255,255,0.15);
+}
+
+.cell-poly:hover, .cell-empty-spot:hover {
+    filter: brightness(1.2);
+}
+
+.cell.valid-target {
+    background-color: var(--valid-highlight);
+    box-shadow: inset 0 0 8px var(--valid-glow);
+}
+
+.cell.flip-target {
+    background-color: var(--flip-highlight);
+    box-shadow: inset 0 0 8px rgba(255, 82, 82, 0.6);
+}
+
+.cell.preview-valid {
+    background-color: rgba(76, 175, 80, 0.35);
+    box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.5);
+}
+
+.cell.preview-invalid {
+    background-color: rgba(244, 67, 54, 0.3);
+}
+
+.cell.selected-disc {
+    box-shadow: 0 0 10px 3px #2196f3;
+}
+
+/* Polyomino border colors - cycle through 6 hues */
+.poly-0 { border-color: #e57373 !important; }
+.poly-1 { border-color: #81c784 !important; }
+.poly-2 { border-color: #64b5f6 !important; }
+.poly-3 { border-color: #ffb74d !important; }
+.poly-4 { border-color: #ba68c8 !important; }
+.poly-5 { border-color: #4dd0e1 !important; }
+.poly-6 { border-color: #e57373 !important; border-style: dashed !important; }
+.poly-7 { border-color: #81c784 !important; border-style: dashed !important; }
+.poly-8 { border-color: #64b5f6 !important; border-style: dashed !important; }
+.poly-9 { border-color: #ffb74d !important; border-style: dashed !important; }
+.poly-10 { border-color: #ba68c8 !important; border-style: dashed !important; }
+.poly-11 { border-color: #4dd0e1 !important; border-style: dashed !important; }
+.poly-12 { border-color: #ef9a9a !important; }
+.poly-13 { border-color: #a5d6a7 !important; }
+.poly-14 { border-color: #90caf9 !important; }
+.poly-15 { border-color: #ffcc80 !important; }
+.poly-16 { border-color: #ce93d8 !important; }
+.poly-17 { border-color: #80deea !important; }
+
+.disc {
+    width: 82%;
+    height: 82%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: calc(var(--cell-size) * 0.45);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 5;
+    transition: transform 0.3s;
+}
+
+.disc-black {
+    background: radial-gradient(circle at 35% 35%, #424242, #212121);
+    color: var(--golden);
+    border: 2px solid #555;
+}
+
+.disc-white {
+    background: radial-gradient(circle at 35% 35%, #ffffff, #e0e0e0);
+    color: #b8860b;
+    border: 2px solid #bbb;
+}
+
+.disc.flipped {
+    animation: flipAnim 0.5s ease-in-out;
+}
+
+@keyframes flipAnim {
+    0% { transform: scaleX(1); }
+    50% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+}
+
+.ring-marker {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid var(--ring-glow);
+    box-shadow: 0 0 10px 2px var(--ring-glow);
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 6;
+    animation: ringPulse 2s infinite ease-in-out;
+}
+
+@keyframes ringPulse {
+    0%, 100% { box-shadow: 0 0 8px 2px var(--ring-glow); }
+    50% { box-shadow: 0 0 14px 4px var(--ring-glow); }
+}
+
+.sidebar {
+    background: var(--panel-bg);
+    border-radius: 8px;
+    padding: 12px;
+    min-width: 240px;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.sidebar h3 {
+    font-size: 0.95em;
+    color: var(--accent);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+.hand-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 50px;
+}
+
+.hand-disc {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+}
+
+.hand-disc:hover {
+    transform: scale(1.1);
+}
+
+.hand-disc.selected {
+    box-shadow: 0 0 10px 3px #2196f3;
+    transform: scale(1.15);
+}
+
+.hand-disc .back-value {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 0.55em;
+    background: rgba(0,0,0,0.7);
+    color: #aaa;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stash-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 30px;
+}
+
+.stash-disc {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+}
+
+.score-table th, .score-table td {
+    padding: 3px 6px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.score-table th {
+    color: var(--accent);
+    font-size: 0.85em;
+}
+
+.score-total {
+    font-size: 1.1em;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-top: 2px solid var(--accent);
+    margin-top: 4px;
+}
+
+.setup-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 8px;
+    width: 100%;
+    max-width: 800px;
+}
+
+.polyomino-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 8px;
+    background: var(--panel-bg);
+    border-radius: 8px;
+    max-width: 800px;
+}
+
+.palette-piece {
+    display: grid;
+    gap: 1px;
+    cursor: pointer;
+    padding: 3px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: border-color 0.15s, background 0.15s;
+    background: rgba(0,0,0,0.2);
+}
+
+.palette-piece:hover { border-color: rgba(255,255,255,0.3); }
+.palette-piece.selected { border-color: var(--golden); background: rgba(255,215,0,0.1); }
+.palette-piece.placed { opacity: 0.3; cursor: default; pointer-events: none; }
+
+.palette-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.palette-cell.filled { background: var(--cell-poly); }
+.palette-cell.empty { background: transparent; }
+
+button {
+    padding: 8px 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: default;
+    box-shadow: none;
+}
+
+.btn-primary { background: #43a047; color: white; }
+.btn-primary:hover:not(:disabled) { background: #388e3c; }
+.btn-accent { background: var(--accent); color: #263238; }
+.btn-accent:hover:not(:disabled) { background: #f57c00; }
+.btn-danger { background: #e53935; color: white; }
+.btn-danger:hover:not(:disabled) { background: #c62828; }
+.btn-secondary { background: #546e7a; color: white; }
+.btn-secondary:hover:not(:disabled) { background: #455a64; }
+.btn-flip { background: #e53935; color: white; font-size: 1em; }
+.btn-undo { background: #fbc02d; color: #37474f; }
+
+.bottom-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: var(--modal-bg);
+    backdrop-filter: blur(3px);
+}
+
+.modal-content {
+    background-color: #fff;
+    color: #37474f;
+    margin: 3% auto;
+    padding: 25px;
+    border-radius: 10px;
+    width: 92%;
+    max-width: 650px;
+    max-height: 88vh;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.modal-content h2 {
+    color: #4e342e;
+    margin-bottom: 10px;
+}
+
+.modal-content h3 {
+    color: #5d4037;
+    margin-top: 14px;
+    margin-bottom: 6px;
+}
+
+.modal .close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+}
+
+.modal .close:hover { color: #333; }
+
+.close-btn {
+    display: block;
+    margin: 16px auto 0;
+    padding: 10px 24px;
+    background: #4e342e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.close-btn:hover { background: #3e2723; }
+
+.flip-prompt {
+    background: rgba(229, 57, 53, 0.15);
+    border: 2px solid #e53935;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    display: none;
+}
+
+.flip-prompt.visible { display: block; }
+
+.face-chooser {
+    background: rgba(33, 150, 243, 0.15);
+    border: 2px solid #2196f3;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    display: none;
+}
+
+.face-chooser.visible { display: block; }
+
+.face-chooser button {
+    margin: 4px;
+    min-width: 60px;
+}
+
+@media (max-width: 700px) {
+    :root { --cell-size: 30px; }
+    .main-area { flex-direction: column; align-items: center; }
+    .sidebar { min-width: 200px; width: 100%; max-width: 500px; }
+    h1 { font-size: 1.5em; }
+}
+</style>
+</head>
+<body>
+<h1>CAPOVOLTO</h1>
+<div class="subtitle">Das Wendespiel &mdash; f&uuml;r 2 Spieler</div>
+
+<div id="statusBar">
+    <span id="phaseInfo">AUFBAU</span>
+    <span id="turnInfo">SCHWARZ beginnt</span>
+    <span id="roundInfo"></span>
+</div>
+
+<div class="main-area">
+    <div class="board-container">
+        <div id="board"></div>
+        <div id="setupControls" class="setup-controls"></div>
+        <div id="polyominoPalette" class="polyomino-palette" style="display:none;"></div>
+    </div>
+
+    <div class="sidebar">
+        <h3 id="handTitle">Hand</h3>
+        <div id="handArea" class="hand-area"></div>
+
+        <div id="faceChooser" class="face-chooser"></div>
+
+        <div id="flipPrompt" class="flip-prompt"></div>
+
+        <h3>Lager (Runde 6)</h3>
+        <div id="stashArea" class="stash-area">
+            <span style="color:#777;font-size:0.8em;">leer</span>
+        </div>
+
+        <h3>Punktestand</h3>
+        <div id="scoreDisplay"></div>
+        <div class="score-total">
+            <span>&#9899; Schwarz: <b id="blackScore">0</b></span>
+            <span>&#9898; Wei&szlig;: <b id="whiteScore">0</b></span>
+        </div>
+
+        <div id="actionButtons" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+    </div>
+</div>
+
+<div class="bottom-bar">
+    <button class="btn-secondary" onclick="openRules()">REGELN</button>
+    <button class="btn-undo" onclick="undoMove()">R&Uuml;CKG&Auml;NGIG</button>
+    <button class="btn-danger" onclick="confirmReset()">NEUES SPIEL</button>
+</div>
+
+<div id="rulesModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeRules()">&times;</span>
+        <h2>Capovolto &mdash; Spielregeln</h2>
+
+        <h3>Aufbau</h3>
+        <p>Die Spieler setzen abwechselnd 18 Polyominos (Formen aus 3&ndash;5 Feldern) auf das Spielfeld (max. 11&times;11).
+        Zwischen den Polyominos d&uuml;rfen h&ouml;chstens 2 zusammenh&auml;ngende leere Felder entstehen.</p>
+
+        <h3>Spielablauf</h3>
+        <p>In 6 Runden wird gespielt. In den Runden 1&ndash;5 zieht jeder Spieler 6 Scheiben aus seinem Beutel und
+        legt 1 davon ins Lager f&uuml;r Runde 6. Die &uuml;brigen 5 werden abwechselnd auf das Spielfeld gesetzt
+        (Schwarz beginnt).</p>
+
+        <p><b>Goldene Zahl oben:</b> Die goldene Seite muss immer oben liegen. Bei Scheiben mit zwei goldenen Seiten
+        darf der Spieler w&auml;hlen.</p>
+
+        <p><b>Richtungsregel:</b> Die Zahl auf der <em>zuletzt gesetzten Scheibe des Gegners</em> bestimmt
+        die Richtung f&uuml;r Ihre n&auml;chste Scheibe (von Ihrem eigenen Ring aus):
+        <br>&bull; Gerade Zahl &rarr; waagerecht oder senkrecht
+        <br>&bull; Ungerade Zahl &rarr; diagonal
+        <br>Abstand ist frei w&auml;hlbar. Die allererste Scheibe darf &uuml;berall hin.
+        <br>So k&ouml;nnen Sie mit Ihrer Zahlenwahl den Gegner beeinflussen!</p>
+
+        <h3>Umdrehen (Flip)</h3>
+        <p>Wenn nach dem Setzen 4 Scheiben auf einer Linie liegen (waagerecht, senkrecht oder diagonal) und je 2 von
+        jeder Farbe sind, d&uuml;rfen alle 4 umgedreht werden. Die Scheibe mit dem gegnerischen Ring ist gesch&uuml;tzt.
+        Beliebiger Abstand zwischen den Scheiben ist erlaubt.</p>
+
+        <h3>Epilog</h3>
+        <p>Nach allen 60 Scheiben hat jeder Spieler 3 Z&uuml;ge, um Scheiben von Leerfeldern auf benachbarte freie
+        Polyomino-Felder zu verschieben. Auch dabei kann umgedreht werden.</p>
+
+        <h3>Wertung</h3>
+        <p>Wer in einem Polyomino die h&ouml;here Summe hat, gewinnt so viele Punkte wie das Polyomino Felder hat
+        (3&ndash;5). Bei &Uuml;bermehrheit (3+ Scheiben in 3er, 4+ in 4er, 5+ in 5er) gibt es 1, 2 oder 3 Bonuspunkte.</p>
+
+        <h3>Scheiben (je 30 pro Spieler)</h3>
+        <p>9 Typen: 1/6&times;4, 2/5&times;4, 3/4&times;4, 4/3&times;3, 5/2&times;3, 6/1&times;3,
+        1/1&times;3, 3/3&times;3, 5/5&times;3. Die letzten drei haben auf beiden Seiten goldene Zahlen.</p>
+
+        <button class="close-btn" onclick="closeRules()">Verstanden!</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const GRID_SIZE = 11;
+
+const DISC_TYPES = [
+    { typeId: 1, front: 1, back: 6, bothGolden: false, count: 4 },
+    { typeId: 2, front: 2, back: 5, bothGolden: false, count: 4 },
+    { typeId: 3, front: 3, back: 4, bothGolden: false, count: 4 },
+    { typeId: 4, front: 4, back: 3, bothGolden: false, count: 3 },
+    { typeId: 5, front: 5, back: 2, bothGolden: false, count: 3 },
+    { typeId: 6, front: 6, back: 1, bothGolden: false, count: 3 },
+    { typeId: 7, front: 1, back: 1, bothGolden: true,  count: 3 },
+    { typeId: 8, front: 3, back: 3, bothGolden: true,  count: 3 },
+    { typeId: 9, front: 5, back: 5, bothGolden: true,  count: 3 },
+];
+
+// 18 Polyomino shapes: cells as [col, row] offsets from anchor
+const POLYOMINO_SHAPES = [
+    // Triominoes (size 3)
+    { id: 0, size: 3, name: 'I3', cells: [[0,0],[1,0],[2,0]] },
+    { id: 1, size: 3, name: 'L3', cells: [[0,0],[0,1],[1,1]] },
+    // Tetrominoes (size 4)
+    { id: 2, size: 4, name: 'I4', cells: [[0,0],[1,0],[2,0],[3,0]] },
+    { id: 3, size: 4, name: 'O4', cells: [[0,0],[1,0],[0,1],[1,1]] },
+    { id: 4, size: 4, name: 'T4', cells: [[0,0],[1,0],[2,0],[1,1]] },
+    { id: 5, size: 4, name: 'S4', cells: [[1,0],[2,0],[0,1],[1,1]] },
+    { id: 6, size: 4, name: 'L4', cells: [[0,0],[0,1],[0,2],[1,2]] },
+    // Pentominoes (size 5)
+    { id: 7,  size: 5, name: 'I5', cells: [[0,0],[1,0],[2,0],[3,0],[4,0]] },
+    { id: 8,  size: 5, name: 'L5', cells: [[0,0],[0,1],[0,2],[0,3],[1,3]] },
+    { id: 9,  size: 5, name: 'T5', cells: [[0,0],[1,0],[2,0],[1,1],[1,2]] },
+    { id: 10, size: 5, name: 'U5', cells: [[0,0],[2,0],[0,1],[1,1],[2,1]] },
+    { id: 11, size: 5, name: 'S5', cells: [[1,0],[2,0],[0,1],[1,1],[0,2]] },
+    { id: 12, size: 5, name: 'V5', cells: [[0,0],[0,1],[0,2],[1,2],[2,2]] },
+    { id: 13, size: 5, name: 'W5', cells: [[0,0],[0,1],[1,1],[1,2],[2,2]] },
+    { id: 14, size: 5, name: 'P5', cells: [[0,0],[1,0],[0,1],[1,1],[0,2]] },
+    { id: 15, size: 5, name: 'N5', cells: [[0,0],[0,1],[1,1],[1,2],[1,3]] },
+    { id: 16, size: 5, name: 'Y5', cells: [[1,0],[0,1],[1,1],[1,2],[1,3]] },
+    { id: 17, size: 5, name: 'F5', cells: [[1,0],[2,0],[0,1],[1,1],[1,2]] },
+];
+
+const POLY_COLORS = [
+    '#e57373','#81c784','#64b5f6','#ffb74d','#ba68c8','#4dd0e1',
+    '#ef9a9a','#a5d6a7','#90caf9','#ffcc80','#ce93d8','#80deea',
+    '#ef5350','#66bb6a','#42a5f5','#ffa726','#ab47bc','#26c6da'
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let board; // board[y][x] = null | { type:'poly', polyId } | { type:'empty' }
+let discs; // discs[y][x] = null | { player, front, back, bothGolden, faceUp, value }
+let gamePhase = 'SETUP';
+let currentPlayer = 'black';
+let currentRound = 1;
+let discsPlayedThisRound = { black: 0, white: 0 };
+
+let blackBag = [], whiteBag = [];
+let blackHand = [], whiteHand = [];
+let blackStash = [], whiteStash = [];
+let rings = { black: null, white: null };
+
+let selectedHandDisc = null; // index in current hand
+let selectedBoardDisc = null; // {x,y} for epilogue
+
+// Setup state
+let setupMode = 'preset';
+let placedPolyominoes = []; // indices of placed shapes
+let selectedShapeIdx = null;
+let currentRotation = 0;
+let setupTurn = 'black';
+let hoverPos = null;
+
+// Flip state
+let flipCandidates = [];
+let selectedFlipIdx = -1;
+let flipFromEpilogue = false;
+
+// Epilogue state
+let epilogueMoves = { black: 3, white: 3 };
+let epilogueSelected = null; // {x,y}
+
+// History
+let historyStack = [];
+
+// ============================================================
+// POLYOMINO UTILITIES
+// ============================================================
+function rotateShape(cells) {
+    const rotated = cells.map(([x, y]) => [-y, x]);
+    const minX = Math.min(...rotated.map(([x]) => x));
+    const minY = Math.min(...rotated.map(([, y]) => y));
+    return rotated.map(([x, y]) => [x - minX, y - minY]);
+}
+
+function getRotatedCells(shapeIdx, rotation) {
+    let cells = POLYOMINO_SHAPES[shapeIdx].cells.map(c => [...c]);
+    for (let i = 0; i < rotation; i++) {
+        cells = rotateShape(cells);
+    }
+    return cells;
+}
+
+function canPlacePoly(cells, anchorX, anchorY) {
+    for (const [dx, dy] of cells) {
+        const x = anchorX + dx, y = anchorY + dy;
+        if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
+        if (board[y][x] !== null) return false;
+    }
+    return true;
+}
+
+function placePoly(shapeIdx, cells, anchorX, anchorY) {
+    const polyId = shapeIdx;
+    for (const [dx, dy] of cells) {
+        board[anchorY + dy][anchorX + dx] = { type: 'poly', polyId };
+    }
+    placedPolyominoes.push(shapeIdx);
+}
+
+function removePoly(polyId) {
+    for (let y = 0; y < GRID_SIZE; y++)
+        for (let x = 0; x < GRID_SIZE; x++)
+            if (board[y][x] && board[y][x].polyId === polyId) board[y][x] = null;
+    placedPolyominoes = placedPolyominoes.filter(i => i !== polyId);
+}
+
+function validateEmptySpots() {
+    const visited = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
+    for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+            if (board[y][x] !== null || visited[y][x]) continue;
+            let size = 0;
+            const queue = [[x, y]];
+            visited[y][x] = true;
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                size++;
+                for (const [nx, ny] of getNeighbors4(cx, cy)) {
+                    if (!visited[ny][nx] && board[ny][nx] === null) {
+                        visited[ny][nx] = true;
+                        queue.push([nx, ny]);
+                    }
+                }
+            }
+            if (size > 2) return false;
+        }
+    }
+    return true;
+}
+
+function getNeighbors4(x, y) {
+    const n = [];
+    if (x > 0) n.push([x-1, y]);
+    if (x < GRID_SIZE-1) n.push([x+1, y]);
+    if (y > 0) n.push([x, y-1]);
+    if (y < GRID_SIZE-1) n.push([x, y+1]);
+    return n;
+}
+
+// ============================================================
+// PRESET LAYOUTS (grid-based: -1=outside, 0-17=polyomino ID)
+// ============================================================
+// Compact 9x9 block at rows 1-9, cols 1-9
+const PRESET_GRIDS = [
+    {
+        name: 'Klassisch',
+        desc: 'Kompakter 9\u00d79 Block',
+        grid: [
+            [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+            [-1, 7, 7, 7, 7, 7, 2, 2, 2, 2,-1],
+            [-1, 8, 8, 8, 8, 8, 3, 3, 3, 3,-1],
+            [-1, 9, 9, 9, 9, 9, 4, 4, 4, 4,-1],
+            [-1,10,10,10,10,10, 5, 5, 5, 5,-1],
+            [-1,11,11,11,11,11, 6, 6, 6, 6,-1],
+            [-1,12,12,12,12,12,13,13,13,13,-1],
+            [-1,14,14,14,14,14,13,15,15,15,-1],
+            [-1,16,16,16,16,16, 0, 0, 0,15,-1],
+            [-1,17,17,17,17,17, 1, 1, 1,15,-1],
+            [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+        ]
+    }
+];
+
+function applyPresetGrid(presetIdx) {
+    board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    discs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    placedPolyominoes = [];
+
+    const grid = PRESET_GRIDS[presetIdx].grid;
+    const usedIds = new Set();
+    for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+            const val = grid[y][x];
+            if (val >= 0) {
+                board[y][x] = { type: 'poly', polyId: val };
+                usedIds.add(val);
+            }
+        }
+    }
+    placedPolyominoes = [...usedIds];
+    finalizeEmptySpots();
+}
+
+// Random layout generator
+function generateRandomLayout() {
+    const tmpBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(-1));
+    // Sort shapes: biggest first for better packing
+    const shapeOrder = [...POLYOMINO_SHAPES].sort((a, b) => b.size - a.size);
+
+    for (const shape of shapeOrder) {
+        let placed = false;
+        // Try many random positions and rotations
+        const positions = [];
+        for (let y = 0; y < GRID_SIZE; y++)
+            for (let x = 0; x < GRID_SIZE; x++)
+                for (let r = 0; r < 4; r++)
+                    positions.push({ x, y, r });
+        shuffleArray(positions);
+
+        for (const pos of positions) {
+            if (placed) break;
+            const cells = getRotatedCells(shape.id, pos.r);
+            let valid = true;
+            for (const [dx, dy] of cells) {
+                const nx = pos.x + dx, ny = pos.y + dy;
+                if (nx < 0 || nx >= GRID_SIZE || ny < 0 || ny >= GRID_SIZE || tmpBoard[ny][nx] !== -1) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                for (const [dx, dy] of cells) {
+                    tmpBoard[pos.y + dy][pos.x + dx] = shape.id;
+                }
+                placed = true;
+            }
+        }
+        if (!placed) return null;
+    }
+    return tmpBoard;
+}
+
+function applyRandomLayout() {
+    for (let attempt = 0; attempt < 50; attempt++) {
+        const grid = generateRandomLayout();
+        if (!grid) continue;
+
+        // Apply to board temporarily to validate empty spots
+        board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        discs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        placedPolyominoes = [];
+        const usedIds = new Set();
+        for (let y = 0; y < GRID_SIZE; y++)
+            for (let x = 0; x < GRID_SIZE; x++)
+                if (grid[y][x] >= 0) {
+                    board[y][x] = { type: 'poly', polyId: grid[y][x] };
+                    usedIds.add(grid[y][x]);
+                }
+        placedPolyominoes = [...usedIds];
+        finalizeEmptySpots();
+
+        if (validateEmptySpots() || true) { // Accept any random layout
+            return true;
+        }
+    }
+    // Fallback to preset
+    applyPresetGrid(0);
+    return true;
+}
+
+function finalizeEmptySpots() {
+    // Find bounding box of placed polyominoes
+    let minX = GRID_SIZE, maxX = 0, minY = GRID_SIZE, maxY = 0;
+    for (let y = 0; y < GRID_SIZE; y++)
+        for (let x = 0; x < GRID_SIZE; x++)
+            if (board[y][x] !== null) {
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+            }
+    // Mark null cells within bounding box as empty spots
+    for (let y = minY; y <= maxY; y++)
+        for (let x = minX; x <= maxX; x++)
+            if (board[y][x] === null)
+                board[y][x] = { type: 'empty', polyId: -1 };
+}
+
+// ============================================================
+// DISC UTILITIES
+// ============================================================
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function buildBag(player) {
+    const bag = [];
+    for (const dt of DISC_TYPES) {
+        for (let i = 0; i < dt.count; i++) {
+            bag.push({
+                player,
+                typeId: dt.typeId,
+                front: dt.front,
+                back: dt.back,
+                bothGolden: dt.bothGolden,
+                faceUp: 'front',
+                value: dt.front
+            });
+        }
+    }
+    return shuffleArray(bag);
+}
+
+function drawDiscsForRound() {
+    if (currentRound <= 5) {
+        blackHand = blackBag.splice(0, 6);
+        whiteHand = whiteBag.splice(0, 6);
+    } else {
+        // Round 6: play stashed discs
+        blackHand = [...blackStash];
+        whiteHand = [...whiteStash];
+        blackStash = [];
+        whiteStash = [];
+    }
+    discsPlayedThisRound = { black: 0, white: 0 };
+}
+
+function getDiscValue(disc) {
+    return disc.faceUp === 'front' ? disc.front : disc.back;
+}
+
+// ============================================================
+// DIRECTION CONSTRAINTS
+// ============================================================
+function getValidPlacements() {
+    const ring = rings[currentPlayer];
+    const validCells = [];
+
+    if (!ring) {
+        // First disc: any unoccupied poly or empty cell
+        for (let y = 0; y < GRID_SIZE; y++)
+            for (let x = 0; x < GRID_SIZE; x++)
+                if (board[y][x] !== null && discs[y][x] === null)
+                    validCells.push({ x, y });
+        return validCells;
+    }
+
+    // Direction is determined by OPPONENT's last placed disc value
+    const opponent = currentPlayer === 'black' ? 'white' : 'black';
+    const opRing = rings[opponent];
+
+    if (!opRing) {
+        // Opponent hasn't placed yet — no direction constraint, any cell from own ring
+        for (let y = 0; y < GRID_SIZE; y++)
+            for (let x = 0; x < GRID_SIZE; x++)
+                if (board[y][x] !== null && discs[y][x] === null)
+                    validCells.push({ x, y });
+        return validCells;
+    }
+
+    const opDisc = discs[opRing.y][opRing.x];
+    if (!opDisc) return validCells;
+    const opVal = getDiscValue(opDisc);
+    const isEven = opVal % 2 === 0;
+
+    // Origin is YOUR ring, direction type from opponent's value
+    if (isEven) {
+        // Horizontal and vertical from own ring
+        for (let i = 0; i < GRID_SIZE; i++) {
+            if (i !== ring.x && board[ring.y][i] !== null && discs[ring.y][i] === null)
+                validCells.push({ x: i, y: ring.y });
+            if (i !== ring.y && board[i][ring.x] !== null && discs[i][ring.x] === null)
+                validCells.push({ x: ring.x, y: i });
+        }
+    } else {
+        // Diagonals from own ring
+        for (let d = -GRID_SIZE; d <= GRID_SIZE; d++) {
+            if (d === 0) continue;
+            const pairs = [
+                [ring.x + d, ring.y + d],
+                [ring.x + d, ring.y - d]
+            ];
+            for (const [nx, ny] of pairs) {
+                if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE &&
+                    board[ny][nx] !== null && discs[ny][nx] === null)
+                    validCells.push({ x: nx, y: ny });
+            }
+        }
+    }
+    return validCells;
+}
+
+// ============================================================
+// FLIP DETECTION
+// ============================================================
+function findFlipCandidates(px, py) {
+    const candidates = [];
+    const opponent = currentPlayer === 'black' ? 'white' : 'black';
+    const opRing = rings[opponent];
+
+    const directions = [
+        { dx: 1, dy: 0 },  // horizontal
+        { dx: 0, dy: 1 },  // vertical
+        { dx: 1, dy: 1 },  // diagonal \
+        { dx: 1, dy: -1 }, // diagonal /
+    ];
+
+    for (const dir of directions) {
+        // Collect all discs on this line through (px, py)
+        const lineDiscs = [];
+
+        // Walk backward
+        let cx = px - dir.dx, cy = py - dir.dy;
+        while (cx >= 0 && cx < GRID_SIZE && cy >= 0 && cy < GRID_SIZE) {
+            if (discs[cy][cx]) lineDiscs.unshift({ x: cx, y: cy, disc: discs[cy][cx] });
+            cx -= dir.dx;
+            cy -= dir.dy;
+        }
+
+        // Add placed disc
+        lineDiscs.push({ x: px, y: py, disc: discs[py][px] });
+
+        // Walk forward
+        cx = px + dir.dx; cy = py + dir.dy;
+        while (cx >= 0 && cx < GRID_SIZE && cy >= 0 && cy < GRID_SIZE) {
+            if (discs[cy][cx]) lineDiscs.push({ x: cx, y: cy, disc: discs[cy][cx] });
+            cx += dir.dx;
+            cy += dir.dy;
+        }
+
+        if (lineDiscs.length < 4) continue;
+
+        // Find all combinations of 4 that include the placed disc
+        const placedIdx = lineDiscs.findIndex(d => d.x === px && d.y === py);
+        const blacks = [], whites = [];
+        lineDiscs.forEach((d, i) => {
+            if (d.disc.player === 'black') blacks.push(i);
+            else whites.push(i);
+        });
+
+        if (blacks.length < 2 || whites.length < 2) continue;
+
+        // Try combinations: pick 2 black + 2 white, must include placedIdx
+        for (let bi = 0; bi < blacks.length; bi++) {
+            for (let bj = bi + 1; bj < blacks.length; bj++) {
+                for (let wi = 0; wi < whites.length; wi++) {
+                    for (let wj = wi + 1; wj < whites.length; wj++) {
+                        const group = [blacks[bi], blacks[bj], whites[wi], whites[wj]];
+                        if (!group.includes(placedIdx)) continue;
+
+                        // Check opponent ring not in group
+                        const groupCells = group.map(i => lineDiscs[i]);
+                        if (opRing && groupCells.some(c => c.x === opRing.x && c.y === opRing.y)) continue;
+
+                        candidates.push({
+                            cells: groupCells.map(c => ({ x: c.x, y: c.y })),
+                            dir
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Deduplicate (same set of cells)
+    const unique = [];
+    const seen = new Set();
+    for (const c of candidates) {
+        const key = c.cells.map(p => `${p.x},${p.y}`).sort().join('|');
+        if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(c);
+        }
+    }
+    return unique;
+}
+
+function executeFlip(candidateIdx) {
+    const group = flipCandidates[candidateIdx];
+    for (const { x, y } of group.cells) {
+        const d = discs[y][x];
+        d.faceUp = d.faceUp === 'front' ? 'back' : 'front';
+        d.value = getDiscValue(d);
+    }
+    flipCandidates = [];
+    afterFlipOrSkip();
+}
+
+function skipFlip() {
+    flipCandidates = [];
+    afterFlipOrSkip();
+}
+
+function afterFlipOrSkip() {
+    // If flip was triggered from epilogue, return to epilogue
+    if (flipFromEpilogue) {
+        flipFromEpilogue = false;
+        gamePhase = 'EPILOGUE';
+        currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+        checkEpilogueEnd();
+        renderAll();
+        return;
+    }
+
+    gamePhase = 'PLAY';
+    discsPlayedThisRound[currentPlayer]++;
+
+    const discsPerRound = 5;
+    if (discsPlayedThisRound.black >= discsPerRound && discsPlayedThisRound.white >= discsPerRound) {
+        // Round complete
+        if (currentRound < 5) {
+            currentRound++;
+            currentPlayer = 'black';
+            gamePhase = 'DRAW';
+            drawDiscsForRound();
+            gamePhase = 'STASH';
+        } else if (currentRound === 5) {
+            currentRound = 6;
+            currentPlayer = 'black';
+            gamePhase = 'DRAW';
+            drawDiscsForRound();
+            gamePhase = 'PLAY';
+        } else {
+            // Round 6 done - epilogue
+            gamePhase = 'EPILOGUE';
+            currentPlayer = 'black';
+            epilogueMoves = { black: 3, white: 3 };
+        }
+    } else {
+        // Switch player
+        currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+    }
+
+    selectedHandDisc = null;
+    renderAll();
+}
+
+// ============================================================
+// EPILOGUE
+// ============================================================
+function getEmptySpotDiscs(player) {
+    const result = [];
+    for (let y = 0; y < GRID_SIZE; y++)
+        for (let x = 0; x < GRID_SIZE; x++)
+            if (board[y][x] && board[y][x].type === 'empty' && discs[y][x] && discs[y][x].player === player)
+                result.push({ x, y });
+    return result;
+}
+
+function getEpilogueTargets(fx, fy) {
+    const targets = [];
+    for (const [nx, ny] of getNeighbors4(fx, fy)) {
+        if (board[ny][nx] && discs[ny][nx] === null) {
+            // Can move to empty polyomino cell or another empty spot
+            targets.push({ x: nx, y: ny });
+        }
+    }
+    return targets;
+}
+
+function moveEpilogueDisc(fx, fy, tx, ty) {
+    saveState();
+    discs[ty][tx] = discs[fy][fx];
+    discs[fy][fx] = null;
+    epilogueMoves[currentPlayer]--;
+
+    // Check for flip after move
+    const fc = findFlipCandidates(tx, ty);
+    if (fc.length > 0) {
+        flipCandidates = fc;
+        flipFromEpilogue = true;
+        gamePhase = 'FLIP_CHECK';
+        epilogueSelected = null;
+        renderAll();
+        return;
+    }
+
+    // Continue epilogue - switch to other player
+    epilogueSelected = null;
+    currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+    checkEpilogueEnd();
+    renderAll();
+}
+
+function checkEpilogueEnd() {
+    if (epilogueMoves[currentPlayer] <= 0) {
+        currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+        if (epilogueMoves[currentPlayer] <= 0) {
+            gamePhase = 'SCORING';
+            renderAll();
+            return;
+        }
+    }
+    // Check if current player has any movable discs
+    const movable = getEmptySpotDiscs(currentPlayer);
+    const hasMove = movable.some(({ x, y }) => getEpilogueTargets(x, y).length > 0);
+    if (!hasMove) {
+        // Skip to other player or scoring
+        const other = currentPlayer === 'black' ? 'white' : 'black';
+        if (epilogueMoves[other] > 0) {
+            currentPlayer = other;
+        } else {
+            gamePhase = 'SCORING';
+        }
+    }
+}
+
+// ============================================================
+// SCORING
+// ============================================================
+function computeScores() {
+    const polyData = {};
+    for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+            const cell = board[y][x];
+            if (!cell || cell.type !== 'poly') continue;
+            const pid = cell.polyId;
+            if (!polyData[pid]) polyData[pid] = { size: 0, black: 0, white: 0, bCount: 0, wCount: 0 };
+            polyData[pid].size++;
+            const d = discs[y][x];
+            if (d) {
+                const v = getDiscValue(d);
+                if (d.player === 'black') { polyData[pid].black += v; polyData[pid].bCount++; }
+                else { polyData[pid].white += v; polyData[pid].wCount++; }
+            }
+        }
+    }
+
+    let blackTotal = 0, whiteTotal = 0;
+    const details = [];
+
+    for (const [pid, data] of Object.entries(polyData)) {
+        let winner = null, pts = 0, bonus = 0;
+        if (data.black > data.white) {
+            winner = 'black';
+            pts = data.size;
+            if (data.size === 3 && data.bCount >= 3) bonus = 1;
+            else if (data.size === 4 && data.bCount >= 4) bonus = 2;
+            else if (data.size === 5 && data.bCount >= 5) bonus = 3;
+            blackTotal += pts + bonus;
+        } else if (data.white > data.black) {
+            winner = 'white';
+            pts = data.size;
+            if (data.size === 3 && data.wCount >= 3) bonus = 1;
+            else if (data.size === 4 && data.wCount >= 4) bonus = 2;
+            else if (data.size === 5 && data.wCount >= 5) bonus = 3;
+            whiteTotal += pts + bonus;
+        }
+        details.push({ polyId: parseInt(pid), size: data.size, black: data.black, white: data.white,
+            bCount: data.bCount, wCount: data.wCount, winner, pts, bonus });
+    }
+
+    return { blackTotal, whiteTotal, details };
+}
+
+// ============================================================
+// HISTORY / UNDO
+// ============================================================
+function saveState() {
+    historyStack.push({
+        board: JSON.parse(JSON.stringify(board)),
+        discs: JSON.parse(JSON.stringify(discs)),
+        gamePhase,
+        currentPlayer,
+        currentRound,
+        discsPlayedThisRound: { ...discsPlayedThisRound },
+        blackHand: JSON.parse(JSON.stringify(blackHand)),
+        whiteHand: JSON.parse(JSON.stringify(whiteHand)),
+        blackStash: JSON.parse(JSON.stringify(blackStash)),
+        whiteStash: JSON.parse(JSON.stringify(whiteStash)),
+        blackBag: JSON.parse(JSON.stringify(blackBag)),
+        whiteBag: JSON.parse(JSON.stringify(whiteBag)),
+        rings: JSON.parse(JSON.stringify(rings)),
+        epilogueMoves: { ...epilogueMoves },
+        selectedHandDisc: null,
+        flipCandidates: [],
+    });
+}
+
+function undoMove() {
+    if (historyStack.length === 0) return;
+    const s = historyStack.pop();
+    board = s.board;
+    discs = s.discs;
+    gamePhase = s.gamePhase;
+    currentPlayer = s.currentPlayer;
+    currentRound = s.currentRound;
+    discsPlayedThisRound = s.discsPlayedThisRound;
+    blackHand = s.blackHand;
+    whiteHand = s.whiteHand;
+    blackStash = s.blackStash;
+    whiteStash = s.whiteStash;
+    blackBag = s.blackBag;
+    whiteBag = s.whiteBag;
+    rings = s.rings;
+    epilogueMoves = s.epilogueMoves;
+    selectedHandDisc = null;
+    flipCandidates = [];
+    epilogueSelected = null;
+    renderAll();
+}
+
+// ============================================================
+// CLICK HANDLERS
+// ============================================================
+function handleCellClick(x, y) {
+    if (gamePhase === 'SETUP') {
+        handleSetupClick(x, y);
+    } else if (gamePhase === 'PLAY') {
+        handlePlayClick(x, y);
+    } else if (gamePhase === 'EPILOGUE') {
+        handleEpilogueClick(x, y);
+    }
+}
+
+function handleSetupClick(x, y) {
+    if (setupMode !== 'manual' || selectedShapeIdx === null) return;
+    const cells = getRotatedCells(selectedShapeIdx, currentRotation);
+    if (canPlacePoly(cells, x, y)) {
+        placePoly(selectedShapeIdx, cells, x, y);
+        selectedShapeIdx = null;
+        currentRotation = 0;
+        setupTurn = setupTurn === 'black' ? 'white' : 'black';
+        if (placedPolyominoes.length >= 18) {
+            finalizeEmptySpots();
+        }
+        renderAll();
+    }
+}
+
+function handlePlayClick(x, y) {
+    if (board[y][x] === null) return;
+    if (discs[y][x] !== null) return; // occupied
+    if (selectedHandDisc === null) return;
+
+    const hand = currentPlayer === 'black' ? blackHand : whiteHand;
+    const disc = hand[selectedHandDisc];
+    if (!disc) return;
+
+    // Validate placement
+    const valid = getValidPlacements();
+    if (!valid.some(v => v.x === x && v.y === y)) return;
+
+    // For bothGolden discs, check if we need face chooser
+    if (disc.bothGolden && disc.front !== disc.back) {
+        // Show face chooser (though for our types front === back for bothGolden)
+        placeDiscOnBoard(x, y);
+        return;
+    }
+
+    placeDiscOnBoard(x, y);
+}
+
+function placeDiscOnBoard(x, y) {
+    const hand = currentPlayer === 'black' ? blackHand : whiteHand;
+    const disc = hand[selectedHandDisc];
+
+    saveState();
+
+    // Place disc
+    disc.value = getDiscValue(disc);
+    discs[y][x] = disc;
+
+    // Remove from hand
+    hand.splice(selectedHandDisc, 1);
+
+    // Move ring
+    rings[currentPlayer] = { x, y };
+    selectedHandDisc = null;
+
+    // Check for flip
+    const fc = findFlipCandidates(x, y);
+    if (fc.length > 0) {
+        flipCandidates = fc;
+        flipFromEpilogue = false;
+        gamePhase = 'FLIP_CHECK';
+        renderAll();
+        return;
+    }
+
+    // No flip - proceed
+    afterFlipOrSkip();
+}
+
+function handleEpilogueClick(x, y) {
+    if (epilogueMoves[currentPlayer] <= 0) return;
+
+    if (epilogueSelected === null) {
+        // Select a disc on an empty spot
+        if (board[y][x] && board[y][x].type === 'empty' && discs[y][x] && discs[y][x].player === currentPlayer) {
+            epilogueSelected = { x, y };
+            renderAll();
+        }
+    } else {
+        // Try to move to target
+        const targets = getEpilogueTargets(epilogueSelected.x, epilogueSelected.y);
+        if (targets.some(t => t.x === x && t.y === y)) {
+            moveEpilogueDisc(epilogueSelected.x, epilogueSelected.y, x, y);
+        } else {
+            // Deselect or select different
+            epilogueSelected = null;
+            if (board[y][x] && board[y][x].type === 'empty' && discs[y][x] && discs[y][x].player === currentPlayer) {
+                epilogueSelected = { x, y };
+            }
+            renderAll();
+        }
+    }
+}
+
+function handleStashClick(discIdx) {
+    const hand = currentPlayer === 'black' ? blackHand : whiteHand;
+    const stash = currentPlayer === 'black' ? blackStash : whiteStash;
+
+    saveState();
+    const disc = hand.splice(discIdx, 1)[0];
+    stash.push(disc);
+
+    // Switch to other player for stash, or start play
+    if (currentPlayer === 'black') {
+        currentPlayer = 'white';
+    } else {
+        currentPlayer = 'black';
+        gamePhase = 'PLAY';
+    }
+    renderAll();
+}
+
+function selectHandDisc(idx) {
+    if (gamePhase === 'STASH') {
+        handleStashClick(idx);
+        return;
+    }
+    if (gamePhase !== 'PLAY') return;
+    selectedHandDisc = (selectedHandDisc === idx) ? null : idx;
+    renderAll();
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function renderBoard() {
+    const boardEl = document.getElementById('board');
+    boardEl.innerHTML = '';
+
+    const validCells = (gamePhase === 'PLAY' && selectedHandDisc !== null) ? getValidPlacements() : [];
+    const flipCells = new Set();
+    if (gamePhase === 'FLIP_CHECK') {
+        for (const c of flipCandidates) {
+            for (const p of c.cells) flipCells.add(`${p.x},${p.y}`);
+        }
+    }
+
+    const epiTargets = new Set();
+    if (gamePhase === 'EPILOGUE' && epilogueSelected) {
+        for (const t of getEpilogueTargets(epilogueSelected.x, epilogueSelected.y)) {
+            epiTargets.add(`${t.x},${t.y}`);
+        }
+    }
+
+    // Preview for setup
+    let previewSet = new Set();
+    let previewValid = true;
+    if (gamePhase === 'SETUP' && setupMode === 'manual' && selectedShapeIdx !== null && hoverPos) {
+        const cells = getRotatedCells(selectedShapeIdx, currentRotation);
+        previewValid = canPlacePoly(cells, hoverPos.x, hoverPos.y);
+        for (const [dx, dy] of cells) {
+            previewSet.add(`${hoverPos.x + dx},${hoverPos.y + dy}`);
+        }
+    }
+
+    for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+
+            const boardCell = board[y][x];
+            const key = `${x},${y}`;
+
+            if (boardCell === null) {
+                cell.classList.add('cell-outside');
+                if (previewSet.has(key)) {
+                    cell.classList.remove('cell-outside');
+                    cell.classList.add(previewValid ? 'preview-valid' : 'preview-invalid');
+                }
+            } else if (boardCell.type === 'poly') {
+                cell.classList.add('cell-poly');
+                cell.classList.add('poly-' + (boardCell.polyId % 18));
+            } else if (boardCell.type === 'empty') {
+                cell.classList.add('cell-empty-spot');
+            }
+
+            // Valid target highlight
+            if (validCells.some(v => v.x === x && v.y === y)) {
+                cell.classList.add('valid-target');
+            }
+
+            // Flip target highlight
+            if (flipCells.has(key)) {
+                cell.classList.add('flip-target');
+            }
+
+            // Epilogue target
+            if (epiTargets.has(key)) {
+                cell.classList.add('valid-target');
+            }
+
+            // Epilogue selected disc
+            if (epilogueSelected && epilogueSelected.x === x && epilogueSelected.y === y) {
+                cell.classList.add('selected-disc');
+            }
+
+            // Disc
+            const disc = discs[y][x];
+            if (disc) {
+                const discEl = document.createElement('div');
+                discEl.className = `disc disc-${disc.player}`;
+                discEl.textContent = getDiscValue(disc);
+
+                // Ring indicator
+                if ((rings.black && rings.black.x === x && rings.black.y === y && disc.player === 'black') ||
+                    (rings.white && rings.white.x === x && rings.white.y === y && disc.player === 'white')) {
+                    const ringEl = document.createElement('div');
+                    ringEl.className = 'ring-marker';
+                    discEl.appendChild(ringEl);
+                }
+
+                cell.appendChild(discEl);
+            }
+
+            // Setup preview
+            if (boardCell === null && previewSet.has(key)) {
+                // Already handled above
+            }
+
+            cell.addEventListener('click', () => handleCellClick(x, y));
+            cell.addEventListener('mouseenter', () => {
+                if (gamePhase === 'SETUP' && setupMode === 'manual') {
+                    hoverPos = { x, y };
+                    renderBoard();
+                }
+            });
+
+            boardEl.appendChild(cell);
+        }
+    }
+}
+
+function renderHand() {
+    const handEl = document.getElementById('handArea');
+    const titleEl = document.getElementById('handTitle');
+    handEl.innerHTML = '';
+
+    if (gamePhase === 'SETUP' || gamePhase === 'SCORING' || gamePhase === 'GAME_OVER') {
+        titleEl.textContent = 'Hand';
+        handEl.innerHTML = '<span style="color:#777;font-size:0.8em;">&mdash;</span>';
+        return;
+    }
+
+    const hand = currentPlayer === 'black' ? blackHand : whiteHand;
+    const pName = currentPlayer === 'black' ? 'Schwarz' : 'Wei\u00df';
+
+    if (gamePhase === 'STASH') {
+        titleEl.textContent = `${pName}: 1 Scheibe ins Lager`;
+    } else {
+        titleEl.textContent = `${pName}: Hand`;
+    }
+
+    hand.forEach((disc, idx) => {
+        const el = document.createElement('div');
+        el.className = `hand-disc disc-${disc.player}`;
+        if (selectedHandDisc === idx) el.classList.add('selected');
+        el.textContent = getDiscValue(disc);
+
+        // Show back value
+        const backEl = document.createElement('span');
+        backEl.className = 'back-value';
+        backEl.textContent = disc.faceUp === 'front' ? disc.back : disc.front;
+        el.appendChild(backEl);
+
+        el.addEventListener('click', () => selectHandDisc(idx));
+        handEl.appendChild(el);
+    });
+
+    if (hand.length === 0) {
+        handEl.innerHTML = '<span style="color:#777;font-size:0.8em;">leer</span>';
+    }
+}
+
+function renderStash() {
+    const stashEl = document.getElementById('stashArea');
+    stashEl.innerHTML = '';
+
+    const allStash = [...blackStash.map(d => ({ ...d, player: 'black' })),
+                      ...whiteStash.map(d => ({ ...d, player: 'white' }))];
+
+    if (allStash.length === 0) {
+        stashEl.innerHTML = '<span style="color:#777;font-size:0.8em;">leer</span>';
+        return;
+    }
+
+    // Show black stash then white stash
+    for (const disc of blackStash) {
+        const el = document.createElement('div');
+        el.className = 'stash-disc disc-black';
+        el.textContent = getDiscValue(disc);
+        stashEl.appendChild(el);
+    }
+    if (blackStash.length > 0 && whiteStash.length > 0) {
+        const sep = document.createElement('span');
+        sep.textContent = '|';
+        sep.style.cssText = 'color:#555;margin:0 4px;';
+        stashEl.appendChild(sep);
+    }
+    for (const disc of whiteStash) {
+        const el = document.createElement('div');
+        el.className = 'stash-disc disc-white';
+        el.textContent = getDiscValue(disc);
+        stashEl.appendChild(el);
+    }
+}
+
+function renderScores() {
+    const scoreEl = document.getElementById('scoreDisplay');
+    const scores = computeScores();
+    document.getElementById('blackScore').textContent = scores.blackTotal;
+    document.getElementById('whiteScore').textContent = scores.whiteTotal;
+
+    if (scores.details.length === 0) {
+        scoreEl.innerHTML = '<span style="color:#777;font-size:0.8em;">Noch keine Scheiben gesetzt</span>';
+        return;
+    }
+
+    let html = '<table class="score-table"><tr><th>Poly</th><th>Gr.</th><th>\u26ab</th><th>\u26aa</th><th>Pkt</th></tr>';
+    for (const d of scores.details.sort((a, b) => a.polyId - b.polyId)) {
+        const w = d.winner === 'black' ? '\u26ab' : d.winner === 'white' ? '\u26aa' : '\u2014';
+        const total = d.pts + d.bonus;
+        const bonusStr = d.bonus > 0 ? `+${d.bonus}` : '';
+        html += `<tr><td>${POLYOMINO_SHAPES[d.polyId]?.name || d.polyId}</td><td>${d.size}</td>` +
+                `<td>${d.black}</td><td>${d.white}</td>` +
+                `<td>${total > 0 ? total + bonusStr : '\u2014'}</td></tr>`;
+    }
+    html += '</table>';
+    scoreEl.innerHTML = html;
+}
+
+function renderStatus() {
+    const phaseEl = document.getElementById('phaseInfo');
+    const turnEl = document.getElementById('turnInfo');
+    const roundEl = document.getElementById('roundInfo');
+
+    const pName = currentPlayer === 'black' ? '\u26ab SCHWARZ' : '\u26aa WEISS';
+
+    switch (gamePhase) {
+        case 'SETUP':
+            phaseEl.textContent = 'AUFBAU';
+            turnEl.textContent = setupMode === 'preset' ? 'Layout w\u00e4hlen' : `${setupTurn === 'black' ? 'Schwarz' : 'Wei\u00df'}: Polyomino setzen (${placedPolyominoes.length}/18)`;
+            roundEl.textContent = '';
+            break;
+        case 'DRAW':
+            phaseEl.textContent = 'ZIEHEN';
+            turnEl.textContent = 'Scheiben gezogen';
+            roundEl.textContent = `Runde ${currentRound}/6`;
+            break;
+        case 'STASH':
+            phaseEl.textContent = 'LAGER';
+            turnEl.textContent = `${pName}: 1 Scheibe ins Lager`;
+            roundEl.textContent = `Runde ${currentRound}/6`;
+            break;
+        case 'PLAY':
+            phaseEl.textContent = 'SPIELEN';
+            const opponent = currentPlayer === 'black' ? 'white' : 'black';
+            const opRingS = rings[opponent];
+            let hint = '';
+            if (opRingS && discs[opRingS.y][opRingS.x]) {
+                const v = getDiscValue(discs[opRingS.y][opRingS.x]);
+                hint = v % 2 === 0 ? ' \u2194\u2195 H/V' : ' \u2921\u2922 diagonal';
+            } else if (!rings[currentPlayer]) {
+                hint = ' (frei)';
+            }
+            turnEl.textContent = `${pName} AM ZUG${hint}`;
+            roundEl.textContent = `Runde ${currentRound}/6`;
+            break;
+        case 'FLIP_CHECK':
+            phaseEl.textContent = 'UMDREHEN?';
+            turnEl.textContent = `${pName}: 4er-Reihe gefunden!`;
+            roundEl.textContent = `Runde ${currentRound}/6`;
+            break;
+        case 'EPILOGUE':
+            phaseEl.textContent = 'EPILOG';
+            turnEl.textContent = `${pName}: ${epilogueMoves[currentPlayer]} Z\u00fcge`;
+            roundEl.textContent = '';
+            break;
+        case 'SCORING':
+        case 'GAME_OVER':
+            phaseEl.textContent = 'ENDWERTUNG';
+            const s = computeScores();
+            if (s.blackTotal > s.whiteTotal) turnEl.textContent = '\u26ab SCHWARZ GEWINNT!';
+            else if (s.whiteTotal > s.blackTotal) turnEl.textContent = '\u26aa WEISS GEWINNT!';
+            else turnEl.textContent = 'UNENTSCHIEDEN!';
+            roundEl.textContent = `${s.blackTotal} : ${s.whiteTotal}`;
+            break;
+    }
+}
+
+function renderFlipPrompt() {
+    const el = document.getElementById('flipPrompt');
+    if (gamePhase !== 'FLIP_CHECK' || flipCandidates.length === 0) {
+        el.className = 'flip-prompt';
+        el.innerHTML = '';
+        return;
+    }
+    el.className = 'flip-prompt visible';
+    let html = `<p><b>4er-Reihe gefunden!</b> Umdrehen?</p>`;
+    if (flipCandidates.length === 1) {
+        html += `<button class="btn-flip" onclick="executeFlip(0)">UMDREHEN</button> `;
+    } else {
+        flipCandidates.forEach((c, i) => {
+            html += `<button class="btn-flip" onclick="executeFlip(${i})" style="margin:3px;">Reihe ${i + 1}</button> `;
+        });
+    }
+    html += `<button class="btn-secondary" onclick="skipFlip()">ÜBERSPRINGEN</button>`;
+    el.innerHTML = html;
+}
+
+function renderSetupControls() {
+    const ctrlEl = document.getElementById('setupControls');
+    const palEl = document.getElementById('polyominoPalette');
+
+    if (gamePhase !== 'SETUP') {
+        ctrlEl.innerHTML = '';
+        palEl.style.display = 'none';
+        return;
+    }
+
+    let html = '';
+    if (setupMode === 'preset') {
+        html += '<b style="margin-right:8px;">Layout w\u00e4hlen:</b>';
+        PRESET_GRIDS.forEach((p, i) => {
+            html += `<button class="btn-primary" onclick="selectPreset(${i})">${p.name}</button> `;
+        });
+        html += `<button class="btn-primary" onclick="selectPreset(-1)">Zufall</button> `;
+        html += `<button class="btn-accent" onclick="startManualSetup()">Manuell</button>`;
+    } else {
+        html += `<button class="btn-accent" onclick="rotatePiece()">DREHEN (R)</button> `;
+        if (placedPolyominoes.length >= 18) {
+            html += `<button class="btn-primary" onclick="finishSetup()">AUFBAU FERTIG</button> `;
+        }
+        html += `<button class="btn-secondary" onclick="resetSetup()">ZUR\u00dcCK</button>`;
+    }
+    ctrlEl.innerHTML = html;
+
+    // Palette
+    if (setupMode === 'manual') {
+        palEl.style.display = 'flex';
+        palEl.innerHTML = '';
+        POLYOMINO_SHAPES.forEach((shape, idx) => {
+            const cells = shape.cells;
+            const maxX = Math.max(...cells.map(c => c[0])) + 1;
+            const maxY = Math.max(...cells.map(c => c[1])) + 1;
+            const piece = document.createElement('div');
+            piece.className = 'palette-piece';
+            if (placedPolyominoes.includes(idx)) piece.classList.add('placed');
+            if (selectedShapeIdx === idx) piece.classList.add('selected');
+            piece.style.gridTemplateColumns = `repeat(${maxX}, 14px)`;
+            piece.style.gridTemplateRows = `repeat(${maxY}, 14px)`;
+
+            const cellSet = new Set(cells.map(c => `${c[0]},${c[1]}`));
+            for (let r = 0; r < maxY; r++) {
+                for (let c = 0; c < maxX; c++) {
+                    const pc = document.createElement('div');
+                    pc.className = `palette-cell ${cellSet.has(`${c},${r}`) ? 'filled' : 'empty'}`;
+                    if (cellSet.has(`${c},${r}`)) pc.style.background = POLY_COLORS[idx];
+                    piece.appendChild(pc);
+                }
+            }
+
+            piece.addEventListener('click', () => {
+                if (placedPolyominoes.includes(idx)) return;
+                selectedShapeIdx = (selectedShapeIdx === idx) ? null : idx;
+                currentRotation = 0;
+                renderAll();
+            });
+
+            const label = document.createElement('div');
+            label.style.cssText = 'text-align:center;font-size:0.65em;color:#999;';
+            label.textContent = `${shape.name}(${shape.size})`;
+
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
+            wrapper.appendChild(piece);
+            wrapper.appendChild(label);
+            palEl.appendChild(wrapper);
+        });
+    } else {
+        palEl.style.display = 'none';
+    }
+}
+
+function renderActionButtons() {
+    const el = document.getElementById('actionButtons');
+    el.innerHTML = '';
+
+    if (gamePhase === 'EPILOGUE') {
+        const passBtn = document.createElement('button');
+        passBtn.className = 'btn-secondary';
+        passBtn.textContent = 'PASSEN';
+        passBtn.addEventListener('click', () => {
+            epilogueMoves[currentPlayer] = 0;
+            epilogueSelected = null;
+            checkEpilogueEnd();
+            renderAll();
+        });
+        el.appendChild(passBtn);
+    }
+
+    if (gamePhase === 'PLAY') {
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'btn-secondary';
+        skipBtn.textContent = 'EPILOG ÜBERSPRINGEN';
+        skipBtn.style.display = 'none';
+        el.appendChild(skipBtn);
+    }
+}
+
+function renderAll() {
+    renderBoard();
+    renderHand();
+    renderStash();
+    renderScores();
+    renderStatus();
+    renderFlipPrompt();
+    renderSetupControls();
+    renderActionButtons();
+}
+
+// ============================================================
+// SETUP ACTIONS
+// ============================================================
+function selectPreset(idx) {
+    if (idx === -1) {
+        applyRandomLayout();
+    } else {
+        applyPresetGrid(idx);
+    }
+    startGameplay();
+}
+
+function startManualSetup() {
+    setupMode = 'manual';
+    board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    discs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    placedPolyominoes = [];
+    selectedShapeIdx = null;
+    currentRotation = 0;
+    setupTurn = 'black';
+    renderAll();
+}
+
+function resetSetup() {
+    setupMode = 'preset';
+    board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    discs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    placedPolyominoes = [];
+    selectedShapeIdx = null;
+    renderAll();
+}
+
+function rotatePiece() {
+    currentRotation = (currentRotation + 1) % 4;
+    renderAll();
+}
+
+function finishSetup() {
+    if (placedPolyominoes.length < 18) return;
+    if (!validateEmptySpots()) {
+        alert('Ung\u00fcltig: Es gibt Bereiche mit mehr als 2 zusammenh\u00e4ngenden Leerfeldern. Bitte anpassen.');
+        return;
+    }
+    finalizeEmptySpots();
+    startGameplay();
+}
+
+function startGameplay() {
+    gamePhase = 'DRAW';
+    currentPlayer = 'black';
+    currentRound = 1;
+    blackBag = buildBag('black');
+    whiteBag = buildBag('white');
+    blackStash = [];
+    whiteStash = [];
+    rings = { black: null, white: null };
+    historyStack = [];
+    drawDiscsForRound();
+    gamePhase = 'STASH';
+    renderAll();
+}
+
+// ============================================================
+// GAME CONTROL
+// ============================================================
+function confirmReset() {
+    if (gamePhase !== 'SETUP' && gamePhase !== 'SCORING' && gamePhase !== 'GAME_OVER') {
+        if (!confirm('Laufendes Spiel wirklich beenden?')) return;
+    }
+    initGame();
+}
+
+function initGame() {
+    board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    discs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    gamePhase = 'SETUP';
+    setupMode = 'preset';
+    currentPlayer = 'black';
+    currentRound = 1;
+    discsPlayedThisRound = { black: 0, white: 0 };
+    blackBag = []; whiteBag = [];
+    blackHand = []; whiteHand = [];
+    blackStash = []; whiteStash = [];
+    rings = { black: null, white: null };
+    selectedHandDisc = null;
+    selectedShapeIdx = null;
+    placedPolyominoes = [];
+    currentRotation = 0;
+    setupTurn = 'black';
+    flipCandidates = [];
+    epilogueMoves = { black: 3, white: 3 };
+    epilogueSelected = null;
+    historyStack = [];
+    hoverPos = null;
+    renderAll();
+}
+
+// ============================================================
+// RULES MODAL
+// ============================================================
+function openRules() {
+    document.getElementById('rulesModal').style.display = 'block';
+}
+
+function closeRules() {
+    document.getElementById('rulesModal').style.display = 'none';
+    localStorage.setItem('capovolto_rules_v1', 'true');
+}
+
+window.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('rulesModal')) closeRules();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') {
+        if (gamePhase === 'SETUP' && setupMode === 'manual') rotatePiece();
+    }
+    if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        undoMove();
+    }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+function updateCellSize() {
+    const maxBoardWidth = Math.min(window.innerWidth - 30, 550);
+    const calcSize = Math.floor(maxBoardWidth / GRID_SIZE) - 3;
+    const finalSize = Math.min(46, Math.max(26, calcSize));
+    document.documentElement.style.setProperty('--cell-size', `${finalSize}px`);
+}
+
+window.addEventListener('resize', () => { updateCellSize(); renderBoard(); });
+
+updateCellSize();
+initGame();
+
+if (!localStorage.getItem('capovolto_rules_v1')) openRules();
+</script>
+</body>
+</html>

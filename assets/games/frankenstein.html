@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frankenstein - Where's that green elbow??</title>
+<style>
+:root {
+    --bg: #263238;
+    --panel-bg: #37474f;
+    --card-size: 70px;
+    --body-cell: 52px;
+    --card-back: #5d4037;
+    --card-front: #fdfcf0;
+    --golden: #ffd700;
+    --accent: #ff9800;
+    --text: #eceff1;
+    --text-dim: #90a4ae;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --purple: #9c27b0;
+    --grey: #9e9e9e;
+    --blue: #00acc1;
+    --player1: #42a5f5;
+    --player2: #ef5350;
+    --player3: #66bb6a;
+    --player4: #ffa726;
+    --modal-bg: rgba(0, 0, 0, 0.9);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+    user-select: none;
+}
+
+h1 {
+    font-size: 2em;
+    color: var(--golden);
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    margin: 5px 0;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    font-size: 0.9em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+/* ─── Setup Screen ─── */
+#setupScreen {
+    background: var(--panel-bg);
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    margin-top: 20px;
+}
+
+#setupScreen h2 {
+    color: var(--golden);
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
+
+.player-select {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.player-select button {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    background: #5d4037;
+    color: var(--text);
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+
+.player-select button:hover {
+    background: #6d4c41;
+    transform: translateY(-1px);
+}
+
+.player-select button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.setup-option {
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-size: 0.95em;
+}
+
+.setup-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ─── Game Screen ─── */
+#gameScreen { display: none; width: 100%; max-width: 1200px; }
+
+#statusBar {
+    background: var(--panel-bg);
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+#playerTurnInfo { color: var(--accent); font-size: 1.05em; }
+#mistakeInfo { color: #e0e0e0; }
+#mistakeTrackInfo { color: #ef9a9a; font-size: 0.9em; }
+#cardsLeft { color: var(--text-dim); }
+
+.main-area {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+/* ─── Card Grid ─── */
+.card-grid-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card-grid-container h3 {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-bottom: 6px;
+}
+
+#cardGrid {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    background: #1a2027;
+    border-radius: 8px;
+    border: 3px solid #5d4037;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+/* ─── Card Flip ─── */
+.card {
+    width: var(--card-size);
+    height: var(--card-size);
+    perspective: 600px;
+    cursor: pointer;
+}
+
+.card.removed {
+    visibility: hidden;
+}
+
+.card.disabled {
+    pointer-events: none;
+}
+
+.card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.45s ease;
+}
+
+.card.flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.card-back {
+    background: var(--card-back);
+    border: 2px solid #8d6e63;
+    color: #d7ccc8;
+    font-weight: 800;
+    font-size: 1.4em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.card-back::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px dashed #8d6e63;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.card-front {
+    background: var(--card-front);
+    border: 2px solid #bdbdbd;
+    transform: rotateY(180deg);
+    padding: 3px;
+}
+
+.card-front svg {
+    width: 100%;
+    height: 100%;
+}
+
+.card.mistake-flash .card-front {
+    animation: mistakeFlash 0.3s ease 2;
+}
+
+@keyframes mistakeFlash {
+    50% { border-color: #e53935; box-shadow: 0 0 12px rgba(229, 57, 53, 0.6); }
+}
+
+.card.place-pulse .card-front {
+    animation: placePulse 0.4s ease;
+}
+
+@keyframes placePulse {
+    50% { transform: rotateY(180deg) scale(1.15); box-shadow: 0 0 16px rgba(76, 175, 80, 0.6); }
+}
+
+/* ─── Bodies Container ─── */
+.bodies-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.body-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.body-tab {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    background: #455a64;
+    color: var(--text-dim);
+    transition: all 0.2s;
+}
+
+.body-tab.active {
+    color: white;
+    position: relative;
+}
+
+.body-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.body-tab.current-turn {
+    animation: turnPulse 1.5s ease infinite;
+}
+
+@keyframes turnPulse {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.5); }
+}
+
+.body-panel {
+    background: #1a2027;
+    border-radius: 0 8px 8px 8px;
+    padding: 12px;
+    border: 2px solid #455a64;
+    min-width: 240px;
+}
+
+.body-panel.active-turn {
+    border-color: var(--golden);
+}
+
+.player-progress {
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 0.8em;
+    color: var(--text-dim);
+}
+
+/* ─── Body Grid ─── */
+.body-grid {
+    display: grid;
+    grid-template-columns: repeat(4, var(--body-cell));
+    grid-template-rows: repeat(7, var(--body-cell));
+    gap: 2px;
+    justify-content: center;
+}
+
+.body-slot {
+    width: var(--body-cell);
+    height: var(--body-cell);
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.body-slot.empty-available {
+    border: 2px dashed #546e7a;
+    background: rgba(255,255,255,0.03);
+}
+
+.body-slot.empty-locked {
+    border: 1px solid #37474f;
+    background: rgba(0,0,0,0.15);
+    opacity: 0.4;
+}
+
+.body-slot.filled {
+    border: 2px solid #8d6e63;
+    background: var(--card-front);
+}
+
+.body-slot.filled svg {
+    width: 100%;
+    height: 100%;
+}
+
+.body-slot.joker-filled {
+    border: 2px solid var(--golden);
+    background: #fff8e1;
+}
+
+.body-slot.just-placed {
+    animation: slotPulse 0.5s ease;
+}
+
+@keyframes slotPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
+    100% { transform: scale(1); }
+}
+
+/* grid placement for body slots */
+.slot-upper_head   { grid-column: 2 / 4; grid-row: 1; }
+.slot-lower_head   { grid-column: 2 / 4; grid-row: 2; }
+.slot-r_upper_arm  { grid-column: 1; grid-row: 3; }
+.slot-torso_ul     { grid-column: 2; grid-row: 3; }
+.slot-torso_ur     { grid-column: 3; grid-row: 3; }
+.slot-l_upper_arm  { grid-column: 4; grid-row: 3; }
+.slot-r_lower_arm  { grid-column: 1; grid-row: 4; }
+.slot-torso_bl     { grid-column: 2; grid-row: 4; }
+.slot-torso_br     { grid-column: 3; grid-row: 4; }
+.slot-l_lower_arm  { grid-column: 4; grid-row: 4; }
+.slot-r_hand       { grid-column: 1; grid-row: 5; }
+.slot-l_upper_leg  { grid-column: 2; grid-row: 5; }
+.slot-r_upper_leg  { grid-column: 3; grid-row: 5; }
+.slot-l_hand       { grid-column: 4; grid-row: 5; }
+.slot-l_lower_leg  { grid-column: 2; grid-row: 6; }
+.slot-r_lower_leg  { grid-column: 3; grid-row: 6; }
+.slot-l_foot       { grid-column: 2; grid-row: 7; }
+.slot-r_foot       { grid-column: 3; grid-row: 7; }
+
+/* ─── Joker Picker Modal ─── */
+#jokerModal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    justify-content: center;
+    align-items: center;
+}
+
+#jokerModal.show { display: flex; }
+
+.joker-picker {
+    background: #fff;
+    color: #333;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.joker-picker h3 {
+    margin-bottom: 12px;
+    color: #5d4037;
+}
+
+.joker-picker p {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.joker-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.joker-slot-btn {
+    padding: 8px 14px;
+    border: 2px solid #5d4037;
+    border-radius: 6px;
+    background: #fff8e1;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85em;
+    transition: all 0.15s;
+}
+
+.joker-slot-btn:hover {
+    background: #ffd700;
+    border-color: #8d6e63;
+}
+
+/* ─── Bottom Controls ─── */
+.bottom-zone {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding: 8px;
+}
+
+.bottom-zone button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+    font-size: 0.85em;
+}
+
+.bottom-zone button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.btn-undo { background: #1e88e5; color: white; }
+.btn-undo:hover { background: #1565c0; }
+.btn-undo:disabled { opacity: 0.4; cursor: default; }
+.btn-reset { background: #e53935; color: white; }
+.btn-reset:hover { background: #c62828; }
+.btn-rules { background: #8e24aa; color: white; }
+.btn-rules:hover { background: #6a1b9a; }
+.btn-csv { background: #546e7a; color: white; }
+.btn-csv:hover { background: #455a64; }
+
+/* ─── Victory Overlay ─── */
+#victoryOverlay {
+    display: none;
+    position: fixed;
+    z-index: 4000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.88);
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+#victoryOverlay.show { display: flex; }
+
+.victory-box {
+    background: linear-gradient(135deg, #1a2027, #37474f);
+    border: 3px solid var(--golden);
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+    max-width: 400px;
+}
+
+.victory-box h2 {
+    color: var(--golden);
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.victory-box p, #victoryMsg {
+    color: var(--text);
+    font-size: 1.1em;
+    margin-bottom: 20px;
+}
+
+.victory-box button {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    background: var(--golden);
+    color: #333;
+    font-weight: 700;
+    font-size: 1em;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+
+.victory-box button:hover { background: #ffca28; }
+
+/* ─── Rules Modal ─── */
+#rulesModal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: var(--modal-bg);
+    backdrop-filter: blur(3px);
+}
+
+.modal-content {
+    background-color: #fff;
+    color: #37474f;
+    margin: 4% auto;
+    padding: 28px;
+    border-radius: 10px;
+    width: 92%;
+    max-width: 620px;
+    max-height: 88vh;
+    overflow-y: auto;
+    line-height: 1.6;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+
+.modal-content h2 {
+    color: #4e342e;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+}
+
+.modal-content h3 {
+    color: #5d4037;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.modal-content p {
+    margin-bottom: 10px;
+}
+
+.modal-content ul {
+    margin: 8px 0 12px 20px;
+}
+
+.modal-content .close {
+    float: right;
+    font-size: 1.8em;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.modal-content .close:hover { color: #333; }
+
+.close-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 28px;
+    background: #5d4037;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.close-btn:hover { background: #4e342e; }
+
+.body-tab.finished { opacity: 0.7; border-bottom: 2px solid var(--green); }
+
+.completion-notice {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a2027, #37474f);
+    border: 2px solid var(--golden);
+    border-radius: 12px;
+    padding: 20px 30px;
+    color: var(--golden);
+    font-size: 1.3em;
+    font-weight: 700;
+    z-index: 3500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-align: center;
+}
+.completion-notice.show { opacity: 1; }
+
+/* ─── Responsive ─── */
+@media (max-width: 800px) {
+    .main-area { flex-direction: column; align-items: center; }
+    :root { --card-size: 55px; --body-cell: 44px; }
+}
+
+@media (max-width: 500px) {
+    h1 { font-size: 1.5em; }
+    :root { --card-size: 44px; --body-cell: 38px; }
+    .player-select { flex-direction: column; }
+    .player-select button { width: 100%; }
+    #statusBar { font-size: 0.85em; }
+}
+</style>
+</head>
+<body>
+
+<h1>FRANKENSTEIN</h1>
+<p class="subtitle">Where's that green elbow?? &mdash; A Memory Game by Walter Prossnitz</p>
+
+<!-- ─── Setup Screen ─── -->
+<div id="setupScreen">
+    <h2>How many players?</h2>
+    <div class="player-select">
+        <button onclick="startGame(1)">1 Player (Solo)</button>
+        <button onclick="startGame(2)">2 Players</button>
+        <button onclick="startGame(3)">3 Players</button>
+        <button onclick="startGame(4)">4 Players</button>
+    </div>
+    <div class="setup-option">
+        <input type="checkbox" id="trackMistakesToggle" checked>
+        <label for="trackMistakesToggle">Track mistakes (cards you should have remembered)</label>
+    </div>
+</div>
+
+<!-- ─── Game Screen ─── -->
+<div id="gameScreen">
+    <div id="statusBar">
+        <span id="playerTurnInfo">Player 1's Turn</span>
+        <span id="mistakeInfo">Misses: 0 / 2</span>
+        <span id="mistakeTrackInfo"></span>
+        <span id="cardsLeft">Cards: 32</span>
+    </div>
+
+    <div class="main-area">
+        <div class="card-grid-container">
+            <h3>Face-down cards</h3>
+            <div id="cardGrid"></div>
+        </div>
+
+        <div class="bodies-container">
+            <div class="body-tabs" id="bodyTabs"></div>
+            <div id="bodyDisplay"></div>
+        </div>
+    </div>
+
+    <div class="bottom-zone">
+        <button class="btn-undo" id="btnUndo" onclick="undoLastFlip()">&#8617; Undo</button>
+        <button class="btn-rules" onclick="openRules()">&#10067; Rules</button>
+        <button class="btn-reset" onclick="confirmReset()">&#9888; New Game</button>
+        <button class="btn-csv" onclick="downloadCSV()">&#128190; Export CSV</button>
+    </div>
+</div>
+
+<!-- ─── Joker Placement Modal ─── -->
+<div id="jokerModal">
+    <div class="joker-picker">
+        <h3>Place your Joker!</h3>
+        <p>Choose a body slot for the joker (torso, arms, or legs only):</p>
+        <div class="joker-slots" id="jokerSlots"></div>
+    </div>
+</div>
+
+<!-- ─── Victory Overlay ─── -->
+<div id="victoryOverlay">
+    <div class="victory-box">
+        <h2 id="victoryTitle">Player 1 wins!</h2>
+        <div id="victoryMsg">Frankie is complete!</div>
+        <button onclick="backToSetup()">New Game</button>
+    </div>
+</div>
+
+<!-- ─── Rules Modal ─── -->
+<div id="rulesModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeRules()">&times;</span>
+        <h2>Frankenstein &mdash; Rules</h2>
+        <p><strong>Where's that green elbow??</strong><br>
+        A Memory Frankenstein game for 1 &ndash; 4 players, ages 5 &ndash; 99.</p>
+
+        <h3>Goal</h3>
+        <p>Build a complete Frankenstein body from face-down cards. The game continues until
+        all players complete their Frankie. The first to finish wins!</p>
+
+        <h3>Setup</h3>
+        <p>Each player starts with 3 of 4 torso parts already in place. The 4th torso part
+        is hidden among the face-down cards along with all other body parts.</p>
+        <ul>
+            <li>2 players: 32 cards</li>
+            <li>3 players: 48 cards</li>
+            <li>4 players: 64 cards</li>
+        </ul>
+
+        <h3>Building Order</h3>
+        <p>Build from the middle outward. Body parts have <strong>no left/right distinction</strong>
+        &mdash; any arm or leg card can be placed on either side!</p>
+        <ul>
+            <li><strong>Arms:</strong> upper arm &rarr; lower arm &rarr; hand</li>
+            <li><strong>Legs:</strong> upper leg &rarr; lower leg &rarr; foot</li>
+            <li><strong>Head:</strong> lower head &rarr; upper head</li>
+        </ul>
+        <p>Each limb requires its <strong>specific adjacent torso part</strong>:
+        right arm needs upper-left torso, left arm needs upper-right torso,
+        left leg needs lower-left torso, right leg needs lower-right torso.
+        Lower head can attach to any top torso part.
+        All torso cards are identical and can fill any empty torso slot.</p>
+
+        <h3>Taking a Turn</h3>
+        <p>Flip cards one at a time. If you can use the card, it's placed on your body
+        and you continue flipping. If you can't use it, that's a <strong>miss</strong>
+        &mdash; the card flips back face down.</p>
+        <p>After your <strong>2nd miss</strong>, your turn ends. The key is
+        remembering where cards are that you can't use yet!</p>
+
+        <h3>Jokers</h3>
+        <p>There are as many joker cards as there are players. A joker can substitute for
+        any torso, arm, or leg part (not hands, feet, or head). Each player may have at
+        most one joker. Finding a 2nd joker passes it to the next player (not a miss).
+        If you later find the real body part, you may swap it with your joker.</p>
+
+        <h3>Solo Mode</h3>
+        <p>In solo mode you control both Frankies, alternating turns just like a 2-player
+        game. The goal is to complete both Frankies with as few misses as possible.
+        Keep track of which Frankie needs which parts &mdash; it's a real brain trainer!</p>
+
+        <h3>Misses &amp; Mistakes</h3>
+        <p>A <strong>miss</strong> is any card you flip that you can't use. After 2 misses,
+        your turn ends. A <strong>mistake</strong> is a special kind of miss: flipping a
+        card that was already turned over before and you still can't use it &mdash;
+        you should have remembered! Mistake tracking can be turned on/off in the setup.</p>
+
+        <button class="close-btn" onclick="closeRules()">Got it!</button>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FRANKENSTEIN - Where's that green elbow??
+   A Memory Frankenstein game for 2-4 players
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── Constants ───
+const TORSO_PARTS = ['torso_ul', 'torso_ur', 'torso_bl', 'torso_br'];
+const ALL_BODY_SLOTS = [
+    'upper_head', 'lower_head',
+    'torso_ul', 'torso_ur', 'torso_bl', 'torso_br',
+    'r_upper_arm', 'l_upper_arm',
+    'r_lower_arm', 'l_lower_arm',
+    'r_hand', 'l_hand',
+    'l_upper_leg', 'r_upper_leg',
+    'l_lower_leg', 'r_lower_leg',
+    'l_foot', 'r_foot'
+];
+
+const FINDABLE_PART_TYPES = [
+    'upper_head', 'lower_head',
+    'upper_arm', 'upper_arm',
+    'lower_arm', 'lower_arm',
+    'hand', 'hand',
+    'upper_leg', 'upper_leg',
+    'lower_leg', 'lower_leg',
+    'foot', 'foot'
+    // + one generic torso card per player
+];
+
+// Maps generic card types to possible body grid slots
+const PART_TO_SLOTS = {
+    upper_arm: ['r_upper_arm', 'l_upper_arm'],
+    lower_arm: ['r_lower_arm', 'l_lower_arm'],
+    hand: ['r_hand', 'l_hand'],
+    upper_leg: ['l_upper_leg', 'r_upper_leg'],
+    lower_leg: ['l_lower_leg', 'r_lower_leg'],
+    foot: ['l_foot', 'r_foot'],
+    torso: TORSO_PARTS,
+    upper_head: ['upper_head'],
+    lower_head: ['lower_head']
+};
+
+const PART_COLORS = ['green', 'orange', 'purple', 'blue'];
+
+const COLOR_HEX = {
+    green: '#4caf50',
+    orange: '#ff9800',
+    purple: '#9c27b0',
+    blue: '#00acc1',
+    grey: '#9e9e9e',
+    joker: '#ffd700'
+};
+
+const PLAYER_COLORS = ['#42a5f5', '#ef5350', '#66bb6a', '#ffa726'];
+const PLAYER_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+
+// Slot labels for display
+const SLOT_LABELS = {
+    upper_head: 'Upper Head', lower_head: 'Lower Head',
+    torso_ul: 'Torso', torso_ur: 'Torso', torso_bl: 'Torso', torso_br: 'Torso',
+    r_upper_arm: 'Upper Arm', l_upper_arm: 'Upper Arm',
+    r_lower_arm: 'Lower Arm', l_lower_arm: 'Lower Arm',
+    r_hand: 'Hand', l_hand: 'Hand',
+    l_upper_leg: 'Upper Leg', r_upper_leg: 'Upper Leg',
+    l_lower_leg: 'Lower Leg', r_lower_leg: 'Lower Leg',
+    l_foot: 'Foot', r_foot: 'Foot'
+};
+
+// Which slots jokers can go in
+const JOKER_VALID_SLOTS = [
+    ...TORSO_PARTS,
+    'r_upper_arm', 'l_upper_arm', 'r_lower_arm', 'l_lower_arm',
+    'l_upper_leg', 'r_upper_leg', 'l_lower_leg', 'r_lower_leg'
+];
+
+// ─── Game State ───
+let numPlayers = 2;
+let trackMistakes = true;
+let isSoloMode = false;
+let gameState = 'SETUP'; // SETUP | PLAYING | GAME_OVER
+let currentPlayer = 0;
+let mistakeCount = 0;
+let cardGrid = [];
+let players = [];
+let historyStack = [];
+let activeBodyTab = 0;
+let isAnimating = false;
+let gridCols = 8;
+let gridRows = 4;
+let seenCards = new Set();
+let finishedCount = 0;
+
+// CSV logging
+let sessionLog = [];
+let turnCounter = 0;
+let currentGameId = '';
+
+// Pending joker state
+let pendingJokerCard = null;
+
+// ─── DOM Refs ───
+const setupScreen = document.getElementById('setupScreen');
+const gameScreen = document.getElementById('gameScreen');
+const cardGridEl = document.getElementById('cardGrid');
+const bodyTabsEl = document.getElementById('bodyTabs');
+const bodyDisplayEl = document.getElementById('bodyDisplay');
+const statusPlayerEl = document.getElementById('playerTurnInfo');
+const statusMistakeEl = document.getElementById('mistakeInfo');
+const statusMistakeTrackEl = document.getElementById('mistakeTrackInfo');
+const statusCardsEl = document.getElementById('cardsLeft');
+const btnUndo = document.getElementById('btnUndo');
+const jokerModal = document.getElementById('jokerModal');
+const jokerSlotsEl = document.getElementById('jokerSlots');
+const victoryOverlay = document.getElementById('victoryOverlay');
+const rulesModal = document.getElementById('rulesModal');
+
+// ─── Initialization ───
+function startGame(n) {
+    isSoloMode = (n === 1);
+    numPlayers = isSoloMode ? 2 : n;
+    trackMistakes = document.getElementById('trackMistakesToggle').checked;
+    currentGameId = Date.now().toString(36);
+
+    gridRows = n === 2 ? 4 : n === 3 ? 6 : 8;
+    gridCols = 8;
+
+    // Init players
+    players = [];
+    for (let i = 0; i < numPlayers; i++) {
+        const missingTorso = TORSO_PARTS[Math.floor(Math.random() * 4)];
+        const body = {};
+        for (const slot of ALL_BODY_SLOTS) body[slot] = null;
+        // Pre-place 3 torso parts (grey)
+        for (const t of TORSO_PARTS) {
+            if (t !== missingTorso) {
+                body[t] = { partType: 'torso', color: 'grey', isJoker: false };
+            }
+        }
+        players.push({
+            body,
+            missingTorso,
+            jokerUsed: false,
+            jokerSlot: null,
+            cardsPlaced: 0,
+            totalMisses: 0,
+            mistakeTrackCount: 0,
+            finished: false,
+            finishOrder: 0
+        });
+    }
+
+    // Generate deck
+    cardGrid = generateDeck();
+    currentPlayer = 0;
+    mistakeCount = 0;
+    historyStack = [];
+    sessionLog = [];
+    turnCounter = 0;
+    activeBodyTab = 0;
+    seenCards = new Set();
+    finishedCount = 0;
+    gameState = 'PLAYING';
+
+    setupScreen.style.display = 'none';
+    gameScreen.style.display = 'block';
+    victoryOverlay.classList.remove('show');
+
+    updateCardSize();
+    renderAll();
+}
+
+function generateDeck() {
+    const deck = [];
+    let id = 0;
+
+    for (let p = 0; p < numPlayers; p++) {
+        // The missing torso card (grey, generic)
+        deck.push({ id: id++, partType: 'torso', color: 'grey', isJoker: false, faceUp: false, removed: false });
+
+        // Generate body parts with chain-based color assignment for solvability
+        // 2 arm chains (upper_arm → lower_arm → hand)
+        const armChain1 = generateColorChain(3);
+        const armChain2 = generateColorChain(3);
+        // 2 leg chains (upper_leg → lower_leg → foot)
+        const legChain1 = generateColorChain(3);
+        const legChain2 = generateColorChain(3);
+        // 1 head chain (lower_head → upper_head)
+        const headChain = generateColorChain(2);
+
+        deck.push({ id: id++, partType: 'upper_arm', color: armChain1[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_arm', color: armChain1[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'hand', color: armChain1[2], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'upper_arm', color: armChain2[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_arm', color: armChain2[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'hand', color: armChain2[2], isJoker: false, faceUp: false, removed: false });
+
+        deck.push({ id: id++, partType: 'upper_leg', color: legChain1[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_leg', color: legChain1[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'foot', color: legChain1[2], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'upper_leg', color: legChain2[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'lower_leg', color: legChain2[1], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'foot', color: legChain2[2], isJoker: false, faceUp: false, removed: false });
+
+        deck.push({ id: id++, partType: 'lower_head', color: headChain[0], isJoker: false, faceUp: false, removed: false });
+        deck.push({ id: id++, partType: 'upper_head', color: headChain[1], isJoker: false, faceUp: false, removed: false });
+    }
+
+    // Add jokers
+    for (let j = 0; j < numPlayers; j++) {
+        deck.push({ id: id++, partType: 'joker', color: 'joker', isJoker: true, faceUp: false, removed: false });
+    }
+
+    return shuffleArray(deck);
+}
+
+function generateColorChain(length) {
+    const chain = [];
+    for (let i = 0; i < length; i++) {
+        const excluded = i > 0 ? [chain[i - 1]] : [];
+        const available = PART_COLORS.filter(c => !excluded.includes(c));
+        chain.push(available[Math.floor(Math.random() * available.length)]);
+    }
+    return chain;
+}
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// ─── Card Interaction ───
+function flipCard(idx) {
+    if (gameState !== 'PLAYING' || isAnimating) return;
+    const card = cardGrid[idx];
+    if (card.faceUp || card.removed) return;
+
+    // Save state for undo
+    historyStack.push({
+        cardIdx: idx,
+        playerBefore: currentPlayer,
+        mistakesBefore: mistakeCount,
+        placement: null, // filled if placed
+        seenCardsBefore: new Set(seenCards),
+        mistakeTrackBefore: players[currentPlayer].mistakeTrackCount,
+        totalMissesBefore: players[currentPlayer].totalMisses,
+        finishedBefore: players[currentPlayer].finished,
+        finishedCountBefore: finishedCount
+    });
+
+    card.faceUp = true;
+    renderCardGrid();
+    logAction('FLIP', card);
+
+    // Short delay for the flip animation to show
+    isAnimating = true;
+    setTimeout(() => {
+        isAnimating = false;
+        processFlippedCard(idx);
+    }, 500);
+}
+
+function processFlippedCard(idx) {
+    const card = cardGrid[idx];
+
+    // Joker handling
+    if (card.isJoker) {
+        handleJoker(card, idx);
+        return;
+    }
+
+    // Find a valid slot for this generic card type
+    const player = players[currentPlayer];
+    const slot = findValidSlot(card.partType, card.color, player);
+
+    if (slot) {
+        // Place it!
+        placeCard(card, slot, currentPlayer);
+        historyStack[historyStack.length - 1].placement = { slot, playerIdx: currentPlayer };
+        logAction('PLACE', card);
+
+        if (checkWin(currentPlayer) && !players[currentPlayer].finished) {
+            players[currentPlayer].finished = true;
+            finishedCount++;
+            players[currentPlayer].finishOrder = finishedCount;
+            if (finishedCount >= numPlayers) {
+                endGame();
+                return;
+            }
+            showCompletionNotice(currentPlayer);
+        }
+        renderAll();
+    } else {
+        // Miss
+        mistakeCount++;
+        players[currentPlayer].totalMisses++;
+        logAction('MISS', card);
+
+        // Check if this was a "should have known" mistake
+        if (trackMistakes && seenCards.has(idx)) {
+            players[currentPlayer].mistakeTrackCount++;
+            logAction('MISTAKE_TRACKED', card);
+        }
+
+        // Flash the card
+        const cardEl = cardGridEl.children[idx];
+        if (cardEl) cardEl.classList.add('mistake-flash');
+
+        renderStatus();
+
+        if (mistakeCount >= 2) {
+            // Turn ends
+            isAnimating = true;
+            setTimeout(() => {
+                flipBackAllUnplaced();
+                nextPlayer();
+                isAnimating = false;
+                renderAll();
+            }, 1200);
+        } else {
+            // First miss - flip back after a delay
+            isAnimating = true;
+            setTimeout(() => {
+                card.faceUp = false;
+                seenCards.add(idx);
+                isAnimating = false;
+                renderAll();
+            }, 1200);
+        }
+    }
+}
+
+function findValidSlot(partType, color, player) {
+    const possibleSlots = PART_TO_SLOTS[partType];
+    if (!possibleSlots) return null;
+
+    for (const slot of possibleSlots) {
+        if (!player.body[slot] && prerequisiteMet(slot, player)) {
+            return slot;
+        }
+    }
+    return null;
+}
+
+function prerequisiteMet(slot, player) {
+    const rules = {
+        // Arms need their specific adjacent torso part
+        r_upper_arm: () => !!player.body['torso_ul'],
+        l_upper_arm: () => !!player.body['torso_ur'],
+        r_lower_arm: () => !!player.body['r_upper_arm'],
+        l_lower_arm: () => !!player.body['l_upper_arm'],
+        r_hand: () => !!player.body['r_lower_arm'],
+        l_hand: () => !!player.body['l_lower_arm'],
+        // Legs need their specific adjacent torso part
+        l_upper_leg: () => !!player.body['torso_bl'],
+        r_upper_leg: () => !!player.body['torso_br'],
+        l_lower_leg: () => !!player.body['l_upper_leg'],
+        r_lower_leg: () => !!player.body['r_upper_leg'],
+        l_foot: () => !!player.body['l_lower_leg'],
+        r_foot: () => !!player.body['r_lower_leg'],
+        // Head needs any top torso (spans both columns)
+        lower_head: () => !!(player.body['torso_ul'] || player.body['torso_ur']),
+        upper_head: () => !!player.body['lower_head'],
+        // Torso parts always placeable
+        torso_ul: () => true, torso_ur: () => true,
+        torso_bl: () => true, torso_br: () => true
+    };
+    return rules[slot] ? rules[slot]() : true;
+}
+
+function placeCard(card, slot, playerIdx) {
+    const player = players[playerIdx];
+    player.body[slot] = { partType: card.partType, color: card.color, isJoker: card.isJoker };
+    player.cardsPlaced++;
+    card.removed = true;
+    activeBodyTab = playerIdx;
+
+    // Check if this part matches a joker slot and offer swap
+    if (player.jokerUsed && player.jokerSlot === slot) {
+        // Can't happen - slot would already be filled
+    }
+}
+
+// ─── Joker Handling ───
+function handleJoker(card, idx) {
+    const player = players[currentPlayer];
+
+    if (!player.jokerUsed) {
+        // Find all valid slots for joker
+        const validSlots = JOKER_VALID_SLOTS.filter(slot =>
+            !player.body[slot] && prerequisiteMet(slot, player)
+        );
+
+        if (validSlots.length === 0) {
+            // Can't place joker - it's a miss
+            mistakeCount++;
+            players[currentPlayer].totalMisses++;
+            logAction('MISS', card);
+            if (trackMistakes && seenCards.has(idx)) {
+                players[currentPlayer].mistakeTrackCount++;
+                logAction('MISTAKE_TRACKED', card);
+            }
+            renderStatus();
+            if (mistakeCount >= 2) {
+                isAnimating = true;
+                setTimeout(() => {
+                    flipBackAllUnplaced();
+                    nextPlayer();
+                    isAnimating = false;
+                    renderAll();
+                }, 1200);
+            } else {
+                isAnimating = true;
+                setTimeout(() => {
+                    card.faceUp = false;
+                    seenCards.add(idx);
+                    isAnimating = false;
+                    renderAll();
+                }, 1200);
+            }
+            return;
+        }
+
+        // Show joker slot picker
+        pendingJokerCard = { card, idx };
+        showJokerPicker(validSlots);
+    } else {
+        // Player already has a joker - pass to next player
+        logAction('JOKER_PASS', card);
+        // Mark card for next player's use
+        const nextP = (currentPlayer + 1) % numPlayers;
+        // Auto-assign to next player if they haven't used a joker
+        if (!players[nextP].jokerUsed) {
+            // Next player gets it on their next turn - for now just remove from grid
+            // In the physical game this is given to the next player to use on their turn
+            // For simplicity: the card stays face-up and will be auto-placed on next player's turn start
+            card.removed = true;
+            // Find a valid slot for next player
+            const nextValidSlots = JOKER_VALID_SLOTS.filter(slot =>
+                !players[nextP].body[slot] && prerequisiteMet(slot, players[nextP])
+            );
+            if (nextValidSlots.length > 0) {
+                const autoSlot = nextValidSlots[0];
+                players[nextP].body[autoSlot] = { partType: 'joker', color: 'joker', isJoker: true };
+                players[nextP].jokerUsed = true;
+                players[nextP].jokerSlot = autoSlot;
+                players[nextP].cardsPlaced++;
+            }
+        } else {
+            // Both have jokers already - card goes back
+            card.faceUp = false;
+        }
+        // Not a mistake - continue flipping
+        renderAll();
+    }
+}
+
+function showJokerPicker(validSlots) {
+    jokerSlotsEl.innerHTML = '';
+    for (const slot of validSlots) {
+        const btn = document.createElement('button');
+        btn.className = 'joker-slot-btn';
+        btn.textContent = SLOT_LABELS[slot];
+        btn.onclick = () => placeJokerInSlot(slot);
+        jokerSlotsEl.appendChild(btn);
+    }
+    jokerModal.classList.add('show');
+}
+
+function placeJokerInSlot(slot) {
+    jokerModal.classList.remove('show');
+    if (!pendingJokerCard) return;
+
+    const { card, idx } = pendingJokerCard;
+    const player = players[currentPlayer];
+
+    player.body[slot] = { partType: 'joker', color: 'joker', isJoker: true };
+    player.jokerUsed = true;
+    player.jokerSlot = slot;
+    player.cardsPlaced++;
+    card.removed = true;
+
+    historyStack[historyStack.length - 1].placement = { slot, playerIdx: currentPlayer, isJoker: true };
+    logAction('PLACE_JOKER', card);
+
+    pendingJokerCard = null;
+
+    if (checkWin(currentPlayer) && !players[currentPlayer].finished) {
+        players[currentPlayer].finished = true;
+        finishedCount++;
+        players[currentPlayer].finishOrder = finishedCount;
+        if (finishedCount >= numPlayers) {
+            endGame();
+            return;
+        }
+        showCompletionNotice(currentPlayer);
+    }
+    renderAll();
+}
+
+// ─── Turn Management ───
+function nextPlayer() {
+    mistakeCount = 0;
+    logAction('TURN_END', null);
+    do {
+        currentPlayer = (currentPlayer + 1) % numPlayers;
+    } while (players[currentPlayer].finished && finishedCount < numPlayers);
+    activeBodyTab = currentPlayer;
+    turnCounter++;
+}
+
+function flipBackAllUnplaced() {
+    for (let i = 0; i < cardGrid.length; i++) {
+        const card = cardGrid[i];
+        if (card.faceUp && !card.removed) {
+            card.faceUp = false;
+            seenCards.add(i);
+        }
+    }
+}
+
+// ─── Win Detection ───
+function checkWin(playerIdx) {
+    const player = players[playerIdx];
+    for (const slot of ALL_BODY_SLOTS) {
+        if (!player.body[slot]) return false;
+    }
+    return true;
+}
+
+function endGame() {
+    gameState = 'GAME_OVER';
+    logAction('GAME_OVER', null);
+
+    if (isSoloMode) {
+        const totalMisses = players[0].totalMisses + players[1].totalMisses;
+        const totalMistakes = players[0].mistakeTrackCount + players[1].mistakeTrackCount;
+        document.getElementById('victoryTitle').textContent = 'Both Frankies Complete!';
+        let msg = `Total misses: ${totalMisses}`;
+        if (trackMistakes) msg += ` | Mistakes: ${totalMistakes}`;
+        document.getElementById('victoryMsg').innerHTML = msg;
+    } else {
+        const sorted = players.map((p, i) => ({ idx: i, ...p }))
+            .sort((a, b) => a.finishOrder - b.finishOrder);
+        document.getElementById('victoryTitle').textContent = getPlayerName(sorted[0].idx) + ' wins!';
+
+        let html = '<table style="margin:10px auto;text-align:left;color:var(--text);border-collapse:collapse">';
+        html += '<tr><th style="padding:4px 10px">#</th><th style="padding:4px 10px">Player</th><th style="padding:4px 10px">Misses</th>';
+        if (trackMistakes) html += '<th style="padding:4px 10px">Mistakes</th>';
+        html += '</tr>';
+        for (const p of sorted) {
+            html += `<tr><td style="padding:4px 10px">${p.finishOrder}</td>`;
+            html += `<td style="padding:4px 10px;color:${PLAYER_COLORS[p.idx]}">${getPlayerName(p.idx)}</td>`;
+            html += `<td style="padding:4px 10px">${p.totalMisses}</td>`;
+            if (trackMistakes) html += `<td style="padding:4px 10px">${p.mistakeTrackCount}</td>`;
+            html += '</tr>';
+        }
+        html += '</table>';
+        document.getElementById('victoryMsg').innerHTML = html;
+    }
+    victoryOverlay.classList.add('show');
+    renderAll();
+}
+
+function showCompletionNotice(playerIdx) {
+    const name = getPlayerName(playerIdx);
+    const notice = document.createElement('div');
+    notice.className = 'completion-notice';
+    notice.textContent = name + "'s Frankie is complete!";
+    document.body.appendChild(notice);
+    setTimeout(() => notice.classList.add('show'), 10);
+    setTimeout(() => {
+        notice.classList.remove('show');
+        setTimeout(() => notice.remove(), 500);
+    }, 2000);
+}
+
+// ─── Undo ───
+function undoLastFlip() {
+    if (historyStack.length === 0 || gameState !== 'PLAYING' || isAnimating) return;
+
+    const entry = historyStack.pop();
+    const card = cardGrid[entry.cardIdx];
+
+    // Undo placement
+    if (entry.placement) {
+        const player = players[entry.placement.playerIdx];
+        player.body[entry.placement.slot] = null;
+        player.cardsPlaced--;
+        if (entry.placement.isJoker) {
+            player.jokerUsed = false;
+            player.jokerSlot = null;
+        }
+        card.removed = false;
+    }
+
+    card.faceUp = false;
+    currentPlayer = entry.playerBefore;
+    mistakeCount = entry.mistakesBefore;
+    activeBodyTab = currentPlayer;
+    if (entry.seenCardsBefore) seenCards = entry.seenCardsBefore;
+    if (entry.mistakeTrackBefore !== undefined) players[currentPlayer].mistakeTrackCount = entry.mistakeTrackBefore;
+    if (entry.totalMissesBefore !== undefined) players[currentPlayer].totalMisses = entry.totalMissesBefore;
+    if (entry.finishedBefore !== undefined) {
+        players[currentPlayer].finished = entry.finishedBefore;
+        finishedCount = entry.finishedCountBefore;
+    }
+
+    // Remove last log entry
+    if (sessionLog.length > 0) sessionLog.pop();
+
+    renderAll();
+}
+
+// ─── Rendering ───
+function renderAll() {
+    renderCardGrid();
+    renderBodyTabs();
+    renderBodyDisplay();
+    renderStatus();
+    btnUndo.disabled = historyStack.length === 0 || gameState !== 'PLAYING';
+}
+
+function renderCardGrid() {
+    cardGridEl.style.gridTemplateColumns = `repeat(${gridCols}, var(--card-size))`;
+    cardGridEl.innerHTML = '';
+
+    for (let i = 0; i < cardGrid.length; i++) {
+        const card = cardGrid[i];
+        const el = document.createElement('div');
+        el.className = 'card';
+        if (card.faceUp) el.classList.add('flipped');
+        if (card.removed) el.classList.add('removed');
+        if (isAnimating || gameState !== 'PLAYING') el.classList.add('disabled');
+
+        const inner = document.createElement('div');
+        inner.className = 'card-inner';
+
+        // Back
+        const back = document.createElement('div');
+        back.className = 'card-face card-back';
+        back.textContent = '?';
+
+        // Front
+        const front = document.createElement('div');
+        front.className = 'card-face card-front';
+        if (card.isJoker) {
+            front.innerHTML = getJokerSVG();
+        } else {
+            front.innerHTML = getBodyPartSVG(card.partType, card.color);
+        }
+
+        inner.appendChild(back);
+        inner.appendChild(front);
+        el.appendChild(inner);
+
+        el.onclick = () => flipCard(i);
+        cardGridEl.appendChild(el);
+    }
+}
+
+function renderBodyTabs() {
+    bodyTabsEl.innerHTML = '';
+    for (let i = 0; i < numPlayers; i++) {
+        const tab = document.createElement('button');
+        tab.className = 'body-tab';
+        if (i === activeBodyTab) tab.classList.add('active');
+        if (i === currentPlayer && gameState === 'PLAYING') tab.classList.add('current-turn');
+        if (players[i].finished) tab.classList.add('finished');
+        tab.textContent = (players[i].finished ? '\u2713 ' : '') + getPlayerName(i);
+        tab.style.borderColor = PLAYER_COLORS[i];
+        if (i === activeBodyTab) {
+            tab.style.background = PLAYER_COLORS[i];
+        }
+        tab.onclick = () => { activeBodyTab = i; renderBodyDisplay(); renderBodyTabs(); };
+        bodyTabsEl.appendChild(tab);
+    }
+}
+
+function renderBodyDisplay() {
+    const player = players[activeBodyTab];
+    if (!player) return;
+
+    const isActive = activeBodyTab === currentPlayer && gameState === 'PLAYING';
+    let html = `<div class="body-panel ${isActive ? 'active-turn' : ''}" style="border-color: ${isActive ? 'var(--golden)' : PLAYER_COLORS[activeBodyTab]}">`;
+    html += `<div class="player-progress">${player.cardsPlaced} / 15 parts found</div>`;
+    html += '<div class="body-grid">';
+
+    for (const slot of ALL_BODY_SLOTS) {
+        const filled = player.body[slot];
+        let cls = `body-slot slot-${slot}`;
+
+        if (filled) {
+            cls += filled.isJoker ? ' joker-filled' : ' filled';
+        } else if (prerequisiteMet(slot, player)) {
+            cls += ' empty-available';
+        } else {
+            cls += ' empty-locked';
+        }
+
+        html += `<div class="${cls}">`;
+        if (filled) {
+            if (filled.isJoker) {
+                html += getJokerSVG();
+            } else {
+                html += getBodyPartSVG(slot, filled.color);
+            }
+        }
+        html += '</div>';
+    }
+
+    html += '</div></div>';
+    bodyDisplayEl.innerHTML = html;
+}
+
+function getPlayerName(idx) {
+    if (isSoloMode) return 'Frankie ' + (idx + 1);
+    return PLAYER_NAMES[idx];
+}
+
+function renderStatus() {
+    const pColor = PLAYER_COLORS[currentPlayer];
+    statusPlayerEl.innerHTML = `<span style="color:${pColor}">${getPlayerName(currentPlayer)}'s Turn</span>`;
+    statusMistakeEl.textContent = `Misses: ${mistakeCount} / 2`;
+    if (trackMistakes) {
+        const playerMistakes = players[currentPlayer].mistakeTrackCount;
+        statusMistakeTrackEl.textContent = `Mistakes: ${playerMistakes}`;
+        statusMistakeTrackEl.style.display = '';
+    } else {
+        statusMistakeTrackEl.style.display = 'none';
+    }
+    const remaining = cardGrid.filter(c => !c.removed).length;
+    statusCardsEl.textContent = `Cards: ${remaining}`;
+}
+
+// ─── SVG Body Part Art ───
+function getColorHex(color) {
+    return COLOR_HEX[color] || color;
+}
+
+function getBodyPartSVG(partType, color) {
+    const c = getColorHex(color);
+    const sw = 4; // stroke width
+
+    const parts = {
+        upper_head: `<svg viewBox="0 0 100 50">
+            <path d="M20 48 Q20 5 50 5 Q80 5 80 48" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="30" y1="8" x2="25" y2="0" stroke="${c}" stroke-width="3"/>
+            <line x1="42" y1="4" x2="40" y2="0" stroke="${c}" stroke-width="3"/>
+            <line x1="50" y1="3" x2="50" y2="0" stroke="${c}" stroke-width="3"/>
+            <line x1="58" y1="4" x2="60" y2="0" stroke="${c}" stroke-width="3"/>
+            <line x1="70" y1="8" x2="75" y2="0" stroke="${c}" stroke-width="3"/>
+        </svg>`,
+
+        lower_head: `<svg viewBox="0 0 100 50">
+            <path d="M20 0 Q20 10 22 15" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M80 0 Q80 10 78 15" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <circle cx="35" cy="14" r="5" fill="none" stroke="${c}" stroke-width="3"/>
+            <circle cx="65" cy="14" r="5" fill="none" stroke="${c}" stroke-width="3"/>
+            <circle cx="50" cy="25" r="3" fill="${c}"/>
+            <path d="M35 35 Q50 46 65 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="35" y1="48" x2="65" y2="48" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        torso_ul: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso_ur: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso_bl: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        torso_br: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+        // Generic types for card display
+        torso: `<svg viewBox="0 0 50 50">
+            <rect x="3" y="3" width="44" height="44" rx="4" fill="none" stroke="${c}" stroke-width="3"/>
+            <line x1="15" y1="20" x2="35" y2="20" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="15" y1="30" x2="35" y2="30" stroke="${c}" stroke-width="2" stroke-dasharray="4,3"/>
+        </svg>`,
+
+        r_upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M50 10 L30 10 Q15 10 15 25 L15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M50 25 L35 25 Q25 25 25 35 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="10" y1="48" x2="32" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+
+        l_upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M0 10 L20 10 Q35 10 35 25 L35 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M0 25 L15 25 Q25 25 25 35 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="18" y1="48" x2="40" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+
+        r_lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="10" y1="2" x2="32" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="15" y1="0" x2="15" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        l_lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="18" y1="2" x2="40" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="35" y1="0" x2="35" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        r_hand: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 L15 15 Q15 25 10 30 L5 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 15 L20 30 L15 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M25 0 L25 15 Q25 25 28 30 L30 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 25 Q22 35 25 40" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M32 15 Q35 25 33 35" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 37 Q15 50 35 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+
+        l_hand: `<svg viewBox="0 0 50 50">
+            <path d="M35 0 L35 15 Q35 25 40 30 L45 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M30 15 L30 30 L35 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M25 0 L25 15 Q25 25 22 30 L20 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M30 25 Q28 35 25 40" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M18 15 Q15 25 17 35" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+            <path d="M47 37 Q35 50 15 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+
+        l_upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 Q12 20 15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M35 0 Q32 20 30 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="12" y1="48" x2="33" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+
+        r_upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 Q18 20 20 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M35 0 Q38 20 35 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="17" y1="48" x2="38" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+
+        l_lower_leg: `<svg viewBox="0 0 50 50">
+            <line x1="12" y1="2" x2="33" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M15 0 Q13 25 15 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M30 0 Q28 25 28 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        r_lower_leg: `<svg viewBox="0 0 50 50">
+            <line x1="17" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M20 0 Q22 25 22 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M35 0 Q37 25 35 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+
+        l_foot: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 L15 25 Q15 40 8 45 Q5 48 10 48 L40 48 Q42 48 40 42 Q35 30 28 25 L28 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="15" cy="45" r="2" fill="${c}"/>
+            <circle cx="22" cy="46" r="2" fill="${c}"/>
+            <circle cx="29" cy="46" r="2" fill="${c}"/>
+        </svg>`,
+
+        r_foot: `<svg viewBox="0 0 50 50">
+            <path d="M35 0 L35 25 Q35 40 42 45 Q45 48 40 48 L10 48 Q8 48 10 42 Q15 30 22 25 L22 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="35" cy="45" r="2" fill="${c}"/>
+            <circle cx="28" cy="46" r="2" fill="${c}"/>
+            <circle cx="21" cy="46" r="2" fill="${c}"/>
+        </svg>`,
+
+        // Generic types (for card display - no left/right distinction)
+        upper_arm: `<svg viewBox="0 0 50 50">
+            <path d="M50 10 L30 10 Q15 10 15 25 L15 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M50 25 L35 25 Q25 25 25 35 L25 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="10" y1="48" x2="32" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+        lower_arm: `<svg viewBox="0 0 50 50">
+            <line x1="10" y1="2" x2="32" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <line x1="15" y1="0" x2="15" y2="50" stroke="${c}" stroke-width="${sw}"/>
+            <line x1="25" y1="0" x2="25" y2="50" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+        hand: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 L15 15 Q15 25 10 30 L5 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 15 L20 30 L15 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M25 0 L25 15 Q25 25 28 30 L30 35" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 25 Q22 35 25 40" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M32 15 Q35 25 33 35" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 37 Q15 50 35 37" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+        upper_leg: `<svg viewBox="0 0 50 50">
+            <path d="M15 0 Q18 20 20 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <path d="M35 0 Q38 20 35 50" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>
+            <line x1="17" y1="48" x2="38" y2="48" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+        </svg>`,
+        lower_leg: `<svg viewBox="0 0 50 50">
+            <line x1="17" y1="2" x2="38" y2="2" stroke="${c}" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M20 0 Q22 25 22 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+            <path d="M35 0 Q37 25 35 50" fill="none" stroke="${c}" stroke-width="${sw}"/>
+        </svg>`,
+        foot: `<svg viewBox="0 0 50 50">
+            <path d="M35 0 L35 25 Q35 40 42 45 Q45 48 40 48 L10 48 Q8 48 10 42 Q15 30 22 25 L22 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="35" cy="45" r="2" fill="${c}"/>
+            <circle cx="28" cy="46" r="2" fill="${c}"/>
+            <circle cx="21" cy="46" r="2" fill="${c}"/>
+        </svg>`
+    };
+
+    return parts[partType] || `<svg viewBox="0 0 50 50"><text x="25" y="30" text-anchor="middle" font-size="8" fill="#999">${partType}</text></svg>`;
+}
+
+function getJokerSVG() {
+    return `<svg viewBox="0 0 50 50">
+        <polygon points="25,2 30,18 48,18 34,28 39,45 25,35 11,45 16,28 2,18 20,18" fill="none" stroke="#ffd700" stroke-width="3"/>
+        <text x="25" y="28" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffd700">J</text>
+    </svg>`;
+}
+
+// ─── Responsive Card Sizing ───
+function updateCardSize() {
+    const maxWidth = Math.min(window.innerWidth - 40, 700);
+    const calcSize = Math.floor(maxWidth / gridCols) - 6;
+    const cardSize = Math.min(75, Math.max(36, calcSize));
+    document.documentElement.style.setProperty('--card-size', cardSize + 'px');
+
+    const bodyCell = Math.min(55, Math.max(32, Math.floor(cardSize * 0.75)));
+    document.documentElement.style.setProperty('--body-cell', bodyCell + 'px');
+}
+
+window.addEventListener('resize', updateCardSize);
+
+// ─── Rules Modal ───
+function openRules() {
+    rulesModal.style.display = 'block';
+}
+
+function closeRules() {
+    rulesModal.style.display = 'none';
+    localStorage.setItem('frankenstein_rules_v1', 'true');
+}
+
+window.onclick = (e) => {
+    if (e.target === rulesModal) closeRules();
+};
+
+// ─── Reset ───
+function confirmReset() {
+    if (confirm('Start a new game? Current progress will be lost.')) {
+        backToSetup();
+    }
+}
+
+function backToSetup() {
+    gameState = 'SETUP';
+    isSoloMode = false;
+    gameScreen.style.display = 'none';
+    setupScreen.style.display = 'block';
+    victoryOverlay.classList.remove('show');
+    jokerModal.classList.remove('show');
+}
+
+// ─── CSV Export ───
+function logAction(action, card) {
+    sessionLog.push({
+        gameId: currentGameId,
+        turn: turnCounter,
+        player: currentPlayer + 1,
+        action,
+        cardPart: card ? card.partType : '',
+        cardColor: card ? card.color : '',
+        timestamp: new Date().toISOString()
+    });
+}
+
+function downloadCSV() {
+    if (sessionLog.length === 0) {
+        alert('No game data to export.');
+        return;
+    }
+    let csv = 'Game_ID,Turn,Player,Action,Part,Color,Timestamp\n';
+    for (const r of sessionLog) {
+        csv += `${r.gameId},${r.turn},${r.player},${r.action},${r.cardPart},${r.cardColor},${r.timestamp}\n`;
+    }
+
+    // Save to server
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({game: 'frankenstein', csv: csv})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) console.log('CSV saved on server: ' + d.filename);
+        else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+    // Local download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    a.download = `frankenstein_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ─── Keyboard Shortcuts ───
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undoLastFlip();
+    }
+});
+
+// ─── Init ───
+if (!localStorage.getItem('frankenstein_rules_v1')) {
+    openRules();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parados &mdash; Board Games by Walter Prossnitz</title>
+<style>
+:root {
+    --bg: #263238;
+    --card-bg: #37474f;
+    --card-hover: #455a64;
+    --accent: #ffd700;
+    --text: #eceff1;
+    --text-dim: #90a4ae;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    padding: 30px 10px 20px;
+}
+
+header h1 {
+    font-size: 2.8em;
+    color: var(--accent);
+    text-shadow: 0 2px 12px rgba(255, 215, 0, 0.3);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+}
+
+header p {
+    color: var(--text-dim);
+    font-size: 1.1em;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 10px;
+}
+
+.game-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.game-card h2 {
+    font-size: 1.4em;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.game-card .players {
+    font-size: 0.85em;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+}
+
+.game-card .desc {
+    color: #cfd8dc;
+    font-size: 0.95em;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+.game-card .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.play-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95em;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.15s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+
+.play-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.btn-green { background: #43a047; color: white; }
+.btn-green:hover { background: #388e3c; }
+.btn-orange { background: #ff9800; color: #263238; }
+.btn-orange:hover { background: #f57c00; }
+.btn-blue { background: #1e88e5; color: white; }
+.btn-blue:hover { background: #1565c0; }
+.btn-purple { background: #8e24aa; color: white; }
+.btn-purple:hover { background: #6a1b9a; }
+.btn-red { background: #e53935; color: white; }
+.btn-red:hover { background: #c62828; }
+.btn-small {
+    padding: 7px 14px;
+    font-size: 0.82em;
+}
+
+footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-top: 40px;
+    padding: 20px 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 500px) {
+    header h1 { font-size: 2em; }
+    .games-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>PARADOS</h1>
+    <p style="font-size:1.3em; color:var(--accent); letter-spacing:2px; margin-bottom:4px;">think ahead!</p>
+    <p>Board Games by Walter Prossnitz</p>
+</header>
+
+<div class="games-grid">
+
+    <div class="game-card">
+        <h2>DUK &mdash; The Impatient Kangaroo</h2>
+        <div class="players">1 Player &middot; Puzzle</div>
+        <div class="desc">
+            The plan: to create a 21st century successor to the super-hit solo puzzle game Rushhour.
+            Many players think that hopping through the outback collecting goodies is more fun than
+            trying to shove your way through traffic? Another advantage &mdash; thanks to the program,
+            there's all kinds of different ways to play:-)
+        </div>
+        <div class="buttons">
+            <a href="kangaroo.html" class="play-btn btn-green" target="_blank">Deutsch</a>
+            <a href="kangaroo_en.html" class="play-btn btn-blue btn-small" target="_blank">English</a>
+            <a href="kangaroo_jp.html" class="play-btn btn-orange btn-small" target="_blank">&#x65E5;&#x672C;&#x8A9E;</a>
+            <a href="kangaroo_cn.html" class="play-btn btn-red btn-small" target="_blank">&#x4E2D;&#x6587;</a>
+            <a href="kangaroo_ua.html" class="play-btn btn-purple btn-small" target="_blank">&#x423;&#x43A;&#x440;</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Capovolto</h2>
+        <div class="players">2 Players &middot; Strategy</div>
+        <div class="desc">
+            The classic game of Othello &mdash; on steroids! Add in area control on a random board,
+            numbered discs and a flipping mechanism that is light years ahead of the original,
+            inviting all kinds of devious strategies, and designed to make your brain go all sorts
+            of places it hasn't been before:-)
+        </div>
+        <div class="buttons">
+            <a href="capovolto.html" class="play-btn btn-green" target="_blank">Play</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Divided Loyalties</h2>
+        <div class="players">2 Players &middot; Strategy</div>
+        <div class="desc">
+            Many turns are offensive AND defensive and each one may have long term consequences!
+            It's connect 4, but with 6 colours. Your colour is always loyal to you, your opponent's
+            never is... and the other 4? Sometimes they are, and sometimes they aren't. Tiles can
+            even be loyal in one direction, AND disloyal in another! Not for the faint of heart....
+        </div>
+        <div class="buttons">
+            <a href="divided_loyalties.html" class="play-btn btn-green" target="_blank">Play</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Democracy in Space</h2>
+        <div class="players">2+ Players &middot; Remote Multiplayer</div>
+        <div class="desc">
+            Based on the concept of the US Electoral College (parliamentary systems also have it).
+            Area majority culled to its essence. A gentle opening suddenly transforms into a nail
+            biting race to the finish! The tie breaker condition needs to be kept in mind, but you
+            won't know for a while if you'll need it this time....
+        </div>
+        <div class="buttons">
+            <a href="democracy_remote.html" class="play-btn btn-green" target="_blank">Play</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Frankenstein &mdash; Where's that green elbow?</h2>
+        <div class="players">1&ndash;4 Players &middot; Memory</div>
+        <div class="desc">
+            This is even shorter and sweeter than Rainbow. For 1&ndash;4 players,
+            it's a "frankly memorable" game (you'll get the pun when you play it).
+            Like most of its colleagues here at Think Ahead, it is so much easier to play online.
+            Age recommendation &mdash; 7 years and up. Don't be surprised if the youngest player wins:-))
+        </div>
+        <div class="buttons">
+            <a href="frankenstein.html" class="play-btn btn-green" target="_blank">Play</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>Rainbow Blackjack</h2>
+        <div class="players">2 Players &middot; Strategy</div>
+        <div class="desc">
+            Colorful 21! Two players build 6 colored towers, trying to get as close to 21 as
+            possible &mdash; like Blackjack, but with colored stones. This game is easier to play
+            than to describe:-) Arrange your stones in a grid, pick rows wisely, and announce
+            just enough to keep your opponent guessing. Gray jokers add a devious twist...
+        </div>
+        <div class="buttons">
+            <a href="rainbow_blackjack.html" class="play-btn btn-green" target="_blank">Deutsch</a>
+            <a href="rainbow_blackjack_en.html" class="play-btn btn-blue btn-small" target="_blank">English</a>
+            <a href="rainbow_blackjack_remote.html" class="play-btn btn-small" target="_blank" style="background:#ff9800;color:#333;">Remote</a>
+        </div>
+    </div>
+
+    <div class="game-card">
+        <h2>MAKA LAINA</h2>
+        <div class="players">2 Players &middot; Strategy</div>
+        <div class="desc">
+            It's the first turn and the battle is on! No time to get warmed up in MakaLaina:-)
+            You need to be planning from the get go, evolving your long term strategy &mdash;
+            but staying flexible. The constant influx of new discs means that even a small shift
+            can have consequences...
+        </div>
+        <div class="buttons">
+            <a href="makalaina.html" class="play-btn btn-green" target="_blank">Local</a>
+            <a href="makalaina_remote.html" class="play-btn btn-blue" target="_blank">Remote</a>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <a href="https://github.com/zdavatz/parados" target="_blank">GitHub</a> &middot;
+    All games run entirely in your browser &mdash; no accounts, no downloads.
+</footer>
+
+</body>
+</html>

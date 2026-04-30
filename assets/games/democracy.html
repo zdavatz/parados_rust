@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Democracy in Space</title>
+    <style>
+        :root { --bg: #0b0e14; --p1: #e94560; --p2: #00d2ff; --accent: #f0a500; --panel: #16213e; --warn: #ffcc00; --cs: 45px; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        #top-bar { background: var(--panel); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--accent); width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; }
+        .main-container { display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; }
+        #board-container { position: relative; }
+        #board { display: grid; grid-template-columns: repeat(12, var(--cs)); grid-template-rows: repeat(12, var(--cs)); background: #222; gap: 1px; border: 3px solid #444; position: relative; z-index: 2; }
+        #laser-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 3; }
+        .cell { width: var(--cs); height: var(--cs); background: #1a1f29; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
+        .cell.rim { background: #12172a; }
+        .valid-target { background: rgba(0, 255, 100, 0.3) !important; box-shadow: inset 0 0 10px rgba(0, 255, 100, 0.4); border: 1px solid #0f0; }
+        .satellite { width: calc(var(--cs) - 5px); height: calc(var(--cs) - 5px); position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .wings { position: absolute; width: calc(var(--cs) - 9px); height: calc(var(--cs) * 0.27); background: rgba(255,255,255,0.15); border-radius: 2px; }
+        .connected .wings { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+        .core { width: calc(var(--cs) * 0.49); height: calc(var(--cs) * 0.49); border-radius: 4px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: calc(var(--cs) * 0.19); z-index: 11; }
+        .p1 .core { background: var(--p1); color: white; }
+        .p2 .core { background: var(--p2); color: black; }
+        .connected .core { border-radius: 50%; border: 2px solid gold; }
+        .selected .core { outline: 2px solid white; transform: scale(1.15); }
+        #sidebar { width: 100%; max-width: 370px; background: var(--panel); padding: 12px; border-radius: 8px; min-height: 200px; display: flex; flex-direction: column; border: 1px solid #444; }
+        #score-panel { background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; font-size: 0.85rem; }
+        #colony-list { font-size: 0.8rem; max-height: 120px; overflow-y: auto; margin-top: 5px; }
+        .colony-entry { padding: 3px 0; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+        .colony-owner-1 { color: var(--p1); }
+        .colony-owner-2 { color: var(--p2); }
+        #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 0.82rem; background: #0b0e14; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #333; min-height: 80px; }
+        .btn { padding: 8px 12px; cursor: pointer; background: #333; border: 1px solid #555; color: white; border-radius: 4px; font-size: 0.85rem; }
+        #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto; }
+        .modal-content { background: #1a1f29; border: 2px solid var(--accent); padding: 20px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 90vh; overflow-y: auto; line-height: 1.5; font-size: 0.9rem; margin: 20px; }
+        .modal-content h3 { color: var(--accent); margin: 12px 0 6px; }
+        #rule-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1a1f29; border: 2px solid #e94560; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 999; display: none; max-width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        #rule-toast .rule-icon { font-size: 1.1rem; margin-right: 6px; }
+        #rule-toast .rule-ref { color: var(--accent); font-size: 0.75rem; display: block; margin-top: 4px; }
+        .displace-target { background: rgba(255, 165, 0, 0.35) !important; box-shadow: inset 0 0 10px rgba(255, 165, 0, 0.5); border: 1px solid orange; }
+        .displace-source { box-shadow: 0 0 12px orange !important; }
+        #displace-banner { display: none; background: linear-gradient(90deg, #1a1f29, #2a1500, #1a1f29); border: 1px solid orange; color: orange; padding: 6px 16px; border-radius: 6px; font-size: 0.85rem; text-align: center; margin-bottom: 6px; width: 100%; max-width: 960px; }
+        #turn-bar { margin-bottom: 8px; width: 100%; max-width: 960px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.9rem; }
+        .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; }
+        .star::before, .star::after { content: ''; position: absolute; border-radius: 50%; }
+        .star::before { width: 4px; height: 1px; top: 0.5px; left: -1px; }
+        .star::after { width: 1px; height: 4px; top: -1px; left: 0.5px; }
+        .star-white { background: #ffffff; }
+        .star-white::before, .star-white::after { background: #ffffff; }
+        .star-yellow { background: #ffdd44; }
+        .star-yellow::before, .star-yellow::after { background: #ffdd44; }
+        .star-blue { background: #88ccff; }
+        .star-blue::before, .star-blue::after { background: #88ccff; }
+        .star-tl { top: 3px; left: 3px; }
+        .star-tr { top: 3px; right: 3px; }
+        .star-bl { bottom: 3px; left: 3px; }
+        .star-br { bottom: 3px; right: 3px; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.7); } 50% { opacity: 0.9; transform: scale(1.05); } }
+        .star { animation: twinkle 10.4s ease-in-out infinite; }
+        .star-tl { animation-delay: 0s; }
+        .star-tr { animation-delay: 2.6s; }
+        .star-bl { animation-delay: 5.2s; }
+        .star-br { animation-delay: 7.8s; }
+
+        @media (max-width: 600px) {
+            .main-container { flex-direction: column; align-items: center; }
+            #sidebar { max-width: 100%; }
+            #top-bar { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="rules-modal">
+    <div class="modal-content">
+        <h2 style="color:var(--accent)">DEMOCRACY IN SPACE — Regeln</h2>
+        <h3>Aufbau</h3>
+        <p>Jeder Spieler hat 12 Satelliten (Werte 1–4, je 3 Stück). Spieler 1 (rot) platziert auf Nord- und Süd-Rand, Spieler 2 (blau) auf Ost- und West-Rand. Je 6 Satelliten zufällig auf die mittleren 6 Felder jedes Randes. Werte 1 und 2 werden ein Feld nach innen verschoben.</p>
+        <h3>Bewegung (Regel 5)</h3>
+        <p>Satelliten bewegen sich in 8 Richtungen. Sie können über andere springen, aber nicht auf besetzte Felder. <b>Normaler Zug:</b> bis zu [Wert] Felder. <b>Verbindungszug:</b> exakt [Wert] Felder.</p>
+        <h3>Verbindungen (Regel 4, 10)</h3>
+        <p>Orthogonal benachbarte verschiedenfarbige Satelliten sind IMMER verbunden und fixiert.</p>
+        <h3>Rand-Regel (Regel 4)</h3>
+        <p>Verbindungen sind erst erlaubt, wenn mindestens ein Rand komplett frei von Satelliten ist.</p>
+        <h3>Kolonien (Regel 6–8)</h3>
+        <p>3+ verbundene Satelliten = Kolonie. Höherer Gesamtwert kontrolliert. Max 6 pro Kolonie (Krone). Zwei Kolonien können nie verschmelzen.</p>
+        <h3>Regel 11 — Verschiebung</h3>
+        <p>Du darfst deinen Satellit neben einem eigenen verbundenen platzieren — auch wenn dort ein unverbundener gegnerischer Satellit steht, der eine Kolonie (3+) erweitern könnte. In diesem Fall verschiebst du den gegnerischen Satellit auf ein freies Feld (max 2 Felder, gerade Linie) und nimmst seinen Platz ein. <b>Orange markierte Felder</b> zeigen Verschiebungs-Möglichkeiten.</p>
+        <h3>Regel 12</h3>
+        <p>Zwei verbundene gleichfarbige Satelliten dürfen nicht orthogonal benachbart sein.</p>
+        <h3>Spielende (Regel 13–14)</h3>
+        <p>Wenn ein Spieler alle 12 verbunden hat → andere bekommt 3 Extra-Züge. Sofort Ende bei 23 verbundenen Satelliten.</p>
+        <h3>Wertung (Regel 15–16)</h3>
+        <p>Meiste Kolonien kontrolliert gewinnt. Tiebreak: wer die Kolonie mit dem niedrigsten Gesamtwert kontrolliert.</p>
+        <button class="btn" onclick="toggleRules()" style="margin-top:10px;">Schließen</button>
+    </div>
+</div>
+
+<div id="top-bar">
+    <div><strong>Modus:</strong> <span style="color:#0f0;">Lokal (2 Spieler)</span></div>
+    <button class="btn" onclick="toggleRules()">REGELN</button>
+</div>
+
+<div id="turn-bar">
+    <span id="turn-txt" style="font-weight:bold;">Spieler Rot am Zug</span>
+    <span id="conn-count">Verbunden: 0 / 23</span>
+    <span id="grace-txt" style="color: var(--warn); font-size:0.85rem;"></span>
+</div>
+
+<div id="displace-banner">⚡ Verschiebe den gegnerischen Satelliten (max 2 Felder, gerade Linie)</div>
+
+<div id="rule-toast"></div>
+
+<div class="main-container">
+    <div id="board-container">
+        <canvas id="laser-canvas"></canvas>
+        <div id="board"></div>
+    </div>
+    <div id="sidebar">
+        <div id="score-panel">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span><b style="color:var(--p1)">Rot:</b> <span id="p1-score">0</span> Kolonien</span>
+                <span><b style="color:var(--p2)">Blau:</b> <span id="p2-score">0</span> Kolonien</span>
+            </div>
+            <div id="colony-list"></div>
+        </div>
+        <div id="chat-messages"></div>
+    </div>
+</div>
+
+<script>
+    const SIZE = 12;
+    const ORTHO = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+    let board = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
+    let currentPlayer = 1;
+    let selected = null;
+    let gameEnded = false;
+    let graceMovesLeft = -1;
+    let firstPlayerDone = 0;
+    let colonies = [];
+    let nextColonyId = 1;
+
+    // Displacement state (Rule 11)
+    let displaceState = null;
+
+    // ============================================================
+    // RIM LOGIC (Rule 4)
+    // ============================================================
+    function isOnRim(r, c) {
+        return r === 0 || r === 11 || c === 0 || c === 11;
+    }
+
+    function anyRimCompletelyFree() {
+        const rims = {
+            N: [], S: [], W: [], E: []
+        };
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                if (!board[r][c]) continue;
+                if (r === 0) rims.N.push([r, c]);
+                if (r === 11) rims.S.push([r, c]);
+                if (c === 0) rims.W.push([r, c]);
+                if (c === 11) rims.E.push([r, c]);
+            }
+        }
+        return rims.N.length === 0 || rims.S.length === 0 ||
+               rims.W.length === 0 || rims.E.length === 0;
+    }
+
+    // ============================================================
+    // COLONY LOGIC (Rules 6-8)
+    // ============================================================
+    function getColonyAt(r, c) {
+        return colonies.find(col => col.cells.some(([cr, cc]) => cr === r && cc === c)) || null;
+    }
+
+    function rebuildColonies() {
+        const visited = new Set();
+        const newColonies = [];
+
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                const key = `${r},${c}`;
+                if (!board[r][c] || !board[r][c].connected || visited.has(key)) continue;
+
+                const group = [];
+                const queue = [[r, c]];
+                visited.add(key);
+
+                while (queue.length > 0) {
+                    const [cr, cc] = queue.shift();
+                    group.push([cr, cc]);
+                    for (const [or, oc] of ORTHO) {
+                        const nr = cr + or, nc = cc + oc;
+                        const nk = `${nr},${nc}`;
+                        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE &&
+                            board[nr][nc] && board[nr][nc].connected && !visited.has(nk)) {
+                            visited.add(nk);
+                            queue.push([nr, nc]);
+                        }
+                    }
+                }
+
+                if (group.length >= 3) {
+                    let v1 = 0, v2 = 0;
+                    group.forEach(([gr, gc]) => {
+                        if (board[gr][gc].player === 1) v1 += board[gr][gc].val;
+                        else v2 += board[gr][gc].val;
+                    });
+
+                    const existing = colonies.find(col =>
+                        col.cells.some(([cr, cc]) => group.some(([gr, gc]) => gr === cr && gc === cc))
+                    );
+
+                    const crowned = group.length >= 6;
+                    let owner;
+                    if (v1 > v2) owner = 1;
+                    else if (v2 > v1) owner = 2;
+                    else {
+                        const justMoved = currentPlayer;
+                        owner = existing ? existing.owner : justMoved;
+                    }
+
+                    newColonies.push({
+                        id: existing ? existing.id : nextColonyId++,
+                        cells: group, owner, crowned, v1, v2,
+                        total: v1 + v2
+                    });
+
+                    const colId = existing ? existing.id : nextColonyId - 1;
+                    const ownerName = owner === 1 ? 'Rot' : 'Blau';
+                    const isNew = !existing;
+                    if (isNew) {
+                        logChat(0, `Neue Kolonie #${colId}: ${group.length} Sat., Rot=${v1} Blau=${v2} → ${ownerName} gewinnt`);
+                    } else if (existing.owner !== owner) {
+                        logChat(0, `Kolonie #${colId} wechselt! Rot=${v1} Blau=${v2} → jetzt ${ownerName}`);
+                    }
+                }
+            }
+        }
+        colonies = newColonies;
+    }
+
+    // ============================================================
+    // MOVE VALIDATION
+    // ============================================================
+    function wouldConnect(tempBoard, dr, dc, player) {
+        for (const [or, oc] of ORTHO) {
+            const nr = dr + or, nc = dc + oc;
+            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && tempBoard[nr][nc]) {
+                if (tempBoard[nr][nc].player !== player) return true;
+            }
+        }
+        return false;
+    }
+
+    function wouldViolateRule12(tempBoard, dr, dc, player) {
+        for (const [or, oc] of ORTHO) {
+            const nr = dr + or, nc = dc + oc;
+            if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) continue;
+            if (!tempBoard[nr][nc]) continue;
+            if (tempBoard[nr][nc].player === player && tempBoard[nr][nc].connected) {
+                return true;
+            }
+        }
+
+        for (const [or, oc] of ORTHO) {
+            const nr = dr + or, nc = dc + oc;
+            if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) continue;
+            if (!tempBoard[nr][nc] || tempBoard[nr][nc].player === player) continue;
+            for (const [or2, oc2] of ORTHO) {
+                const nr2 = nr + or2, nc2 = nc + oc2;
+                if (nr2 < 0 || nr2 >= SIZE || nc2 < 0 || nc2 >= SIZE) continue;
+                if (nr2 === dr && nc2 === dc) continue;
+                if (tempBoard[nr2][nc2] && tempBoard[nr2][nc2].player !== player && tempBoard[nr2][nc2].connected) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    // ============================================================
+    // MOVE VALIDATION
+    // ============================================================, or a { reason, rule } object if invalid
+    function getMoveRejection(sr, sc, dr, dc) {
+        if (board[dr][dc]) return { reason: "Feld ist besetzt.", rule: "" };
+        const sat = board[sr][sc];
+        const dist = Math.max(Math.abs(dr - sr), Math.abs(dc - sc));
+
+        if (!(sr === dr || sc === dc || Math.abs(dr - sr) === Math.abs(dc - sc)))
+            return { reason: "Nur gerade Linien oder Diagonalen.", rule: "Regel 5a" };
+
+        const tempBoard = board.map(row => row.map(cell => cell ? {...cell} : null));
+        tempBoard[dr][dc] = { ...tempBoard[sr][sc] };
+        tempBoard[sr][sc] = null;
+
+        const willConnect = wouldConnect(tempBoard, dr, dc, sat.player);
+
+        if (willConnect) {
+            if (dist !== sat.val)
+                return { reason: `Verbindungszug muss exakt ${sat.val} Felder sein (nicht ${dist}).`, rule: "Regel 5c" };
+        } else {
+            if (dist > sat.val)
+                return { reason: `Dieser Satellit kann max. ${sat.val} Felder ziehen.`, rule: "Regel 5b" };
+        }
+
+        if (willConnect) {
+            if (!anyRimCompletelyFree()) {
+                let involvesRim = isOnRim(dr, dc);
+                if (!involvesRim) {
+                    for (const [or, oc] of ORTHO) {
+                        const nr = dr + or, nc = dc + oc;
+                        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && tempBoard[nr][nc]) {
+                            if (tempBoard[nr][nc].player !== sat.player && isOnRim(nr, nc)) {
+                                involvesRim = true; break;
+                            }
+                        }
+                    }
+                }
+                if (involvesRim)
+                    return { reason: "Verbindungen mit Rand-Satelliten erst wenn ein Rand komplett frei ist.", rule: "Regel 4" };
+            }
+
+            if (wouldViolateRule12(tempBoard, dr, dc, sat.player))
+                return { reason: "Zwei verbundene gleichfarbige Satelliten dürfen nicht orthogonal nebeneinander stehen.", rule: "Regel 12" };
+
+            const colonyViolation = getColonyViolationReason(tempBoard, dr, dc, sat.player);
+            if (colonyViolation) return colonyViolation;
+        }
+
+        return null;
+    }
+
+    function getColonyViolationReason(tempBoard, dr, dc, player) {
+        const neighborGroups = new Set();
+        const allNeighborCells = new Set();
+
+        for (const [or, oc] of ORTHO) {
+            const nr = dr + or, nc = dc + oc;
+            if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) continue;
+            if (!tempBoard[nr][nc] || !tempBoard[nr][nc].connected) continue;
+
+            const col = getColonyAt(nr, nc);
+            if (col) {
+                if (col.crowned)
+                    return { reason: `Diese Kolonie hat bereits 6 Satelliten (Maximum) und ist gekrönt.`, rule: "Regel 8a" };
+                neighborGroups.add(col.id);
+                col.cells.forEach(([cr, cc]) => allNeighborCells.add(`${cr},${cc}`));
+            } else {
+                allNeighborCells.add(`${nr},${nc}`);
+                for (const [or2, oc2] of ORTHO) {
+                    const pr = nr + or2, pc = nc + oc2;
+                    if (pr >= 0 && pr < SIZE && pc >= 0 && pc < SIZE && tempBoard[pr][pc] &&
+                        tempBoard[pr][pc].connected && tempBoard[pr][pc].player !== tempBoard[nr][nc].player) {
+                        allNeighborCells.add(`${pr},${pc}`);
+                    }
+                }
+            }
+        }
+
+        if (neighborGroups.size > 1)
+            return { reason: "Dieser Zug würde zwei Kolonien verschmelzen — das ist nicht erlaubt.", rule: "Regel 8b" };
+
+        if (allNeighborCells.size + 1 > 6)
+            return { reason: `Kolonie hätte ${allNeighborCells.size + 1} Satelliten — Maximum ist 6.`, rule: "Regel 8a" };
+
+        return null;
+    }
+
+    function isValidMove(sr, sc, dr, dc) {
+        return getMoveRejection(sr, sc, dr, dc) === null;
+    }
+
+    // ============================================================
+    // MOVE EXECUTION
+    // ============================================================
+    function executeMove(sr, sc, dr, dc) {
+        const sat = board[sr][sc];
+        const playerName = sat.player === 1 ? 'Rot' : 'Blau';
+        board[dr][dc] = sat;
+        board[sr][sc] = null;
+
+        let madeConnection = false;
+        const connectedWith = [];
+        for (const [or, oc] of ORTHO) {
+            const nr = dr + or, nc = dc + oc;
+            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc]) {
+                if (board[nr][nc].player !== sat.player) {
+                    board[dr][dc].connected = true;
+                    board[nr][nc].connected = true;
+                    madeConnection = true;
+                    connectedWith.push(`${board[nr][nc].player===1?'R':'B'}${board[nr][nc].val}`);
+                }
+            }
+        }
+
+        if (madeConnection) {
+            logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc}) ⚡ verbindet mit ${connectedWith.join(', ')}`);
+            rebuildColonies();
+        } else {
+            logChat(0, `${playerName} ${sat.val}: (${sr},${sc})→(${dr},${dc})`);
+        }
+        currentPlayer = (currentPlayer === 1) ? 2 : 1;
+    }
+
+    // ============================================================
+    // END GAME (Rules 13-14)
+    // ============================================================
+    function checkEndGame() {
+        const p1c = board.flat().filter(s => s && s.player === 1 && s.connected).length;
+        const p2c = board.flat().filter(s => s && s.player === 2 && s.connected).length;
+        const total = p1c + p2c;
+
+        if (total >= 23) {
+            gameEnded = true;
+            announceWinner();
+            return;
+        }
+
+        if (graceMovesLeft === -1) {
+            if (p1c === 12 && firstPlayerDone === 0) {
+                firstPlayerDone = 1;
+                graceMovesLeft = 3;
+                logChat(0, "Rot hat alle verbunden! Blau hat 3 Gnaden-Züge.");
+            } else if (p2c === 12 && firstPlayerDone === 0) {
+                firstPlayerDone = 2;
+                graceMovesLeft = 3;
+                logChat(0, "Blau hat alle verbunden! Rot hat 3 Gnaden-Züge.");
+            }
+        } else if (graceMovesLeft > 0) {
+            graceMovesLeft--;
+            if (graceMovesLeft <= 0) {
+                gameEnded = true;
+                announceWinner();
+            }
+        }
+    }
+
+    function announceWinner() {
+        const p1c = colonies.filter(c => c.owner === 1).length;
+        const p2c = colonies.filter(c => c.owner === 2).length;
+        let msg;
+        if (p1c > p2c) {
+            msg = `🏆 ROT gewinnt! (${p1c}–${p2c} Kolonien)`;
+        } else if (p2c > p1c) {
+            msg = `🏆 BLAU gewinnt! (${p2c}–${p1c} Kolonien)`;
+        } else {
+            const sorted = [...colonies].sort((a, b) => a.total - b.total);
+            if (sorted.length > 0) {
+                const lowest = sorted[0];
+                msg = `🏆 ${lowest.owner === 1 ? 'ROT' : 'BLAU'} gewinnt im Tiebreak! (Kolonie Wert ${lowest.total})`;
+            } else {
+                msg = "Unentschieden!";
+            }
+        }
+        logChat(0, msg);
+    }
+
+    // ============================================================
+    // RULE 11: DISPLACEMENT
+    // ============================================================
+    function canDisplace(sr, sc, targetR, targetC, player) {
+        const sat = board[sr][sc];
+        if (!sat || sat.player !== player || sat.connected) return false;
+
+        const target = board[targetR][targetC];
+        if (!target || target.player === player || target.connected) return false;
+
+        const dist = Math.max(Math.abs(targetR - sr), Math.abs(targetC - sc));
+        if (!(sr === targetR || sc === targetC || Math.abs(targetR - sr) === Math.abs(targetC - sc))) return false;
+        if (dist !== sat.val) return false;
+
+        let nextToOwnConnected = false;
+        for (const [or, oc] of ORTHO) {
+            const nr = targetR + or, nc = targetC + oc;
+            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc]) {
+                if (board[nr][nc].player === player && board[nr][nc].connected) {
+                    nextToOwnConnected = true;
+                    break;
+                }
+            }
+        }
+        if (!nextToOwnConnected) return false;
+
+        let nearColony = false;
+        for (const [or, oc] of ORTHO) {
+            const nr = targetR + or, nc = targetC + oc;
+            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc]) {
+                if (board[nr][nc].connected) {
+                    const col = getColonyAt(nr, nc);
+                    if (col && col.cells.length >= 3) {
+                        nearColony = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!nearColony) return false;
+
+        return getDisplacementTargets(targetR, targetC, target).length > 0;
+    }
+
+    function getDisplacementTargets(fromR, fromC, sat) {
+        const targets = [];
+        const maxDist = 2;
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+
+        for (const [ddr, ddc] of dirs) {
+            for (let step = 1; step <= maxDist; step++) {
+                const tr = fromR + ddr * step, tc = fromC + ddc * step;
+                if (tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE) break;
+                if (board[tr][tc]) break;
+                targets.push([tr, tc]);
+            }
+        }
+        return targets;
+    }
+
+    // ============================================================
+    // CLICK HANDLER
+    // ============================================================
+    function handleCellClick(r, c) {
+        if (gameEnded) return;
+
+        if (graceMovesLeft > 0 && currentPlayer === firstPlayerDone) {
+            currentPlayer = firstPlayerDone === 1 ? 2 : 1;
+        }
+
+        // PHASE 2: Displacement — choosing where to move the opponent satellite
+        if (displaceState) {
+            const ds = displaceState;
+            const targets = getDisplacementTargets(ds.opponentR, ds.opponentC, ds.opponentSat);
+            const isValidTarget = targets.some(([tr, tc]) => tr === r && tc === c);
+
+            if (isValidTarget) {
+                hideToast();
+                board[r][c] = ds.opponentSat;
+                board[ds.opponentR][ds.opponentC] = null;
+
+                const ourSat = board[ds.satR][ds.satC];
+                board[ds.opponentR][ds.opponentC] = ourSat;
+                board[ds.satR][ds.satC] = null;
+
+                let madeConnection = false;
+                for (const [or, oc] of ORTHO) {
+                    const nr = ds.opponentR + or, nc = ds.opponentC + oc;
+                    if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc]) {
+                        if (board[nr][nc].player !== ourSat.player) {
+                            board[ds.opponentR][ds.opponentC].connected = true;
+                            board[nr][nc].connected = true;
+                            madeConnection = true;
+                        }
+                    }
+                }
+
+                for (const [or, oc] of ORTHO) {
+                    const nr = r + or, nc = c + oc;
+                    if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc]) {
+                        if (board[nr][nc].player !== ds.opponentSat.player) {
+                            board[r][c].connected = true;
+                            board[nr][nc].connected = true;
+                            madeConnection = true;
+                        }
+                    }
+                }
+
+                if (madeConnection) rebuildColonies();
+                currentPlayer = (currentPlayer === 1) ? 2 : 1;
+                displaceState = null;
+                document.getElementById('displace-banner').style.display = 'none';
+                checkEndGame();
+                render();
+
+                logChat(0, `Satellit verschoben und Platz eingenommen! (Regel 11)`);
+            } else {
+                displaceState = null;
+                selected = null;
+                document.getElementById('displace-banner').style.display = 'none';
+                render();
+            }
+            return;
+        }
+
+        // PHASE 1: Normal selection and movement
+        if (selected) {
+            const rejection = getMoveRejection(selected.r, selected.c, r, c);
+            if (!rejection) {
+                hideToast();
+                executeMove(selected.r, selected.c, r, c);
+                selected = null;
+                checkEndGame();
+                render();
+            } else {
+                if (board[r][c] && canDisplace(selected.r, selected.c, r, c, currentPlayer)) {
+                    displaceState = {
+                        satR: selected.r, satC: selected.c,
+                        opponentR: r, opponentC: c,
+                        opponentSat: board[r][c]
+                    };
+                    selected = null;
+                    document.getElementById('displace-banner').style.display = 'block';
+                    render();
+                    highlightDisplacement(r, c);
+                    return;
+                }
+
+                const sat = board[selected.r][selected.c];
+                const dist = Math.max(Math.abs(r - selected.r), Math.abs(c - selected.c));
+                const onLine = selected.r === r || selected.c === c ||
+                    Math.abs(r - selected.r) === Math.abs(c - selected.c);
+
+                if (onLine && dist <= sat.val + 1) {
+                    showToast(rejection.reason, rejection.rule);
+                }
+                selected = null;
+                render();
+            }
+        } else if (board[r][c] && board[r][c].player === currentPlayer && !board[r][c].connected) {
+            hideToast();
+            selected = { r, c };
+            render();
+            highlightWithDisplacement(r, c, board[r][c].val);
+        }
+    }
+
+    function highlightWithDisplacement(r, c, val) {
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+        for (const [ddr, ddc] of dirs) {
+            for (let step = 1; step <= val; step++) {
+                const tr = r + ddr * step, tc = c + ddc * step;
+                if (tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE) break;
+                if (isValidMove(r, c, tr, tc)) {
+                    const cell = document.getElementById(`c-${tr}-${tc}`);
+                    if (cell) cell.classList.add('valid-target');
+                } else if (board[tr][tc] && canDisplace(r, c, tr, tc, currentPlayer)) {
+                    const cell = document.getElementById(`c-${tr}-${tc}`);
+                    if (cell) cell.classList.add('displace-target');
+                }
+            }
+        }
+    }
+
+    function highlightDisplacement(fromR, fromC) {
+        const sat = board[fromR][fromC];
+        const targets = getDisplacementTargets(fromR, fromC, sat);
+
+        const sourceCell = document.getElementById(`c-${fromR}-${fromC}`);
+        if (sourceCell) sourceCell.classList.add('displace-source');
+
+        for (const [tr, tc] of targets) {
+            const cell = document.getElementById(`c-${tr}-${tc}`);
+            if (cell) cell.classList.add('displace-target');
+        }
+    }
+
+    let toastTimeout = null;
+    function showToast(reason, rule) {
+        const el = document.getElementById('rule-toast');
+        el.innerHTML = `<span class="rule-icon">⚠️</span>${reason}${rule ? `<span class="rule-ref">${rule}</span>` : ''}`;
+        el.style.display = 'block';
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    function hideToast() {
+        const el = document.getElementById('rule-toast');
+        el.style.display = 'none';
+        if (toastTimeout) clearTimeout(toastTimeout);
+    }
+
+    // ============================================================
+    // SETUP (Rule 2)
+    // ============================================================
+    function setupGame() {
+        board = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
+        colonies = []; nextColonyId = 1;
+        currentPlayer = 1; gameEnded = false;
+        graceMovesLeft = -1; firstPlayerDone = 0;
+
+        const makeVals = () => [1,1,1,2,2,2,3,3,3,4,4,4].sort(() => Math.random() - 0.5);
+        const p1v = makeVals(), p2v = makeVals();
+
+        // P1: North (row 0, cols 3-8) and South (row 11, cols 3-8)
+        for (let i = 0; i < 6; i++) {
+            const v = p1v[i];
+            board[v <= 2 ? 1 : 0][i + 3] = { player: 1, val: v, connected: false };
+        }
+        for (let i = 0; i < 6; i++) {
+            const v = p1v[i + 6];
+            board[v <= 2 ? 10 : 11][i + 3] = { player: 1, val: v, connected: false };
+        }
+        // P2: West (rows 3-8, col 0) and East (rows 3-8, col 11)
+        for (let i = 0; i < 6; i++) {
+            const v = p2v[i];
+            board[i + 3][v <= 2 ? 1 : 0] = { player: 2, val: v, connected: false };
+        }
+        for (let i = 0; i < 6; i++) {
+            const v = p2v[i + 6];
+            board[i + 3][v <= 2 ? 10 : 11] = { player: 2, val: v, connected: false };
+        }
+    }
+
+    // ============================================================
+    // RENDER
+    // ============================================================
+    function getAllConnections(bs) {
+        const conns = [];
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                if (!bs[r][c]) continue;
+                for (const [dr, dc] of [[0,1],[1,0]]) {
+                    const nr = r+dr, nc = c+dc;
+                    if (nr < SIZE && nc < SIZE && bs[nr][nc] && bs[r][c].player !== bs[nr][nc].player
+                        && bs[r][c].connected && bs[nr][nc].connected) {
+                        conns.push([r,c,nr,nc]);
+                    }
+                }
+            }
+        }
+        return conns;
+    }
+
+    function render() {
+        const b = document.getElementById('board'); b.innerHTML = '';
+        let totalConnected = 0;
+        const connectionPairs = getAllConnections(board);
+
+        board.forEach((row, r) => row.forEach((sat, c) => {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            if (isOnRim(r, c)) cell.classList.add('rim');
+            cell.id = `c-${r}-${c}`;
+            cell.onclick = () => handleCellClick(r, c);
+            const sc = ['star-white','star-yellow','star-blue'];
+            const rs = () => sc[Math.floor(Math.random()*3)];
+            cell.innerHTML = `<span class="star star-tl ${rs()}"></span><span class="star star-tr ${rs()}"></span><span class="star star-bl ${rs()}"></span><span class="star star-br ${rs()}"></span>`;
+            if (sat) {
+                if (sat.connected) totalConnected++;
+                const el = document.createElement('div');
+                el.className = `satellite p${sat.player} ${sat.connected?'connected':''} ${selected?.r===r&&selected?.c===c?'selected':''}`;
+                el.innerHTML = `<div class="wings"></div><div class="core">${sat.val}</div>`;
+                cell.appendChild(el);
+            }
+            b.appendChild(cell);
+        }));
+
+        drawConnections(connectionPairs);
+        renderScore();
+
+        document.getElementById('conn-count').innerText = `Verbunden: ${totalConnected} / 23`;
+        document.getElementById('turn-txt').innerText = gameEnded
+            ? "🔒 SPIEL BEENDET" : `Spieler ${currentPlayer===1?'Rot':'Blau'} am Zug`;
+        document.getElementById('grace-txt').innerText =
+            graceMovesLeft > 0 ? `⚡ ${graceMovesLeft} Gnaden-Züge` : '';
+    }
+
+    function renderScore() {
+        const p1c = colonies.filter(c => c.owner === 1).length;
+        const p2c = colonies.filter(c => c.owner === 2).length;
+        document.getElementById('p1-score').innerText = p1c;
+        document.getElementById('p2-score').innerText = p2c;
+
+        const list = document.getElementById('colony-list');
+        list.innerHTML = '';
+        colonies.forEach(col => {
+            const div = document.createElement('div');
+            div.className = 'colony-entry';
+            const oc = col.owner === 1 ? 'colony-owner-1' : 'colony-owner-2';
+            div.innerHTML = `<span>Kolonie #${col.id} (${col.cells.length} Sat.)${col.crowned?' 👑':''}</span>
+                <span>R:${col.v1} B:${col.v2} → <span class="${oc}">${col.owner===1?'Rot':'Blau'}</span></span>`;
+            list.appendChild(div);
+        });
+    }
+
+    function drawConnections(pairs) {
+        const canvas = document.getElementById('laser-canvas');
+        const boardEl = document.getElementById('board');
+        canvas.width = boardEl.offsetWidth;
+        canvas.height = boardEl.offsetHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cs')) + 1;
+
+        for (const [r1, c1, r2, c2] of pairs) {
+            const x1 = c1 * cs + cs / 2;
+            const y1 = r1 * cs + cs / 2;
+            const x2 = c2 * cs + cs / 2;
+            const y2 = r2 * cs + cs / 2;
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            const isHorizontal = r1 === r2;
+
+            ctx.save();
+
+            ctx.strokeStyle = '#f0a500';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#f0a500';
+            ctx.shadowBlur = 8;
+            ctx.globalAlpha = 0.9;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.7;
+            ctx.strokeStyle = '#f0a500';
+            const railOffset = 5;
+            if (isHorizontal) {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1 - railOffset);
+                ctx.lineTo(x2, y2 - railOffset);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x1, y1 + railOffset);
+                ctx.lineTo(x2, y2 + railOffset);
+                ctx.stroke();
+                ctx.globalAlpha = 0.4;
+                const steps = 4;
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const sx = x1 + (x2 - x1) * t;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, midY - railOffset);
+                    ctx.lineTo(sx, midY + railOffset);
+                    ctx.stroke();
+                }
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(x1 - railOffset, y1);
+                ctx.lineTo(x2 - railOffset, y2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x1 + railOffset, y1);
+                ctx.lineTo(x2 + railOffset, y2);
+                ctx.stroke();
+                ctx.globalAlpha = 0.4;
+                const steps = 4;
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const sy = y1 + (y2 - y1) * t;
+                    ctx.beginPath();
+                    ctx.moveTo(midX - railOffset, sy);
+                    ctx.lineTo(midX + railOffset, sy);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = '#f0a500';
+            ctx.shadowColor = '#f0a500';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(x1, y1, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x2, y2, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        colonies.forEach(col => {
+            let cx = 0, cy = 0;
+            col.cells.forEach(([r, c]) => { cx += c; cy += r; });
+            cx = (cx / col.cells.length) * cs + cs / 2;
+            cy = (cy / col.cells.length) * cs + cs / 2;
+
+            const centerR = Math.round(cy / cs - 0.5);
+            const centerC = Math.round(cx / cs - 0.5);
+            let markerX = cx, markerY = cy;
+            let foundEmpty = false;
+
+            for (let radius = 0; radius <= 2 && !foundEmpty; radius++) {
+                for (let dr = -radius; dr <= radius && !foundEmpty; dr++) {
+                    for (let dc = -radius; dc <= radius && !foundEmpty; dc++) {
+                        if (radius > 0 && Math.abs(dr) < radius && Math.abs(dc) < radius) continue;
+                        const tr = centerR + dr, tc = centerC + dc;
+                        if (tr >= 0 && tr < SIZE && tc >= 0 && tc < SIZE && !board[tr][tc]) {
+                            markerX = tc * cs + cs / 2;
+                            markerY = tr * cs + cs / 2;
+                            foundEmpty = true;
+                        }
+                    }
+                }
+            }
+
+            if (!foundEmpty) {
+                markerY -= 20;
+            }
+
+            const color = col.owner === 1 ? '#e94560' : '#00d2ff';
+            const label = `${col.v1 + col.v2}`;
+
+            ctx.save();
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 6;
+
+            ctx.beginPath();
+            ctx.arc(markerX, markerY, 11, 0, Math.PI * 2);
+            ctx.fillStyle = '#0b0e14';
+            ctx.globalAlpha = 0.9;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (col.crowned) {
+                ctx.strokeStyle = 'gold';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 10px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, markerX, markerY);
+
+            ctx.restore();
+        });
+    }
+
+    // ============================================================
+    // LOG
+    // ============================================================
+    function logChat(role, msg) {
+        const box = document.getElementById('chat-messages');
+        const name = role===0?"SYS":(role===1?"ROT":"BLAU");
+        const color = role===1?"#e94560":(role===2?"#00d2ff":"#ffcc00");
+        box.innerHTML += `<div><span style="color:${color};font-weight:bold;">${name}:</span> ${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function toggleRules() {
+        const m = document.getElementById('rules-modal');
+        m.style.display = (m.style.display==='flex')?'none':'flex';
+    }
+
+    function calcCellSize() {
+        const vw = window.innerWidth - 28;
+        const vh = window.innerHeight - 120;
+        const maxByWidth = Math.floor((vw - 11) / 12);
+        const maxByHeight = Math.floor((vh - 11) / 12);
+        const cs = Math.max(22, Math.min(maxByWidth, maxByHeight, 45));
+        document.documentElement.style.setProperty('--cs', cs + 'px');
+    }
+    calcCellSize();
+    window.addEventListener('resize', () => { calcCellSize(); render(); });
+
+    setupGame();
+    render();
+    logChat(0, "Lokaler 2-Spieler-Modus.");
+</script>
+</body>
+</html>

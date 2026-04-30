@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Application identifier (must match the provisioning profile).
+         The APPLE_TEAM_ID prefix is substituted by the release
+         workflow before codesign runs. -->
+    <key>com.apple.application-identifier</key>
+    <string>__APPLE_TEAM_ID__.com.ywesee.parados</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>__APPLE_TEAM_ID__</string>
+
+    <!-- App Sandbox: required for Mac App Store. -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+
+    <!-- WKWebView's JS engine needs JIT inside the sandbox. -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+
+    <!-- Outbound HTTPS for the three remote-multiplayer variants.
+         We hand them off to the default browser via `open`, but
+         WKWebView still issues an HTTPS preflight against PeerJS
+         CDNs in some flows; keeping the network-client capability
+         on avoids surprise blocks during App Review. -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+</dict>
+</plist>

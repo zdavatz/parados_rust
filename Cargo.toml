@@ -1,0 +1,60 @@
+[package]
+name = "parados"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Parados — Think Ahead Games desktop GUI (Linux, macOS, Windows)"
+license = "GPL-3.0-only"
+authors = [
+    "Walter Prossnitz",
+    "Zeno R.R. Davatz <zdavatz@ywesee.com>",
+]
+homepage = "https://game.ywesee.com/parados/"
+repository = "https://github.com/zdavatz/parados_rust"
+
+[[bin]]
+name = "parados"
+path = "src/main.rs"
+
+# tao + wry are the same window/webview crates that power Tauri.  They
+# ship a native WKWebView on macOS, WebView2 on Windows and WebKitGTK
+# on Linux, so the bundled HTML games render with the same engine
+# users have on the iOS / Android ports.
+[dependencies]
+tao  = "0.30"
+wry  = "0.45"
+
+# Embed every HTML game (and the kangaroo logo) directly into the
+# release binary.  No external resources at runtime — the desktop
+# build is a single-file install just like the iOS / Android binaries.
+include_dir = "0.7"
+
+# PNG decode for the window icon (we ship the kangaroo as PNG / JPG
+# and decode it at startup into a `tao::window::Icon`).
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+
+# Open external URLs (PeerJS / WebRTC remote-multiplayer variants) in
+# the user's default browser, matching iOS (`UIApplication.open(_:)`)
+# and Android (`Intent.ACTION_VIEW`) behaviour.
+open = "5"
+
+# HTML-escape user-visible strings when generating the index page.
+html-escape = "0.2"
+
+# Multi-resolution .ico encoder used by `examples/make_ico.rs` to
+# regenerate `assets/icon.ico` from `assets/icon.png`.
+ico = "0.4"
+
+[target.'cfg(windows)'.build-dependencies]
+# Embed the kangaroo icon into the Windows .exe via build.rs.
+winresource = "0.1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
+
+[profile.dev]
+opt-level = 0
+debug = true

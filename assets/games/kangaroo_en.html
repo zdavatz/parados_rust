@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUK: The Impatient Kangaroo 🦘</title>
+    <style>
+        :root {
+            --bg-color: #e3c4a8;
+            --grid-color: #cfb096;
+            --green-dish: #2e7d32;
+            --blue-dish: #1565c0;
+            --kangy-color: #d84315;
+            --modal-bg: rgba(0, 0, 0, 0.9);
+            --cell-size: 45px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #263238;
+            color: #eceff1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        h1 { margin: 10px 0 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 1.8em; }
+        .subtitle { font-size: 0.9em; color: #b0bec5; margin-bottom: 15px; font-style: italic; }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* MODE SWITCHER */
+        .mode-tabs {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            background: #37474f;
+            border: 1px solid #546e7a;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .mode-tab.active { background: #ff9800; color: #263238; border-color: #ff9800; }
+
+        /* TOP BAR */
+        .top-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 0 0 6px 6px;
+            box-sizing: border-box;
+        }
+
+        .config-panel { display: none; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;}
+        .config-panel.active { display: flex; }
+
+        select { background: #455a64; color: white; border: 1px solid #78909c; padding: 6px; border-radius: 4px; font-size: 0.9em; }
+        select:disabled { opacity: 0.5; cursor: not-allowed; border-color: #546e7a; }
+
+        /* EDITOR PALETTE */
+        .editor-palette {
+            display: flex; gap: 10px; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
+        }
+        .brush-btn {
+            width: 35px; height: 35px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; font-size: 1.2em;
+        }
+        .brush-btn.active { border-color: #ffeb3b; box-shadow: 0 0 10px rgba(255,235,59,0.5); transform: scale(1.1);}
+        .brush-g { background: radial-gradient(circle at 30% 30%, #66bb6a, var(--green-dish)); }
+        .brush-b { background: radial-gradient(circle at 30% 30%, #42a5f5, var(--blue-dish)); }
+        .brush-k { background: #e65100; }
+        .brush-e { background: #eceff1; color: black; font-size: 0.9em; font-weight: bold;}
+
+        /* STATUS & CONTROLS */
+        .status-panel {
+            background: rgba(0, 0, 0, 0.25); padding: 12px; border-radius: 8px; text-align: center;
+            width: 100%; margin-bottom: 15px; border-left: 4px solid #ff9800; box-sizing: border-box;
+        }
+        .status-text { font-size: 1.1em; font-weight: bold; color: #ffcc80; margin-bottom: 4px; }
+        .sub-status { font-size: 0.9em; color: #cfd8dc; }
+
+        .main-controls { display: flex; gap: 12px; margin-bottom: 15px; width: 100%; justify-content: center; }
+
+        button {
+            padding: 8px 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; font-size: 0.95em;
+            transition: all 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+        button:disabled { opacity: 0.5; cursor: default; box-shadow: none; transform: none; background-color: #546e7a !important; }
+
+        .btn-move { background-color: #8e24aa; color: white; flex-grow: 1; justify-content: center; max-width: 200px;}
+        .btn-undo { background-color: #fbc02d; color: #37474f; min-width: 90px; justify-content: center;}
+        .btn-start { background-color: #43a047; color: white; }
+        .variant-toggle { display: inline-flex; gap: 2px; }
+        .btn-variant { padding: 6px 10px; border: 2px solid #888; border-radius: 8px; background: #555; color: #ccc; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+        .btn-variant.active { background: #ff9800; color: #fff; border-color: #ff9800; }
+
+        /* BOARD */
+        .board {
+            display: grid; gap: 3px; background-color: var(--bg-color); padding: 10px;
+            border-radius: 6px; border: 6px solid #5d4037; box-shadow: 0 10px 25px rgba(0,0,0,0.5); margin-bottom: 10px;
+        }
+        .cell {
+            width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
+            border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
+        }
+        .cell:hover { background-color: rgba(255,255,255,0.3); }
+
+        .dish {
+            width: 60%; height: 60%; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4); pointer-events: none;
+        }
+        .dish.green { background: radial-gradient(circle at 30% 30%, #66bb6a, var(--green-dish)); }
+        .dish.blue { background: radial-gradient(circle at 30% 30%, #42a5f5, var(--blue-dish)); }
+
+        .kangy {
+            font-size: calc(var(--cell-size) * 0.75); z-index: 10; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
+            pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
+        }
+        .ghost-kangy { opacity: 0.4; filter: grayscale(50%); animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0% {transform: translateY(0px);} 50% {transform: translateY(-5px);} 100% {transform: translateY(0px);} }
+
+        .selected { outline: 3px dashed #ffeb3b; box-shadow: inset 0 0 10px rgba(255, 235, 59, 0.4); z-index: 5; }
+        .highlight { background-color: rgba(100, 255, 218, 0.25); box-shadow: inset 0 0 8px rgba(100, 255, 218, 0.4); }
+        .highlight::after { content: ''; width: 20%; height: 20%; background-color: rgba(100, 255, 218, 0.9); border-radius: 50%; }
+
+        .top-rules-zone { width: 100%; display: flex; justify-content: center; margin-bottom: 10px; }
+        .bottom-zone { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; width: 100%; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .btn-reset { background-color: #c62828; color: white; opacity: 0.9; }
+        .btn-rules { background-color: #0277bd; color: white; }
+        .btn-csv { background-color: #2e7d32; color: white; opacity: 0.9; }
+
+        /* MODAL */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: var(--modal-bg);
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: #fff; color: #37474f;
+            margin: 5% auto; padding: 25px; border-radius: 10px;
+            width: 90%; max-width: 600px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            max-height: 85vh; overflow-y: auto;
+            line-height: 1.5;
+        }
+        .close-btn { background-color: #37474f; color: white; width: 100%; margin-top: 20px; justify-content: center; padding: 12px;}
+        .close { float: right; font-size: 24px; cursor: pointer; color: #90a4ae; }
+        .modal-content h2 { border-bottom: 2px solid #eceff1; padding-bottom: 10px; margin-top: 0; color: #263238;}
+        .modal-content h3 { color: #d84315; margin-top: 20px; margin-bottom: 5px; border-bottom: 1px solid #cfd8dc; padding-bottom: 5px;}
+        .modal-content p { margin-bottom: 15px; font-size: 0.95em; }
+        .modal-content ul { padding-left: 20px; margin-top: 5px; }
+        .modal-content li { margin-bottom: 10px; font-size: 0.95em; }
+        .emphasis { font-weight: bold; color: #c62828; }
+    </style>
+</head>
+<body>
+
+    <div class="top-rules-zone">
+        <button class="btn-rules" onclick="openRules()">❓ Rules</button>
+    </div>
+
+    <h1>DUK 🦘</h1>
+    <div class="subtitle">The Impatient Kangaroo</div>
+
+    <div class="game-wrapper">
+
+        <div class="mode-tabs">
+            <div class="mode-tab active" onclick="switchMode('LEVEL')">🏆 Level</div>
+            <div class="mode-tab" onclick="switchMode('RANDOM')">🎲 Take a Chance</div>
+            <div class="mode-tab" onclick="switchMode('EDITOR')">🛠️ Custom</div>
+        </div>
+
+        <div class="top-bar">
+            <div id="panel-LEVEL" class="config-panel active">
+                <select id="levelSelect" onchange="confirmReset()">
+                    </select>
+                <span class="variant-toggle">
+                    <button id="btnVariantA" class="btn-variant active" onclick="switchVariant('A')">Start A</button>
+                    <button id="btnVariantB" class="btn-variant" onclick="switchVariant('B')">Start B</button>
+                </span>
+                <button class="btn-start" onclick="confirmReset()">Start Level</button>
+            </div>
+
+            <div id="panel-RANDOM" class="config-panel">
+                <select id="boardSize">
+                    <option value="10x10" selected>10 x 10</option>
+                    <option value="12x12">12 x 12</option>
+                </select>
+                <select id="difficulty">
+                    <option value="beginner">Center 6×6 (Easy)</option>
+                    <option value="normal" selected>Inner 8×8 (Medium)</option>
+                    <option value="high">Full (Hard)</option>
+                </select>
+                <button class="btn-start" onclick="confirmReset()">Roll the Dice</button>
+            </div>
+
+            <div id="panel-EDITOR" class="config-panel">
+                <select id="editorSize" onchange="initEditorBoard()">
+                    <option value="8x8">8 x 8</option>
+                    <option value="10x10" selected>10 x 10</option>
+                    <option value="12x12">12 x 12</option>
+                </select>
+                <div class="editor-palette">
+                    <div class="brush-btn brush-g active" onclick="setBrush('G')"></div>
+                    <div class="brush-btn brush-b" onclick="setBrush('B')"></div>
+                    <div class="brush-btn brush-k" onclick="setBrush('K')">🦘</div>
+                    <div class="brush-btn brush-e" onclick="setBrush('E')">X</div>
+                </div>
+                <button class="btn-start" onclick="startCustomGame()">Play!</button>
+            </div>
+        </div>
+
+        <div class="status-panel">
+            <div id="gameStatus" class="status-text">Loading DUK...</div>
+            <div id="turnInfo" class="sub-status"></div>
+            <div id="dishCount" class="sub-status"></div>
+        </div>
+
+        <div class="main-controls">
+            <button id="btnUndo" class="btn-undo" onclick="undoMove()" disabled>↩️ Undo</button>
+            <button id="btnMoveDish" class="btn-move" onclick="toggleDishMoveMode()" disabled>🖐️ Move Dish</button>
+        </div>
+
+        <div id="board" class="board"></div>
+
+        <div class="bottom-zone">
+            <button class="btn-reset" onclick="confirmReset()">⚠️ Restart</button>
+            <button class="btn-csv" onclick="downloadCSV()">💾 Save CSV</button>
+        </div>
+    </div>
+
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRules()">&times;</span>
+            <h2>The Impatient Kangaroo</h2>
+
+            <h3>The Goal</h3>
+            <p>Kangy is collecting food and water for her family! Jump over dishes in the Outback to collect them all.</p>
+
+            <h3>How to Play</h3>
+            <ul>
+                <li>You decide where Kangy starts and whether she first jumps over a blue or green dish.</li>
+                <li>After the first jump, colors must <b>always alternate</b>. Even when jumping over a group of dishes, the color alternation must be maintained.</li>
+                <li>The dishes in such a group must be directly adjacent in a line (no gaps!).</li>
+                <li>In all cases, the distance between Kangy's takeoff square and the landing square must be <b>exactly equal</b> (symmetry / catapult jump).</li>
+            </ul>
+
+            <h3>Important!</h3>
+            <p>Before EVERY jump, you may (and should!) move exactly one dish by one square in any direction (including diagonally).</p>
+            <p>Winning without these moves is not possible... Experienced players often move dishes long before Kangy reaches that part of the Outback.</p>
+
+            <h3>Tactical Tips</h3>
+            <p>Choosing Kangy's starting position is one of your most important decisions. If you discover an area in the Outback where the dishes are already alternating, it's a good idea to start there.</p>
+            <p>Use these "free" moves (moves where you don't need to shift dishes for Kangy's direct path) to position other dishes where Kangy will need them later — perhaps much later!</p>
+            <p>A general tip: Try to collect the dishes at the edges first and move everything away from the corners whenever you can.</p>
+
+            <button class="close-btn" onclick="closeRules()">Got it, let's go!</button>
+        </div>
+    </div>
+
+<script>
+    /** * LEVEL DATABASE
+     * You can add all your handmade levels here!
+     * G = Green, B = Blue, . = Empty
+     */
+    const LEVEL_DATABASE = [
+        {
+            id: 'tut1',
+            group: 'Beginner',
+            name: 'Level 1: First Steps',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "..........",
+                "....G.....",
+                "..........",
+                "....B.....",
+                "..........",
+                "....G.....",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 8}, // x (column), y (row) -> zero-based
+            startHintB: {x: 6, y: 6}
+        },
+        {
+            id: 'tut2',
+            group: 'Beginner',
+            name: 'Level 2: The Block',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "..........",
+                "....G.....",
+                "....B.....",
+                "....G.....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7},
+            startHintB: {x: 6, y: 5}
+        },
+        {
+            id: 'tut3',
+            group: 'Beginner',
+            name: 'Level 3: Practice Moving',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "....B.....",
+                "..........",
+                "..........",
+                ".....G....",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 7}, // You need to move G to the left to jump!
+            startHintB: {x: 2, y: 5}
+        },
+        {
+            id: 'mid1',
+            group: 'Intermediate',
+            name: 'Level 1: Staircase',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..B.G.....",
+                "..........",
+                "...G.B....",
+                "..........",
+                ".G...B....",
+                "..........",
+                "...G......",
+                "....B.....",
+                ".........."
+            ],
+            startHint: {x: 5, y: 8}
+        },
+        {
+            id: 'mid2',
+            group: 'Intermediate',
+            name: 'Level 2: Scattered',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "..........",
+                "...G.B....",
+                "..........",
+                ".....G....",
+                "..........",
+                ".B......B.",
+                "..........",
+                ".....G....",
+                ".........."
+            ],
+            startHint: {x: 1, y: 1}
+        },
+        {
+            id: 'mid3',
+            group: 'Intermediate',
+            name: 'Level 3: Diagonal',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                ".....B....",
+                "..........",
+                "...G..G...",
+                "..........",
+                "..G.B..B..",
+                "..........",
+                "..G.B.....",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 8, y: 8}
+        },
+        {
+            id: 'adv1',
+            group: 'Advanced',
+            name: 'Level 1: The Cross',
+            cols: 10, rows: 10,
+            layout: [
+                "..........",
+                "....G.....",
+                "....B.....",
+                "....G.....",
+                ".BGB.GBG..",
+                "....B.....",
+                "....G.....",
+                "....B.....",
+                "..........",
+                ".........."
+            ],
+            startHint: {x: 4, y: 4},
+            startHintB: {x: 0, y: 0}
+        }
+    ];
+
+    // Globals
+    let currentMode = 'LEVEL'; // LEVEL, RANDOM, EDITOR
+    let selectedVariant = 'A';
+    let COLS = 10, ROWS = 10;
+    let board = [];
+    let gameState = 'SETUP'; // SETUP, PLAYING, WON, EDITOR
+    let nextTarget = null;
+    let kangyPos = {x: -1, y: -1};
+    let dishMoveAvailable = true;
+    let isMovingDish = false;
+    let selectedDishPos = null;
+    let historyStack = [];
+    let kangyWobbleInterval = null;
+    let kangyWobbleIndex = 0;
+    let currentBrush = 'G'; // For Editor: G, B, K, E (Empty)
+    let currentLevelData = null; // Stores active level for reset
+
+    // DATA LOGGING
+    let sessionLog = [];
+    let currentGameId = 0;
+    let turnCounter = 0;
+
+    // UI
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('gameStatus');
+    const turnInfoEl = document.getElementById('turnInfo');
+    const btnMoveDish = document.getElementById('btnMoveDish');
+    const btnUndo = document.getElementById('btnUndo');
+    const countEl = document.getElementById('dishCount');
+    const root = document.documentElement;
+    const modal = document.getElementById('rulesModal');
+
+    // --- LOGGING SYSTEM ---
+    function logAction(actionType, fromX, fromY, toX, toY, details) {
+        sessionLog.push({
+            gameId: currentGameId,
+            mode: currentMode,
+            turn: turnCounter,
+            action: actionType,
+            fromX: fromX,
+            fromY: fromY,
+            toX: toX,
+            toY: toY,
+            details: details,
+            timestamp: new Date().toISOString()
+        });
+        turnCounter++;
+    }
+
+    function removeLastLog() {
+        if (sessionLog.length > 0) {
+            const lastEntry = sessionLog[sessionLog.length - 1];
+            if (lastEntry.gameId === currentGameId) {
+                sessionLog.pop();
+                turnCounter--;
+            }
+        }
+    }
+
+    function downloadCSV() {
+        if (sessionLog.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+
+        let csv = "Game_ID,Mode,Turn_No,Action,From_X,From_Y,To_X,To_Y,Details,Timestamp\n";
+        sessionLog.forEach(row => {
+            csv += `${row.gameId},${row.mode},${row.turn},${row.action},${row.fromX},${row.fromY},${row.toX},${row.toY},"${row.details}",${row.timestamp}\n`;
+        });
+
+        // Save to server
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({game: 'kangaroo_en', csv: csv})
+        }).then(r => r.json()).then(d => {
+            if (d.ok) console.log('CSV saved on server: ' + d.filename);
+            else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+        // Local download
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        link.download = `kangaroo_en_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function getActiveStartHint(lvl) {
+        if (!lvl) return null;
+        return selectedVariant === 'B' && lvl.startHintB ? lvl.startHintB : lvl.startHint;
+    }
+
+    // --- INITIALIZATION ---
+    function populateLevelSelect() {
+        const select = document.getElementById('levelSelect');
+        select.innerHTML = '';
+        let currentGroup = '';
+
+        LEVEL_DATABASE.forEach((lvl, index) => {
+            if (lvl.group !== currentGroup) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = lvl.group;
+                select.appendChild(optgroup);
+                currentGroup = lvl.group;
+            }
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.innerText = lvl.name;
+            select.lastChild.appendChild(opt);
+        });
+    }
+
+    function switchMode(mode) {
+        if (gameState === 'PLAYING' && board.some(row => row.includes('G') || row.includes('B'))) {
+            if (!confirm("Abandon game and switch mode?")) return;
+        }
+
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
+
+        event.target.classList.add('active');
+        document.getElementById('panel-' + mode).classList.add('active');
+
+        if (mode === 'EDITOR') {
+            initEditorBoard();
+        } else {
+            initGame();
+        }
+    }
+
+    function switchVariant(v) {
+        selectedVariant = v;
+        document.getElementById('btnVariantA').classList.toggle('active', v === 'A');
+        document.getElementById('btnVariantB').classList.toggle('active', v === 'B');
+        confirmReset();
+    }
+
+    function confirmReset() {
+        if (gameState === 'PLAYING') {
+            if (!confirm("Really restart?")) return;
+        }
+        initGame();
+    }
+
+    function initGame() {
+        historyStack = [];
+        dishMoveAvailable = true;
+        isMovingDish = false;
+        selectedDishPos = null;
+        kangyPos = {x: -1, y: -1};
+        nextTarget = null;
+        currentLevelData = null;
+
+        currentGameId++;
+        turnCounter = 1;
+
+        if (currentMode === 'LEVEL') {
+            const lvlIndex = document.getElementById('levelSelect').value;
+            const lvl = LEVEL_DATABASE[lvlIndex];
+            currentLevelData = lvl;
+            // Show/hide A/B toggle based on whether level has two start positions
+            const hasVariants = !!lvl.startHintB;
+            document.querySelector('.variant-toggle').style.display = hasVariants ? 'inline-flex' : 'none';
+            if (!hasVariants) selectedVariant = 'A';
+            COLS = lvl.cols; ROWS = lvl.rows;
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    let char = lvl.layout[y][x];
+                    if (char === 'G') board[y][x] = 'G';
+                    if (char === 'B') board[y][x] = 'B';
+                    if (char === 'K') { board[y][x] = 'K'; kangyPos = {x,y}; }
+                }
+            }
+            gameState = kangyPos.x !== -1 ? 'PLAYING' : 'SETUP';
+            if (gameState === 'PLAYING') logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Auto Kangy placed");
+
+        } else if (currentMode === 'RANDOM') {
+            const sizeVal = document.getElementById('boardSize').value.split('x');
+            COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            generateRandomBoard();
+            gameState = 'SETUP';
+        }
+
+        updateGridCSS();
+        renderBoard();
+        updateUI();
+    }
+
+    // --- RANDOM GENERATOR ---
+    function isColorBalanced(b, rows, cols) {
+        let midX = cols / 2, midY = rows / 2;
+        let leftG = 0, leftB = 0, rightG = 0, rightB = 0;
+        let topG = 0, topB = 0, bottomG = 0, bottomB = 0;
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                let c = b[y][x];
+                if (c !== 'G' && c !== 'B') continue;
+                if (x < midX) { if (c === 'G') leftG++; else leftB++; }
+                else          { if (c === 'G') rightG++; else rightB++; }
+                if (y < midY) { if (c === 'G') topG++; else topB++; }
+                else          { if (c === 'G') bottomG++; else bottomB++; }
+            }
+        }
+        let totalG = leftG + rightG, totalB = leftB + rightB;
+        if (totalG < 2 || totalB < 2) return true;
+        let minRatio = 0.3;
+        if (leftG  < totalG * minRatio || rightG  < totalG * minRatio) return false;
+        if (leftB  < totalB * minRatio || rightB  < totalB * minRatio) return false;
+        if (topG   < totalG * minRatio || bottomG < totalG * minRatio) return false;
+        if (topB   < totalB * minRatio || bottomB < totalB * minRatio) return false;
+        return true;
+    }
+
+    function generateRandomBoard() {
+        const diff = document.getElementById('difficulty').value;
+        let innerSize, totalDishes;
+        if (diff === 'beginner') { innerSize = 6; totalDishes = 12; }
+        else if (diff === 'normal') { innerSize = 8; totalDishes = 20; }
+        else { innerSize = Math.max(COLS, ROWS); totalDishes = Math.floor(COLS * ROWS * 0.34); if (totalDishes % 2 !== 0) totalDishes--; }
+
+        let pad = innerSize >= COLS ? 0 : Math.floor((COLS - innerSize) / 2);
+        let greenCount = totalDishes / 2;
+        let blueCount = totalDishes / 2;
+
+        let deck = [];
+        for(let i=0; i<greenCount; i++) deck.push('G');
+        for(let i=0; i<blueCount; i++) deck.push('B');
+
+        let coords = [];
+        for(let y = pad; y < ROWS - pad; y++) {
+            for(let x = pad; x < COLS - pad; x++) { coords.push({x, y}); }
+        }
+
+        let attempts = 0;
+        do {
+            deck.sort(() => Math.random() - 0.5);
+            coords.sort(() => Math.random() - 0.5);
+            for(let y = 0; y < ROWS; y++)
+                for(let x = 0; x < COLS; x++)
+                    if(board[y][x] === 'G' || board[y][x] === 'B') board[y][x] = null;
+            for(let i=0; i<deck.length && i<coords.length; i++) {
+                board[coords[i].y][coords[i].x] = deck[i];
+            }
+            attempts++;
+        } while (attempts < 100 && !isColorBalanced(board, ROWS, COLS));
+    }
+
+    // --- EDITOR MODE ---
+    function initEditorBoard() {
+        const sizeVal = document.getElementById('editorSize').value.split('x');
+        COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
+        board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        kangyPos = {x: -1, y: -1};
+        gameState = 'EDITOR';
+        updateGridCSS();
+        renderBoard();
+        updateUI();
+    }
+
+    function setBrush(type) {
+        currentBrush = type;
+        document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function startCustomGame() {
+        let g=0, b=0, k=0;
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                if(board[y][x]==='G') g++;
+                if(board[y][x]==='B') b++;
+                if(board[y][x]==='K') k++;
+            }
+        }
+        if (g===0 && b===0) return alert("There's nothing to collect in the Outback!");
+
+        nextTarget = null;
+        if (g > b) nextTarget = 'G';
+        if (b > g) nextTarget = 'B';
+
+        dishMoveAvailable = true;
+        isMovingDish = false;
+        historyStack = [];
+
+        currentGameId++;
+        turnCounter = 1;
+
+        if (k === 0) {
+            gameState = 'SETUP';
+        } else {
+            gameState = 'PLAYING';
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    if(board[y][x]==='K') kangyPos = {x,y};
+                }
+            }
+            logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Editor Kangy placed");
+        }
+
+        document.querySelectorAll('.brush-btn').forEach(b => b.style.pointerEvents = 'none');
+
+        renderBoard();
+        updateUI();
+    }
+
+    // --- RENDER & LOGIC ---
+    function updateGridCSS() {
+        boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+        boardEl.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
+        const maxBoardWidth = Math.min(window.innerWidth - 30, 800);
+        const calcSize = Math.floor(maxBoardWidth / COLS) - 4;
+        const finalSize = Math.min(55, Math.max(25, calcSize));
+        root.style.setProperty('--cell-size', `${finalSize}px`);
+    }
+
+    function renderBoard() {
+        boardEl.innerHTML = '';
+        let gLeft = 0, bLeft = 0;
+
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const content = board[y][x];
+
+                if (content === 'G') {
+                    const d = document.createElement('div'); d.className = 'dish green'; cell.appendChild(d);
+                    gLeft++;
+                } else if (content === 'B') {
+                    const d = document.createElement('div'); d.className = 'dish blue'; cell.appendChild(d);
+                    bLeft++;
+                } else if (content === 'K') {
+                    const k = document.createElement('div'); k.className = 'kangy'; k.innerText = '🦘'; cell.appendChild(k);
+                }
+                else if (gameState === 'SETUP' && currentMode === 'LEVEL' && currentLevelData) {
+                    const hint = getActiveStartHint(currentLevelData);
+                    if (hint && hint.x === x && hint.y === y) {
+                        const gk = document.createElement('div'); gk.className = 'kangy ghost-kangy'; gk.innerText = '🦘'; cell.appendChild(gk);
+                    }
+                }
+
+                cell.onclick = () => handleCellClick(x, y);
+
+                if (gameState === 'PLAYING') {
+                    if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
+                        cell.classList.add('selected');
+                    } else if (!isMovingDish && isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                        cell.classList.add('highlight');
+                    }
+                }
+                boardEl.appendChild(cell);
+            }
+        }
+
+        if (gameState !== 'EDITOR') {
+            countEl.innerText = `Green: ${gLeft} | Blue: ${bLeft}`;
+            if (gameState === 'PLAYING' && gLeft===0 && bLeft===0) {
+                gameState = 'WON';
+                statusEl.innerText = "🏆 VICTORY! Kangy collected all food and water for her family!";
+                statusEl.style.color = "#66bb6a";
+                btnMoveDish.disabled = true;
+                logAction("WIN", -1, -1, -1, -1, "Game Won");
+            } else if (gameState === 'PLAYING' && (gLeft>0 || bLeft>0) && !canAnyMovePossible() && !dishMoveAvailable) {
+                 statusEl.innerText = "Dead end... Try 'Undo' ↩️";
+                 statusEl.style.color = "#ef9a9a";
+            }
+        } else {
+            countEl.innerText = `Builder Mode (G:${gLeft} B:${bLeft})`;
+        }
+        updateKangyFacing();
+    }
+
+    function updateUI() {
+        btnUndo.disabled = (historyStack.length === 0);
+        document.querySelectorAll('select').forEach(s => s.disabled = (gameState === 'PLAYING' || gameState === 'WON'));
+
+        if (gameState === 'EDITOR') {
+            statusEl.style.color = "#ffcc80";
+            statusEl.innerText = "Build your Outback";
+            turnInfoEl.innerText = "Choose a brush and click the grid";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'SETUP') {
+            statusEl.style.color = "#ffcc80";
+            statusEl.innerText = nextTarget ? `⚠️ Imbalance! First jump must be ${nextTarget==='G'?'GREEN':'BLUE'}!` : "Place Kangy to start";
+            turnInfoEl.innerText = currentLevelData && getActiveStartHint(currentLevelData) ? "Hint: Use the ghost Kangy 👻" : "Click on an empty square";
+            btnMoveDish.disabled = true;
+        } else if (gameState === 'PLAYING') {
+            btnMoveDish.disabled = !dishMoveAvailable;
+            let targetText = nextTarget === 'G' ? "GREEN (Food)" : (nextTarget === 'B' ? "BLUE (Water)" : "Free Choice");
+
+            if (isMovingDish) {
+                statusEl.innerText = "Move a dish";
+                turnInfoEl.innerText = "Click on an adjacent empty square";
+                btnMoveDish.innerText = "❌ Cancel";
+            } else {
+                statusEl.innerHTML = `Kangy's turn! Target: <b>${targetText}</b>`;
+                turnInfoEl.innerText = "Think about long catapult jumps!";
+                btnMoveDish.innerText = "🖐️ Move Dish";
+            }
+        } else if (gameState === 'WON') {
+             turnInfoEl.innerText = "Kangy's family is happy!";
+        }
+    }
+
+    function handleCellClick(x, y) {
+        if (gameState === 'EDITOR') {
+            if (currentBrush === 'K') {
+                for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) if(board[r][c]==='K') board[r][c] = null;
+                board[y][x] = 'K';
+            } else if (currentBrush === 'E') {
+                board[y][x] = null;
+            } else {
+                if (board[y][x] === 'K') return;
+                board[y][x] = currentBrush;
+            }
+            renderBoard();
+            updateUI();
+        }
+        else if (gameState === 'SETUP') {
+            if (board[y][x] === null) {
+                saveState();
+                board[y][x] = 'K';
+                kangyPos = {x, y};
+                gameState = 'PLAYING';
+                logAction("START", -1, -1, x, y, "Kangy placed");
+                renderBoard();
+                updateUI();
+            }
+        }
+        else if (gameState === 'PLAYING') {
+            if (isMovingDish) {
+                handleDishMove(x, y);
+            } else {
+                if (isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                    saveState();
+                    executeJump(x, y);
+                }
+            }
+        }
+    }
+
+    // --- MOVE & JUMP LOGIC ---
+    function saveState() {
+        historyStack.push({
+            board: JSON.parse(JSON.stringify(board)),
+            gameState, nextTarget, kangyPos: {...kangyPos},
+            dishMoveAvailable, isMovingDish: false, selectedDishPos: null
+        });
+        updateUI();
+    }
+
+    function undoMove() {
+        if (historyStack.length === 0) return;
+        const s = historyStack.pop();
+        board = s.board; gameState = s.gameState; nextTarget = s.nextTarget;
+        kangyPos = s.kangyPos; dishMoveAvailable = s.dishMoveAvailable;
+        isMovingDish = false; selectedDishPos = null;
+        removeLastLog();
+        renderBoard(); updateUI();
+    }
+
+    function toggleDishMoveMode() {
+        if (!dishMoveAvailable) return;
+        isMovingDish = !isMovingDish;
+        selectedDishPos = null;
+        updateUI(); renderBoard();
+    }
+
+    function handleDishMove(x, y) {
+        if (board[y][x] === 'G' || board[y][x] === 'B') {
+            selectedDishPos = {x, y};
+            renderBoard();
+        } else if (selectedDishPos && board[y][x] === null) {
+            const dx = Math.abs(x - selectedDishPos.x);
+            const dy = Math.abs(y - selectedDishPos.y);
+            if (dx <= 1 && dy <= 1 && (dx+dy > 0)) {
+                saveState();
+
+                const color = board[selectedDishPos.y][selectedDishPos.x];
+                logAction("MOVE_DISH", selectedDishPos.x, selectedDishPos.y, x, y, `Moved ${color}`);
+
+                board[y][x] = board[selectedDishPos.y][selectedDishPos.x];
+                board[selectedDishPos.y][selectedDishPos.x] = null;
+                dishMoveAvailable = false; isMovingDish = false; selectedDishPos = null;
+                renderBoard(); updateUI();
+            }
+        }
+    }
+
+    function isValidJump(fromX, fromY, toX, toY) {
+        if (board[toY][toX] !== null) return false;
+        const dx = toX - fromX; const dy = toY - fromY;
+        if (dx === 0 && dy === 0) return false;
+        if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return false;
+
+        const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+        let curX = fromX + stepX; let curY = fromY + stepY;
+        let empBefore = 0, empAfter = 0, dishes = [], state = 0;
+
+        while (curX !== toX || curY !== toY) {
+            const c = board[curY][curX];
+            if (state === 0) {
+                if (c === null) empBefore++;
+                else if (c === 'G' || c === 'B') { state = 1; dishes.push(c); }
+                else return false;
+            } else if (state === 1) {
+                if (c === 'G' || c === 'B') dishes.push(c);
+                else if (c === null) { state = 2; empAfter++; }
+                else return false;
+            } else if (state === 2) {
+                if (c === null) empAfter++;
+                else return false;
+            }
+            curX += stepX; curY += stepY;
+        }
+
+        if (dishes.length === 0) return false;
+        if (empBefore !== empAfter) return false;
+        if (nextTarget !== null && dishes[0] !== nextTarget) return false;
+        for (let i = 0; i < dishes.length - 1; i++) {
+            if (dishes[i] === dishes[i+1]) return false;
+        }
+        return true;
+    }
+
+    function executeJump(toX, toY) {
+        const dx = toX - kangyPos.x; const dy = toY - kangyPos.y;
+        const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+        let curX = kangyPos.x + stepX; let curY = kangyPos.y + stepY;
+        let lastColor = null;
+        let skippedDishes = [];
+
+        while (curX !== toX || curY !== toY) {
+            const c = board[curY][curX];
+            if (c === 'G' || c === 'B') {
+                lastColor = c;
+                skippedDishes.push(c);
+                board[curY][curX] = null;
+            }
+            curX += stepX; curY += stepY;
+        }
+
+        logAction("JUMP", kangyPos.x, kangyPos.y, toX, toY, `Skipped: ${skippedDishes.join('+')}`);
+
+        board[kangyPos.y][kangyPos.x] = null;
+        board[toY][toX] = 'K'; kangyPos = {x: toX, y: toY};
+
+        if (lastColor === 'G') nextTarget = 'B';
+        else if (lastColor === 'B') nextTarget = 'G';
+
+        dishMoveAvailable = true;
+        renderBoard(); updateUI();
+    }
+
+    function canAnyMovePossible() {
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                if(board[y][x] === null && isValidJump(kangyPos.x, kangyPos.y, x, y)) return true;
+            }
+        }
+        return false;
+    }
+
+    // --- Kangy rotation toward jump directions ---
+    const DIRECTION_TRANSFORMS = {
+        'left':       'rotate(0deg)',
+        'up-left':    'rotate(45deg)',
+        'up':         'rotate(90deg)',
+        'up-right':   'scaleX(-1) rotate(45deg)',
+        'right':      'scaleX(-1)',
+        'down-right': 'scaleX(-1) rotate(-45deg)',
+        'down':       'rotate(-90deg)',
+        'down-left':  'rotate(-45deg)'
+    };
+    const DIRECTION_ANGLE_ORDER = ['up','up-right','right','down-right','down','down-left','left','up-left'];
+
+    function getDirectionKey(dx, dy) {
+        const map = {'-1,0':'left','-1,-1':'up-left','0,-1':'up','1,-1':'up-right',
+                     '1,0':'right','1,1':'down-right','0,1':'down','-1,1':'down-left'};
+        return map[`${dx},${dy}`];
+    }
+
+    function getValidJumpDirections() {
+        const dirs = new Set();
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (board[y][x] === null && isValidJump(kangyPos.x, kangyPos.y, x, y)) {
+                    const dx = x - kangyPos.x, dy = y - kangyPos.y;
+                    const sx = dx === 0 ? 0 : dx / Math.abs(dx);
+                    const sy = dy === 0 ? 0 : dy / Math.abs(dy);
+                    dirs.add(getDirectionKey(sx, sy));
+                }
+            }
+        }
+        return [...dirs].sort((a, b) => DIRECTION_ANGLE_ORDER.indexOf(a) - DIRECTION_ANGLE_ORDER.indexOf(b));
+    }
+
+    function applyKangyTransform(t) {
+        const el = document.querySelector('.kangy:not(.ghost-kangy)');
+        if (el) el.style.transform = t;
+    }
+
+    function updateKangyFacing() {
+        if (kangyWobbleInterval) { clearInterval(kangyWobbleInterval); kangyWobbleInterval = null; }
+        if (gameState !== 'PLAYING' || isMovingDish) { applyKangyTransform('rotate(0deg)'); return; }
+        const dirs = getValidJumpDirections();
+        if (dirs.length === 0) { applyKangyTransform('rotate(0deg)'); return; }
+        if (dirs.length === 1) { applyKangyTransform(DIRECTION_TRANSFORMS[dirs[0]]); return; }
+        kangyWobbleIndex = 0;
+        let wobbleCount = 0;
+        const maxWobbles = dirs.length * 3;
+        applyKangyTransform(DIRECTION_TRANSFORMS[dirs[0]]);
+        kangyWobbleInterval = setInterval(() => {
+            wobbleCount++;
+            if (wobbleCount >= maxWobbles) {
+                clearInterval(kangyWobbleInterval);
+                kangyWobbleInterval = null;
+                return;
+            }
+            kangyWobbleIndex = (kangyWobbleIndex + 1) % dirs.length;
+            applyKangyTransform(DIRECTION_TRANSFORMS[dirs[kangyWobbleIndex]]);
+        }, 800);
+    }
+
+    function openRules() {
+        modal.style.display = "block";
+    }
+
+    function closeRules() {
+        modal.style.display = "none";
+        localStorage.setItem('kangy_master_en_v2', 'true');
+    }
+
+    window.onclick = (e) => {
+        if (e.target == modal) closeRules();
+    }
+
+    if (!localStorage.getItem('kangy_master_en_v2')) openRules();
+
+    // START
+    populateLevelSelect();
+    initGame();
+
+</script>
+</body>
+</html>

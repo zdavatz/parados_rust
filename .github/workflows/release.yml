@@ -1,0 +1,735 @@
+name: Release
+
+# Fires whenever a semver tag `vX.Y.Z` is pushed.
+#
+# Typical release flow:
+#
+#   # in Cargo.toml, bump version 1.0.0 → 1.0.1
+#   git commit -am "Release v1.0.1" && git push
+#   git tag v1.0.1 && git push origin v1.0.1
+#
+# This workflow then builds release binaries for Linux, macOS
+# (x86_64 and arm64) and Windows, packages them, and attaches them
+# to the GitHub Release that gets created for the tag.  When the
+# Mac App Store / Microsoft Store gate variables are set, it also
+# builds + signs + uploads a Mac App Store .pkg and a Microsoft
+# Store .msix.
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to release (e.g. v1.0.1)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Cross-platform build matrix — one job per target triple.
+  # ---------------------------------------------------------------------
+  build:
+    name: build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
+            binary-suffix: ""
+          - target: x86_64-apple-darwin
+            os: macos-15-intel
+            archive: tar.gz
+            binary-suffix: ""
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            archive: tar.gz
+            binary-suffix: ""
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            archive: zip
+            binary-suffix: ".exe"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      # wry needs WebKitGTK headers + soup + xkbcommon on Linux.
+      - name: install Linux GUI build deps
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libxkbcommon-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev
+
+      - name: cargo build --release
+        run: cargo build --release --target ${{ matrix.target }} --bin parados
+
+      - name: resolve tag / version
+        id: vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "stem=parados-$tag-${{ matrix.target }}" >> "$GITHUB_OUTPUT"
+
+      - name: stage artifact contents
+        shell: bash
+        run: |
+          mkdir -p dist/${{ steps.vars.outputs.stem }}
+          cp "target/${{ matrix.target }}/release/parados${{ matrix.binary-suffix }}" dist/${{ steps.vars.outputs.stem }}/
+          cp README.md LICENSE dist/${{ steps.vars.outputs.stem }}/
+
+      - name: stage Linux desktop integration
+        if: startsWith(matrix.target, 'x86_64-unknown-linux')
+        shell: bash
+        run: |
+          cp assets/parados.desktop  dist/${{ steps.vars.outputs.stem }}/
+          cp assets/icon.png         dist/${{ steps.vars.outputs.stem }}/
+          cp assets/install-linux.sh dist/${{ steps.vars.outputs.stem }}/
+          chmod +x                   dist/${{ steps.vars.outputs.stem }}/install-linux.sh
+
+      # macOS .app bundle — wraps the GUI binary so Finder / Dock /
+      # Spotlight pick up the icon and bundle metadata.
+      - name: build macOS .app bundle
+        if: contains(matrix.target, 'apple-darwin')
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.vars.outputs.tag }}"
+          version="${version#v}"
+          stem="${{ steps.vars.outputs.stem }}"
+          app="dist/${stem}/Parados.app"
+          mkdir -p "${app}/Contents/MacOS" "${app}/Contents/Resources"
+
+          tmp_iconset="$(mktemp -d)/icon.iconset"
+          mkdir -p "$tmp_iconset"
+          for size in 16 32 64 128 256 512; do
+            sips -z "$size" "$size" assets/icon.png \
+              --out "$tmp_iconset/icon_${size}x${size}.png" >/dev/null
+            dbl=$((size * 2))
+            sips -z "$dbl" "$dbl" assets/icon.png \
+              --out "$tmp_iconset/icon_${size}x${size}@2x.png" >/dev/null
+          done
+          iconutil -c icns "$tmp_iconset" -o "${app}/Contents/Resources/icon.icns"
+
+          mv "dist/${stem}/parados" "${app}/Contents/MacOS/parados"
+          sed "s/__VERSION__/${version}/g" assets/Info.plist.template \
+            > "${app}/Contents/Info.plist"
+          chmod +x "${app}/Contents/MacOS/parados"
+
+      - name: pack tar.gz
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          cd dist
+          tar czf "${{ steps.vars.outputs.stem }}.tar.gz" "${{ steps.vars.outputs.stem }}"
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${{ steps.vars.outputs.stem }}.tar.gz" > "${{ steps.vars.outputs.stem }}.tar.gz.sha256"
+          else
+            shasum -a 256 "${{ steps.vars.outputs.stem }}.tar.gz" > "${{ steps.vars.outputs.stem }}.tar.gz.sha256"
+          fi
+
+      - name: pack zip
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          cd dist
+          Compress-Archive -Path "${{ steps.vars.outputs.stem }}" -DestinationPath "${{ steps.vars.outputs.stem }}.zip"
+          (Get-FileHash "${{ steps.vars.outputs.stem }}.zip" -Algorithm SHA256).Hash.ToLower() + "  ${{ steps.vars.outputs.stem }}.zip" | Out-File -Encoding ASCII "${{ steps.vars.outputs.stem }}.zip.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.vars.outputs.stem }}
+          path: |
+            dist/${{ steps.vars.outputs.stem }}.tar.gz
+            dist/${{ steps.vars.outputs.stem }}.tar.gz.sha256
+            dist/${{ steps.vars.outputs.stem }}.zip
+            dist/${{ steps.vars.outputs.stem }}.zip.sha256
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # ---------------------------------------------------------------------
+  # macOS — universal .app + notarized DMG + Mac App Store .pkg.
+  # ---------------------------------------------------------------------
+  macos-store:
+    name: macOS .app + DMG + App Store .pkg
+    runs-on: macos-14
+    if: ${{ vars.MACOS_STORE_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-universal
+
+      - name: resolve version
+        id: vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
+          version="${tag#v}"
+          echo "tag=$tag"           >> "$GITHUB_OUTPUT"
+          echo "version=$version"   >> "$GITHUB_OUTPUT"
+
+      - name: build universal parados
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --release --target aarch64-apple-darwin --bin parados
+          cargo build --release --target x86_64-apple-darwin  --bin parados
+          mkdir -p target/release
+          lipo -create \
+            target/aarch64-apple-darwin/release/parados \
+            target/x86_64-apple-darwin/release/parados \
+            -output target/release/parados-universal
+
+      - name: assemble Parados.app
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.vars.outputs.version }}"
+          app="target/release/Parados.app"
+          rm -rf "$app"
+          mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+          cp target/release/parados-universal "$app/Contents/MacOS/parados"
+          chmod +x "$app/Contents/MacOS/parados"
+
+          tmp_iconset="$(mktemp -d)/icon.iconset"
+          mkdir -p "$tmp_iconset"
+          for size in 16 32 64 128 256 512; do
+            sips -z "$size" "$size" assets/icon.png \
+              --out "$tmp_iconset/icon_${size}x${size}.png" >/dev/null
+            dbl=$((size * 2))
+            sips -z "$dbl" "$dbl" assets/icon.png \
+              --out "$tmp_iconset/icon_${size}x${size}@2x.png" >/dev/null
+          done
+          iconutil -c icns "$tmp_iconset" -o "$app/Contents/Resources/icon.icns"
+
+          sed "s/__VERSION__/${version}/g" assets/Info.plist.template \
+            > "$app/Contents/Info.plist"
+
+      - name: import signing certificates
+        if: env.MACOS_CERTIFICATE != ''
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_INSTALLER_CERTIFICATE: ${{ secrets.MACOS_INSTALLER_CERTIFICATE }}
+          MACOS_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_INSTALLER_CERTIFICATE_PASSWORD }}
+          MACOS_DEVELOPER_ID_CERTIFICATE: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE }}
+          MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          security create-keychain -p "" build.keychain
+          security set-keychain-settings build.keychain
+          security list-keychains -d user -s build.keychain
+
+          echo "$MACOS_CERTIFICATE" | base64 --decode > app_cert.p12
+          security import app_cert.p12 -k build.keychain \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/productbuild
+          rm app_cert.p12
+
+          if [ -n "$MACOS_INSTALLER_CERTIFICATE" ]; then
+            echo "$MACOS_INSTALLER_CERTIFICATE" | base64 --decode > installer_cert.p12
+            security import installer_cert.p12 -k build.keychain \
+              -P "$MACOS_INSTALLER_CERTIFICATE_PASSWORD" \
+              -T /usr/bin/codesign -T /usr/bin/productbuild
+            rm installer_cert.p12
+          fi
+
+          if [ -n "$MACOS_DEVELOPER_ID_CERTIFICATE" ]; then
+            echo "$MACOS_DEVELOPER_ID_CERTIFICATE" | base64 --decode > devid_cert.p12
+            security import devid_cert.p12 -k build.keychain \
+              -P "$MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD" \
+              -T /usr/bin/codesign -T /usr/bin/productbuild
+            rm devid_cert.p12
+          fi
+
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "" build.keychain
+          security find-identity -v build.keychain
+
+      - name: code-sign for DMG (Developer ID, optional)
+        if: env.MACOS_DEVELOPER_ID_CERTIFICATE != ''
+        env:
+          MACOS_DEVELOPER_ID_CERTIFICATE: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE }}
+        run: |
+          set -euo pipefail
+          identity=$(security find-identity -v build.keychain \
+            | grep "Developer ID Application" | head -1 \
+            | sed 's/.*"\(.*\)"/\1/' || true)
+          if [ -z "$identity" ]; then
+            echo "WARNING: Developer ID secret was set but no matching identity loaded — DMG will be unsigned"
+            exit 0
+          fi
+          codesign --force --options runtime \
+            --sign "$identity" \
+            --entitlements entitlements.plist \
+            --deep \
+            target/release/Parados.app
+
+      - name: create DMG
+        run: |
+          set -euo pipefail
+          version="${{ steps.vars.outputs.version }}"
+          staging=$(mktemp -d)
+          cp -R target/release/Parados.app "$staging/"
+          ln -s /Applications "$staging/Applications"
+          hdiutil create -volname "Parados" \
+            -srcfolder "$staging" \
+            -ov -format UDZO \
+            "parados-${version}-macos-universal.dmg"
+          rm -rf "$staging"
+
+      - name: notarize DMG (only if Developer ID signed it)
+        if: env.APPLE_API_KEY_P8 != '' && env.MACOS_DEVELOPER_ID_CERTIFICATE != ''
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          MACOS_DEVELOPER_ID_CERTIFICATE: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.vars.outputs.version }}"
+          dmg="parados-${version}-macos-universal.dmg"
+          mkdir -p ~/.private_keys
+          echo "$APPLE_API_KEY_P8" | base64 --decode \
+            > ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+          xcrun notarytool submit "$dmg" \
+            --key ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER_ID" \
+            --wait
+          xcrun stapler staple "$dmg"
+
+      - name: upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: parados-*-macos-universal.dmg
+          if-no-files-found: ignore
+
+      - name: build + sign + upload Mac App Store .pkg
+        if: env.APPLE_API_KEY_P8 != '' && env.APPLE_TEAM_ID != ''
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.vars.outputs.version }}"
+          app="target/release/Parados.app"
+
+          sed "s/__APPLE_TEAM_ID__/${APPLE_TEAM_ID}/g" \
+            entitlements-appstore.plist > entitlements-appstore-resolved.plist
+
+          if [ -n "$MACOS_PROVISIONING_PROFILE" ]; then
+            echo "$MACOS_PROVISIONING_PROFILE" | base64 --decode \
+              > "$app/Contents/embedded.provisionprofile"
+          fi
+
+          app_identity=$(security find-identity -v build.keychain \
+            | grep -E "Apple Distribution|3rd Party Mac Developer Application" \
+            | head -1 | sed 's/.*"\(.*\)"/\1/' || true)
+          if [ -z "$app_identity" ]; then
+            echo "WARNING: no App Store signing identity, skipping .pkg"
+            exit 0
+          fi
+          codesign --force --options runtime \
+            --sign "$app_identity" \
+            --entitlements entitlements-appstore-resolved.plist \
+            --deep \
+            "$app"
+
+          installer_identity=$(security find-identity -v build.keychain \
+            | grep -E "3rd Party Mac Developer Installer|Mac Installer Distribution" \
+            | head -1 | sed 's/.*"\(.*\)"/\1/' || true)
+          pkg="parados-${version}-macos-appstore.pkg"
+          if [ -n "$installer_identity" ]; then
+            productbuild --component "$app" /Applications \
+              --sign "$installer_identity" "$pkg"
+          else
+            productbuild --component "$app" /Applications "$pkg"
+          fi
+
+          mkdir -p ~/.private_keys
+          echo "$APPLE_API_KEY_P8" | base64 --decode \
+            > ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+          # Push App Store Connect listing metadata (description,
+          # keywords, support / marketing / privacy URLs, copyright).
+          # Same pattern as rust2xml — pure REST against
+          # api.appstoreconnect.apple.com using JWT signed with the
+          # API .p8 key.
+          if [ -n "${{ secrets.MACOS_APP_ID }}" ]; then
+            python3 .github/scripts/appstore_metadata.py \
+              --app-id      "${{ secrets.MACOS_APP_ID }}" \
+              --version     "$version" \
+              --key-id      "$APPLE_API_KEY_ID" \
+              --issuer-id   "$APPLE_API_ISSUER_ID" \
+              --key-file    "$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8" \
+              || echo "WARNING: App Store metadata sync failed (non-fatal)"
+          else
+            echo "MACOS_APP_ID secret not set — skipping listing metadata sync"
+          fi
+
+          transporter="/Applications/Transporter.app/Contents/itms/bin/iTMSTransporter"
+          if [ -x "$transporter" ]; then
+            "$transporter" -m upload \
+              -f "$pkg" \
+              -apiKey "$APPLE_API_KEY_ID" \
+              -apiIssuer "$APPLE_API_ISSUER_ID" \
+              || echo "WARNING: iTMSTransporter upload failed"
+          else
+            xcrun altool --upload-app \
+              --file "$pkg" \
+              --type macos \
+              --apiKey "$APPLE_API_KEY_ID" \
+              --apiIssuer "$APPLE_API_ISSUER_ID" \
+              || echo "WARNING: altool upload failed"
+          fi
+
+      - name: upload App Store .pkg artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-appstore-pkg
+          path: parados-*-macos-appstore.pkg
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # Windows — MSIX for Microsoft Store.
+  # ---------------------------------------------------------------------
+  windows-msix:
+    name: Windows MSIX
+    runs-on: windows-latest
+    if: ${{ vars.MSSTORE_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-msix
+
+      - name: resolve version
+        id: vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
+          version="${tag#v}"
+          echo "tag=$tag"         >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: cargo build --release (parados)
+        run: cargo build --release --bin parados
+
+      - name: pack MSIX
+        shell: pwsh
+        run: |
+          $version = "${{ steps.vars.outputs.version }}"
+          $sdkBin = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*\x64\makeappx.exe" -ErrorAction SilentlyContinue | Sort-Object -Descending | Select-Object -First 1
+          if (-not $sdkBin) { Write-Error "makeappx.exe not found in Windows SDK"; exit 1 }
+          $sdkDir = $sdkBin.DirectoryName
+
+          $stage = "msix_staging"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item target\release\parados.exe $stage\
+
+          $manifest = Get-Content windows\AppxManifest.xml -Raw
+          $manifest = $manifest -replace 'Version="1\.0\.0\.0"', "Version=`"${version}.0`""
+          Set-Content -Path "$stage\AppxManifest.xml" -Value $manifest
+
+          New-Item -ItemType Directory -Force -Path "$stage\assets" | Out-Null
+          Copy-Item windows\assets\* "$stage\assets\"
+
+          & "$sdkDir\makeappx.exe" pack /d $stage `
+            /p "parados-${version}-windows-x64.msix" /o
+
+      - name: sign MSIX
+        if: env.WINDOWS_CERTIFICATE != ''
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $version = "${{ steps.vars.outputs.version }}"
+          $sdkBin = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*\x64\signtool.exe" -ErrorAction SilentlyContinue | Sort-Object -Descending | Select-Object -First 1
+          $bytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+          [IO.File]::WriteAllBytes("cert.pfx", $bytes)
+          & $sdkBin.FullName sign /fd SHA256 /a /f cert.pfx /p $env:WINDOWS_CERTIFICATE_PASSWORD `
+            "parados-${version}-windows-x64.msix"
+          Remove-Item cert.pfx
+
+      - name: upload MSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix
+          path: parados-*-windows-x64.msix
+          if-no-files-found: ignore
+
+      # ------------------------------------------------------------
+      # Microsoft Store submission via the devcenter REST API.
+      # The full listing (description / keywords / privacy URL / etc)
+      # is generated here from the same source-of-truth strings the
+      # iOS / Android stores use, so all three stores stay in sync.
+      # ------------------------------------------------------------
+      - name: submit to Microsoft Store
+        if: vars.MSSTORE_APP_ID != '' && env.MSSTORE_TENANT_ID != ''
+        shell: pwsh
+        env:
+          MSSTORE_TENANT_ID: ${{ secrets.MSSTORE_TENANT_ID }}
+          MSSTORE_CLIENT_ID: ${{ secrets.MSSTORE_CLIENT_ID }}
+          MSSTORE_CLIENT_SECRET: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+          MSSTORE_APP_ID: ${{ vars.MSSTORE_APP_ID }}
+        run: |
+          $msix = Get-ChildItem parados-*-windows-x64.msix | Select-Object -First 1
+          if (-not $msix) { Write-Error "No MSIX produced"; exit 1 }
+
+          $tokenBody = @{
+            grant_type    = "client_credentials"
+            client_id     = $env:MSSTORE_CLIENT_ID
+            client_secret = $env:MSSTORE_CLIENT_SECRET
+            resource      = "https://manage.devcenter.microsoft.com"
+          }
+          $tokenResp = Invoke-RestMethod -Method Post `
+            -Uri "https://login.microsoftonline.com/$($env:MSSTORE_TENANT_ID)/oauth2/token" `
+            -Body $tokenBody
+          $token   = $tokenResp.access_token
+          $headers = @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" }
+          $appId   = $env:MSSTORE_APP_ID
+
+          $appResp = Invoke-RestMethod -Method Get `
+            -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId" `
+            -Headers $headers
+
+          if ($appResp.pendingApplicationSubmission) {
+            $pendingId = $appResp.pendingApplicationSubmission.id
+            Write-Host "Deleting pending submission: $pendingId"
+            Invoke-RestMethod -Method Delete `
+              -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$pendingId" `
+              -Headers $headers
+            Start-Sleep -Seconds 2
+          }
+
+          # Same source of truth as the iOS / Android store listings.
+          # Description text comes from parados_ios/README.md +
+          # parados_android/README.md, kept in sync across all three
+          # ports.  Newlines via backtick-n so YAML indentation stays
+          # legal — PowerShell here-strings would put text at column
+          # 0 and break the surrounding `run:` block scalar.
+          $descriptionEn = (
+            "Parados is a collection of seven original board games - playable offline, fully embedded, no internet connection required.`n`n" +
+            "DUK - The Impatient Kangaroo (1 player, puzzle, DE/EN/JP/CN/UA)`n" +
+            "Capovolto (2 players, strategy)`n" +
+            "Divided Loyalties (2 players, strategy)`n" +
+            "Democracy in Space (2+ players, strategy; remote multiplayer optional)`n" +
+            "Frankenstein - Where's that green elbow? (1-4 players, memory)`n" +
+            "Rainbow Blackjack (2 players, strategy; remote multiplayer optional)`n" +
+            "MAKA LAINA (2 players, strategy; remote multiplayer optional)`n`n" +
+            "Three games offer optional cross-device PeerJS / WebRTC multiplayer; those open in your default browser. All other games run entirely offline.`n`n" +
+            "Open Source (GPL v3) - by Walter Prossnitz / Think Ahead Games / ywesee GmbH."
+          )
+          $descriptionDe = (
+            "Parados ist eine Sammlung von sieben originalen Brettspielen - offline spielbar, vollstaendig eingebettet, kein Internet noetig.`n`n" +
+            "DUK - Das ungeduldige Kaenguru (1 Spieler, Puzzle, DE/EN/JP/CN/UA)`n" +
+            "Capovolto (2 Spieler, Strategie)`n" +
+            "Divided Loyalties (2 Spieler, Strategie)`n" +
+            "Democracy in Space (2+ Spieler, Strategie; optional Remote-Multiplayer)`n" +
+            "Frankenstein - Wo ist der gruene Ellbogen? (1-4 Spieler, Memory)`n" +
+            "Rainbow Blackjack (2 Spieler, Strategie; optional Remote-Multiplayer)`n" +
+            "MAKA LAINA (2 Spieler, Strategie; optional Remote-Multiplayer)`n`n" +
+            "Drei Spiele bieten optional PeerJS / WebRTC Mehrspieler-Modus; diese oeffnen im Standard-Browser. Alle anderen Spiele laufen komplett offline.`n`n" +
+            "Open Source (GPL v3) - von Walter Prossnitz / Think Ahead Games / ywesee GmbH."
+          )
+          $releaseNotesEn = "Initial Microsoft Store release of the Parados desktop port."
+          $releaseNotesDe = "Erstveroeffentlichung der Parados-Desktop-Version im Microsoft Store."
+
+          $createBody = @{
+            listings = @{
+              "en-us" = @{
+                baseListing = @{
+                  title = "Parados"
+                  description = $descriptionEn
+                  releaseNotes = $releaseNotesEn
+                  keywords = @("Parados", "ThinkAhead", "BoardGames", "Puzzle", "Strategy", "Memory", "Offline", "Kangaroo", "Othello", "Connect4")
+                  copyrightAndTrademarkInfo = "Copyright Think Ahead Games / ywesee GmbH"
+                  licenseTerms = "GNU General Public License v3.0"
+                  privacyPolicy = "https://ywesee.com/Parados/Parados"
+                  websiteUrl = "https://game.ywesee.com/parados/"
+                  supportContact = "zdavatz@ywesee.com"
+                  features = @(
+                    "Seven original board games — embedded, offline, no ads.",
+                    "Five-language Kangaroo puzzle (DE / EN / JP / CN / UA).",
+                    "Three games offer optional PeerJS remote multiplayer.",
+                    "Same engine + game files as the iOS / Android editions."
+                  )
+                  shortDescription = "Seven original Think Ahead board games — offline, no ads."
+                  images = @()
+                }
+              }
+              "de-de" = @{
+                baseListing = @{
+                  title = "Parados"
+                  description = $descriptionDe
+                  releaseNotes = $releaseNotesDe
+                  keywords = @("Parados", "ThinkAhead", "Brettspiele", "Puzzle", "Strategie", "Memory", "Offline", "Kaenguru", "Othello", "VierGewinnt")
+                  copyrightAndTrademarkInfo = "Copyright Think Ahead Games / ywesee GmbH"
+                  licenseTerms = "GNU General Public License v3.0"
+                  privacyPolicy = "https://ywesee.com/Parados/Parados"
+                  websiteUrl = "https://game.ywesee.com/parados/"
+                  supportContact = "zdavatz@ywesee.com"
+                  features = @(
+                    "Sieben originale Brettspiele — eingebettet, offline, ohne Werbung.",
+                    "Kaenguru-Puzzle in fuenf Sprachen (DE / EN / JP / CN / UA).",
+                    "Drei Spiele bieten optional PeerJS Remote-Multiplayer.",
+                    "Gleiche Engine + Spieldateien wie die iOS- / Android-Editionen."
+                  )
+                  shortDescription = "Sieben originale Think-Ahead-Brettspiele — offline, ohne Werbung."
+                  images = @()
+                }
+              }
+            }
+            pricing = @{
+              trialPeriod = "NoFreeTrial"
+              marketSpecificPricings = @{}
+              sales = @()
+              priceId = "Free"
+            }
+            applicationCategory = "Games_BoardAndCard"
+            allowTargetFutureDeviceFamilies = @{
+              Desktop = $true; Mobile = $false; Xbox = $false; Holographic = $false
+            }
+            allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies = $true
+            hardwarePreferences = @("Keyboard", "Mouse")
+            hasExternalInAppProducts = $false
+            meetAccessibilityGuidelines = $true
+            canInstallOnRemovableMedia = $true
+            automaticBackupEnabled = $true
+            applicationPackages = @()
+            notesForCertification = "Desktop port of the Parados Think Ahead board games (iOS / Android already approved). Plays bundled HTML game files inside an embedded WebView2 webview. Three optional remote-multiplayer variants open the user's default browser to game.ywesee.com/parados/. No login, no ads. Contact: zdavatz@ywesee.com"
+          } | ConvertTo-Json -Depth 10 -Compress
+
+          $subResp = Invoke-RestMethod -Method Post `
+            -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions" `
+            -Headers $headers -Body $createBody `
+            -ContentType "application/json; charset=utf-8"
+          $subId     = $subResp.id
+          $uploadUrl = $subResp.fileUploadUrl
+
+          $submission = $subResp
+          $submission.targetPublishMode = "Immediate"
+          $submission.targetPublishDate = ""
+          $submission.visibility = "Public"
+          if ($submission.applicationPackages) {
+            foreach ($pkg in $submission.applicationPackages) {
+              $pkg.fileStatus = "PendingDelete"
+            }
+          } else {
+            $submission.applicationPackages = @()
+          }
+          $submission.applicationPackages += @{
+            fileName = $msix.Name
+            fileStatus = "PendingUpload"
+            minimumDirectXVersion = "None"
+            minimumSystemRam = "None"
+          }
+          $updateBody = $submission | ConvertTo-Json -Depth 20 -Compress
+          Invoke-RestMethod -Method Put `
+            -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$subId" `
+            -Headers $headers -Body $updateBody `
+            -ContentType "application/json; charset=utf-8"
+
+          $zipPath = [System.IO.Path]::Combine($env:TEMP, "upload.zip")
+          Compress-Archive -Path $msix.FullName -DestinationPath $zipPath -Force
+          $zipBytes = [System.IO.File]::ReadAllBytes($zipPath)
+          Invoke-RestMethod -Method Put -Uri $uploadUrl `
+            -Headers @{"x-ms-blob-type" = "BlockBlob"} `
+            -Body $zipBytes -ContentType "application/octet-stream"
+
+          Invoke-RestMethod -Method Post `
+            -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$subId/commit" `
+            -Headers $headers
+
+  # ---------------------------------------------------------------------
+  # Attach everything to a GitHub Release.
+  # ---------------------------------------------------------------------
+  publish:
+    name: publish release
+    needs: [build, macos-store, windows-msix]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: list staged artifacts
+        run: ls -lh artifacts || true
+
+      - name: resolve tag
+        id: vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: Parados ${{ steps.vars.outputs.tag }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(steps.vars.outputs.tag, '-') }}
+          files: |
+            artifacts/*.tar.gz
+            artifacts/*.tar.gz.sha256
+            artifacts/*.zip
+            artifacts/*.zip.sha256
+            artifacts/*.dmg
+            artifacts/*.msix

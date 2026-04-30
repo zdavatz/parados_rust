@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Blackjack Remote — Parados</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg: #263238;
+            --panel-bg: #37474f;
+            --panel-hover: #455a64;
+            --accent: #ffd700;
+            --text: #eceff1;
+            --text-dim: #90a4ae;
+            --modal-bg: rgba(0, 0, 0, 0.92);
+            --stone-red: #e53935;
+            --stone-blue: #1e88e5;
+            --stone-yellow: #fdd835;
+            --stone-green: #43a047;
+            --stone-orange: #ff9800;
+            --stone-purple: #8e24aa;
+            --stone-gray: #9e9e9e;
+            --tower-width: 72px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--accent);
+            font-size: 1.8em;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            letter-spacing: 2px;
+            margin-top: 16px;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.3em;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 0.95em;
+            margin-bottom: 12px;
+        }
+
+        /* -- Connect Screen -- */
+        #connectScreen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #connectScreen.hidden { display: none; }
+
+        .connect-box {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 40px 36px;
+            width: 420px;
+            max-width: 90vw;
+            text-align: center;
+        }
+        .connect-box h2 { margin-bottom: 6px; }
+        .connect-box .subtitle { margin-bottom: 20px; }
+        .field-group { margin-bottom: 14px; text-align: left; }
+        .field-group label { display: block; font-size: 0.85em; color: var(--text-dim); margin-bottom: 4px; }
+        .field-group input {
+            width: 100%; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px; background: rgba(255,255,255,0.08); color: var(--text);
+            font-size: 1em; outline: none;
+        }
+        .field-group input:focus { border-color: var(--accent); }
+        #connect-status { margin-top: 12px; font-size: 0.9em; min-height: 20px; }
+        #connect-status.error { color: #e53935; }
+        #connect-status.success { color: #43a047; }
+
+        /* -- Screens -- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 12px 16px;
+        }
+        .screen.active { display: flex; }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.12s;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.5); }
+        .btn:active { transform: translateY(1px); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-gold { background: var(--accent); color: #333; }
+        .btn-dim { background: var(--panel-hover); color: var(--text); }
+        .btn-danger { background: #c62828; color: white; }
+        .btn-small { padding: 6px 14px; font-size: 0.85em; }
+
+        /* -- Status Bar -- */
+        #statusBar {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 8px 20px;
+            margin: 8px 0;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: 0.9em;
+            width: 100%;
+            max-width: 700px;
+        }
+        #statusBar span { white-space: nowrap; }
+        .status-label { color: var(--text-dim); }
+        .status-value { color: var(--accent); font-weight: 600; }
+
+        /* -- Towers -- */
+        .towers-container {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+        .tower {
+            width: var(--tower-width);
+            min-height: 260px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            border: 2px solid;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            padding: 8px 4px;
+            gap: 3px;
+            position: relative;
+            transition: box-shadow 0.2s;
+        }
+        .tower.droppable { box-shadow: 0 0 14px 3px rgba(255,215,0,0.5); cursor: pointer; }
+        .tower-label {
+            position: absolute;
+            bottom: -22px;
+            font-weight: 700;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tower-total {
+            position: absolute;
+            top: -22px;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.95em;
+        }
+        .tower-owner-dot {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .tower-owner-dot.p0 { background: var(--stone-red); }
+        .tower-owner-dot.p1 { background: var(--stone-green); }
+        .tower-21 { box-shadow: 0 0 10px 2px rgba(255,215,0,0.5); }
+        .tower-red { border-color: var(--stone-red); }
+        .tower-blue { border-color: var(--stone-blue); }
+        .tower-yellow { border-color: var(--stone-yellow); }
+        .tower-green { border-color: var(--stone-green); }
+        .tower-orange { border-color: var(--stone-orange); }
+        .tower-purple { border-color: var(--stone-purple); }
+
+        /* -- Stones -- */
+        .stone {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.25);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+        .stone:hover { transform: scale(1.08); }
+        .stone.selected { box-shadow: 0 0 12px 4px var(--accent); transform: scale(1.12); }
+        .stone.small { width: 36px; height: 36px; font-size: 0.9em; }
+        .stone.tiny { width: 28px; height: 28px; font-size: 0.75em; }
+
+        .stone-red { background: var(--stone-red); }
+        .stone-blue { background: var(--stone-blue); }
+        .stone-yellow { background: var(--stone-yellow); color: #333; text-shadow: none; }
+        .stone-green { background: var(--stone-green); }
+        .stone-orange { background: var(--stone-orange); color: #333; text-shadow: none; }
+        .stone-purple { background: var(--stone-purple); }
+        .stone-gray { background: var(--stone-gray); color: #333; text-shadow: none; }
+        .stone-facedown { background: #546e7a; color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); cursor: default; }
+
+        /* -- Grid -- */
+        .grid-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 56px);
+            grid-template-rows: repeat(3, 56px);
+            gap: 6px;
+        }
+        .grid-cell {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
+            border: 2px dashed rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .grid-cell:hover { background: rgba(255,255,255,0.1); }
+        .grid-cell.occupied { border-style: solid; border-color: rgba(255,255,255,0.3); cursor: default; }
+        .grid-cell.highlight-row { border-color: var(--accent); background: rgba(255,215,0,0.12); }
+
+        .stone-pool {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 400px;
+            margin: 8px 0;
+        }
+
+        /* -- Hand -- */
+        .hand-area {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* -- Announcement -- */
+        .announce-area {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .announce-btns {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+        .announcement-display {
+            background: rgba(255,215,0,0.1);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 8px 16px;
+            margin: 8px 0;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* -- Wait Overlay -- */
+        #waitOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--modal-bg);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #waitOverlay.active { display: flex; }
+        #waitOverlay h2 {
+            font-size: 1.6em;
+            margin-bottom: 16px;
+        }
+        #waitOverlay p {
+            color: var(--text-dim);
+            font-size: 1.1em;
+        }
+
+        /* -- Rules Modal -- */
+        #rulesModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--modal-bg);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .rules-content {
+            max-width: 640px;
+            margin: 0 auto;
+            background: var(--panel-bg);
+            border-radius: 14px;
+            padding: 24px 28px;
+            position: relative;
+            line-height: 1.65;
+        }
+        .rules-content h2 { margin-bottom: 12px; }
+        .rules-content h3 { color: var(--accent); margin: 14px 0 6px; font-size: 1.05em; }
+        .rules-content p { margin: 6px 0; }
+        .rules-content ul { margin: 6px 0 6px 20px; }
+        .rules-content li { margin: 4px 0; }
+        .rules-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: var(--text-dim);
+            line-height: 1;
+        }
+        .rules-close:hover { color: var(--text); }
+        .close-btn {
+            display: block;
+            margin: 16px auto 0;
+            padding: 10px 32px;
+            background: var(--accent);
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* -- Scoring Screen -- */
+        .scoring-table {
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+        .scoring-table th, .scoring-table td {
+            padding: 8px 14px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .scoring-table th {
+            color: var(--accent);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .winner-cell { color: var(--accent); font-weight: 700; }
+        .no-point-cell { color: var(--text-dim); }
+
+        .final-result {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin: 16px 0;
+            color: var(--accent);
+        }
+
+        /* -- Bottom Buttons -- */
+        .bottom-bar {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* -- Row/Col Picker -- */
+        .pick-instructions {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 10px 18px;
+            margin: 8px 0;
+            text-align: center;
+            font-size: 0.95em;
+        }
+        .row-col-btns {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* -- Chat -- */
+        #chatArea {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 280px;
+            max-height: 300px;
+            background: var(--panel-bg);
+            border-top-left-radius: 12px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            font-size: 0.85em;
+            max-height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-msg { margin: 2px 0; }
+        .chat-msg.system { color: var(--text-dim); font-style: italic; }
+        .chat-sender { font-weight: 600; }
+        .chat-sender.p1 { color: var(--stone-red); }
+        .chat-sender.p2 { color: var(--stone-green); }
+        #chatInput {
+            display: flex;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        #chatInput input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: rgba(255,255,255,0.06);
+            color: var(--text);
+            font-size: 0.85em;
+            outline: none;
+        }
+        #chatInput button {
+            padding: 8px 12px;
+            border: none;
+            background: var(--accent);
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* -- Your Turn pulse -- */
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 8px rgba(255,215,0,0.3); }
+            50% { text-shadow: 0 0 20px rgba(255,215,0,0.6); }
+        }
+        .your-turn { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+        /* -- Responsive -- */
+        @media (max-width: 800px) {
+            :root { --tower-width: 58px; }
+            .stone { width: 38px; height: 38px; font-size: 0.95em; }
+            .stone.small { width: 32px; height: 32px; font-size: 0.8em; }
+            .grid-3x3 { grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); }
+            .grid-cell { width: 48px; height: 48px; }
+            #chatArea { width: 220px; }
+        }
+
+        @media (max-width: 500px) {
+            :root { --tower-width: 46px; }
+            h1 { font-size: 1.4em; }
+            .stone { width: 34px; height: 34px; font-size: 0.85em; }
+            .stone.small { width: 28px; height: 28px; font-size: 0.75em; }
+            .grid-3x3 { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 42px); gap: 4px; }
+            .grid-cell { width: 42px; height: 42px; }
+            #statusBar { font-size: 0.8em; gap: 8px; padding: 6px 12px; }
+            .towers-container { gap: 3px; }
+            #chatArea { width: 180px; }
+        }
+
+        /* -- Animations -- */
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: slideUp 0.3s ease-out; }
+    </style>
+</head>
+<body>
+
+<!-- ======== CONNECT SCREEN ======== -->
+<div id="connectScreen">
+    <div class="connect-box">
+        <h2>RAINBOW BLACKJACK</h2>
+        <p class="subtitle">Remote — Farbiges 21</p>
+        <div class="field-group">
+            <label>Dein Name</label>
+            <input type="text" id="player-name" placeholder="Name eingeben" maxlength="20">
+        </div>
+        <div class="field-group">
+            <label>Raum-ID (beide Spieler geben dieselbe ID ein)</label>
+            <input type="text" id="room-id" placeholder="z.B. meinraum42">
+        </div>
+        <button class="btn btn-gold" id="connect-btn" onclick="startConnection()" style="margin-top: 8px;">Verbinden</button>
+        <button class="btn btn-dim btn-small" onclick="openRules()" style="margin-top: 12px;">? Regeln</button>
+        <div id="connect-status"></div>
+    </div>
+</div>
+
+<!-- ======== GAME SCREEN ======== -->
+<div id="gameScreen" class="screen">
+    <h1>RAINBOW BLACKJACK</h1>
+    <div id="statusBar">
+        <span><span class="status-label">Runde </span><span class="status-value" id="sRound">1</span><span class="status-label"> / 6</span></span>
+        <span><span class="status-label">Du: </span><span class="status-value" id="sMyRole">—</span></span>
+        <span><span class="status-label">Phase: </span><span class="status-value" id="sPhase">—</span></span>
+        <span><span class="status-label">Punkte: </span><span class="status-value" id="sScore">0 – 0</span></span>
+    </div>
+
+    <!-- Towers -->
+    <div class="towers-container" id="towersArea"></div>
+
+    <!-- Dynamic content area -->
+    <div id="dynamicArea" style="display: flex; flex-direction: column; align-items: center; width: 100%;"></div>
+
+    <!-- Bottom buttons -->
+    <div class="bottom-bar">
+        <button class="btn btn-dim btn-small" id="btnUndo" onclick="undoMove()" style="display:none;">&#8617; Rueckgaengig</button>
+        <button class="btn btn-dim btn-small" onclick="openRules()">? Regeln</button>
+        <button class="btn btn-dim btn-small" onclick="downloadCSV()">CSV Export</button>
+    </div>
+</div>
+
+<!-- ======== SCORING SCREEN ======== -->
+<div id="scoringScreen" class="screen">
+    <h1>RAINBOW BLACKJACK</h1>
+    <h2 style="margin-top: 12px;">Endergebnis</h2>
+    <div id="scoringContent"></div>
+    <div style="margin-top: 16px; display: flex; gap: 10px;">
+        <button class="btn btn-dim btn-small" onclick="downloadCSV()">CSV Export</button>
+    </div>
+</div>
+
+<!-- ======== WAIT OVERLAY ======== -->
+<div id="waitOverlay">
+    <h2 id="waitTitle">Warten...</h2>
+    <p id="waitMsg">Der Gegner ist am Zug</p>
+</div>
+
+<!-- ======== RULES MODAL ======== -->
+<div id="rulesModal">
+    <div class="rules-content">
+        <span class="rules-close" onclick="closeRules()">&times;</span>
+        <h2>Rainbow Blackjack — Regeln</h2>
+
+        <h3>Ueberblick</h3>
+        <p>Zwei Spieler bauen gemeinsam an 6 farbigen Tuermen. Ziel: In jedem Turm moeglichst nahe an die Summe 21 kommen. Wer den letzten Stein in einen Turm legt, gewinnt den Punkt fuer diesen Turm.</p>
+
+        <h3>Material</h3>
+        <ul>
+            <li>36 farbige Steine: je 1–6 in Rot, Blau, Gelb, Gruen, Orange, Lila</li>
+            <li>6 graue Joker-Steine (3 pro Spieler)</li>
+            <li>Spieler 1: Primaerfarben (Rot, Blau, Gelb) + 3 Joker = 21 Steine</li>
+            <li>Spieler 2: Sekundaerfarben (Gruen, Orange, Lila) + 3 Joker = 21 Steine</li>
+        </ul>
+
+        <h3>Spielvorbereitung</h3>
+        <ul>
+            <li>Das Programm entfernt 3 zufaellige Steine pro Spieler. Diese sind nicht Teil des Spiels.</li>
+            <li>Die ersten 9 Steine werden vom Programm zufaellig in einem 3&times;3-Raster angeordnet — sie bleiben fuer den Gegner verdeckt!</li>
+            <li>Man darf die eigenen Steine anschauen und sich die Positionen merken.</li>
+        </ul>
+
+        <h3>Farbkreis &amp; Nachbarschaft</h3>
+        <p>Die 6 Farben bilden einen Kreis: <b>Rot — Orange — Gelb — Gruen — Blau — Lila</b> (und zurueck zu Rot).<br>
+        Jeder Stein darf in seinen eigenen Farbturm <b>oder</b> in die beiden Nachbar-Tuerme gelegt werden:</p>
+        <ul>
+            <li>🔴 <b>Rot</b> → Lila-, Rot- oder Orange-Turm</li>
+            <li>🟠 <b>Orange</b> → Rot-, Orange- oder Gelb-Turm</li>
+            <li>🟡 <b>Gelb</b> → Orange-, Gelb- oder Gruen-Turm</li>
+            <li>🟢 <b>Gruen</b> → Gelb-, Gruen- oder Blau-Turm</li>
+            <li>🔵 <b>Blau</b> → Gruen-, Blau- oder Lila-Turm</li>
+            <li>🟣 <b>Lila</b> → Blau-, Lila- oder Rot-Turm</li>
+        </ul>
+
+        <h3>Spielablauf</h3>
+        <ul>
+            <li>Jede <b>Runde</b> besteht aus 3 Zuegen.</li>
+            <li>Am Anfang der Runde nimmt jeder Spieler eine Reihe in beliebiger Richtung (3 Steine) aus seinem Raster und sagt entweder die <b>Farben</b> oder die <b>Zahlen</b> an (Grau = 0).</li>
+            <li>Dann legen die Spieler <b>abwechselnd je 1 Stein</b> in einen Turm (3 Zuege pro Runde).</li>
+            <li>Jeder farbige Stein darf in seinen <b>eigenen</b> Farbturm oder in die <b>zwei benachbarten</b> Tuerme auf dem Farbkreis gelegt werden. Graue Joker duerfen in jeden Turm.</li>
+        </ul>
+
+        <h3>Raster &amp; Runden</h3>
+        <ul>
+            <li><b>Runde 1–3:</b> Steine aus dem ersten 3&times;3-Raster. Erste Reihe in beliebiger Richtung frei waehlbar, danach eine der anderen zwei.</li>
+            <li><b>Runde 4–6:</b> Verbleibende 9 Steine werden vom Programm in einem neuen 3&times;3-Raster angeordnet. Erste Reihe in beliebiger Richtung frei waehlbar, danach eine der anderen zwei.</li>
+            <li>Die einmal gewaehlte Richtung gilt fuer alle weiteren Runden im selben Raster.</li>
+        </ul>
+
+        <h3>Zugreihenfolge</h3>
+        <p>Runde 1: Sp.1 beginnt, Runde 2: Sp.2, Runde 3: Sp.1, Runde 4: Sp.1, Runde 5: Sp.2, Runde 6: Sp.1. Der Rundenbeginner waehlt zuerst seine Reihe und legt in jedem Zug als Erster einen Stein.</p>
+
+        <h3>Graue Joker</h3>
+        <ul>
+            <li>Ein Joker uebernimmt den Wert des zuletzt gelegten Steins im Turm.</li>
+            <li>Ein Joker darf <b>nicht</b> als erster Stein in einen Turm gelegt werden.</li>
+            <li>Zwei Joker duerfen <b>nicht</b> direkt aufeinander folgen.</li>
+            <li><b>Joker ersetzen:</b> Liegt ein Joker oben und man hat einen farbigen Stein, der naeher an 21 kommt, aber mit dem Joker die 21 ueberschreiten wuerde, darf man den Joker entfernen und den eigenen Stein legen.</li>
+        </ul>
+
+        <h3>Wertung</h3>
+        <p>Jeder Turm zeigt einen farbigen Punkt (rot = Spieler 1, gruen = Spieler 2), der anzeigt, wer den letzten Stein gelegt hat.</p>
+        <ul>
+            <li><b>Sofortiger Sieg:</b> Wer zuerst 3 Tuerme besitzt, die jeweils genau 21 erreichen, gewinnt sofort!</li>
+            <li>Wenn niemand 3 Tuerme mit 21 erreicht, gewinnt wer am Ende mehr Tuerme besitzt.</li>
+        </ul>
+
+        <button class="close-btn" onclick="closeRules()">Verstanden!</button>
+    </div>
+</div>
+
+<!-- ======== CHAT ======== -->
+<div id="chatArea">
+    <div id="chatMessages"></div>
+    <div id="chatInput">
+        <input type="text" id="chatText" placeholder="Nachricht..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">Senden</button>
+    </div>
+</div>
+
+<script>
+// ======================================
+// RAINBOW BLACKJACK REMOTE — Game Logic
+// ======================================
+
+const COLORS = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+const PRIMARY_COLORS = ['red', 'blue', 'yellow'];
+const SECONDARY_COLORS = ['green', 'orange', 'purple'];
+const COLOR_WHEEL = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+const ADJACENT_TOWERS = {};
+COLOR_WHEEL.forEach((c, i) => {
+    const prev = COLOR_WHEEL[(i - 1 + 6) % 6];
+    const next = COLOR_WHEEL[(i + 1) % 6];
+    ADJACENT_TOWERS[c] = [prev, c, next];
+});
+const COLOR_NAMES = {
+    red: 'Rot', blue: 'Blau', yellow: 'Gelb',
+    green: 'Gruen', orange: 'Orange', purple: 'Lila', gray: 'Grau'
+};
+const ROUND_STARTERS = [0, 1, 0, 0, 1, 0];
+
+// -- Network State --
+let peer = null;
+let conn = null;
+let myRole = null;    // 'host' or 'join'
+let myPlayer = null;  // 0 or 1 (0-indexed)
+let myName = '';
+let opponentName = '';
+
+// -- Game State --
+let gameState = 'CONNECT';
+let players = [];
+let towers = {};
+let currentPlayer = 0;
+let currentRound = 1;
+let gridNumber = 1;
+let roundStarter = 0;
+let pickedOrientations = [null, null];
+let pickedIndicesPerPlayer = [[], []];
+let selectedHandIdx = null;
+let stonesPlayedThisTurn = 0;
+let announcements = ['', ''];
+let playSubTurn = 0;
+let historyStack = [];
+let sessionLog = [];
+let currentGameId = '';
+let gridArrangePlayerIdx = 0;
+let selectedPoolIdx = null;
+
+// -- DOM refs --
+const connectScreen = document.getElementById('connectScreen');
+const gameScreen = document.getElementById('gameScreen');
+const scoringScreen = document.getElementById('scoringScreen');
+const towersArea = document.getElementById('towersArea');
+const dynamicArea = document.getElementById('dynamicArea');
+const waitOverlay = document.getElementById('waitOverlay');
+const waitTitle = document.getElementById('waitTitle');
+const waitMsg = document.getElementById('waitMsg');
+const rulesModal = document.getElementById('rulesModal');
+
+// ======================================
+// NETWORK — PeerJS
+// ======================================
+
+function setConnStatus(msg, cls) {
+    const el = document.getElementById('connect-status');
+    el.textContent = msg;
+    el.className = cls || '';
+}
+
+function startConnection() {
+    const name = document.getElementById('player-name').value.trim();
+    const room = document.getElementById('room-id').value.trim();
+
+    if (!name) { setConnStatus('Bitte Namen eingeben.', 'error'); return; }
+    if (!room) { setConnStatus('Bitte Raum-ID eingeben.', 'error'); return; }
+
+    myName = name;
+    document.getElementById('connect-btn').disabled = true;
+    setConnStatus('Verbinde...');
+
+    const hostId = `rainbow-bj-${room}-host`;
+
+    peer = new Peer(hostId);
+
+    peer.on('open', () => {
+        myRole = 'host';
+        myPlayer = 0;
+        setConnStatus('Warte auf zweiten Spieler in Raum "' + room + '"...');
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+        });
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            peer.destroy();
+            peer = new Peer();
+            peer.on('open', () => {
+                myRole = 'join';
+                myPlayer = 1;
+                setConnStatus('Trete Raum "' + room + '" bei...');
+                conn = peer.connect(hostId, { reliable: true });
+                setupConn();
+            });
+            peer.on('error', (err2) => {
+                setConnStatus('Fehler: ' + err2.message, 'error');
+                document.getElementById('connect-btn').disabled = false;
+            });
+        } else {
+            setConnStatus('Fehler: ' + err.message, 'error');
+            document.getElementById('connect-btn').disabled = false;
+        }
+    });
+}
+
+function setupConn() {
+    conn.on('open', () => {
+        setConnStatus('Verbunden!', 'success');
+        conn.send({ type: 'hello', name: myName, player: myPlayer });
+        setTimeout(() => {
+            connectScreen.classList.add('hidden');
+            gameScreen.classList.add('active');
+            addSystemMsg('Verbunden! Du bist Spieler ' + (myPlayer + 1) + '.');
+            if (myRole === 'host') {
+                initGame();
+            }
+        }, 400);
+    });
+
+    conn.on('data', (data) => {
+        handleNetMessage(data);
+    });
+
+    conn.on('close', () => {
+        addSystemMsg('Gegner hat die Verbindung getrennt.');
+    });
+}
+
+function sendNet(msg) {
+    if (conn && conn.open) conn.send(msg);
+}
+
+function handleNetMessage(data) {
+    switch (data.type) {
+        case 'hello':
+            opponentName = data.name;
+            addSystemMsg(opponentName + ' ist beigetreten als Spieler ' + (data.player + 1) + '.');
+            break;
+        case 'chat':
+            addChatMsg(data.player, data.name, data.text);
+            break;
+        case 'game_init':
+            applyGameInit(data);
+            break;
+        case 'grid_arranged':
+            applyGridArranged(data);
+            break;
+        case 'grid_look_done':
+            applyGridLookDone(data);
+            break;
+        case 'pick_row':
+            applyPickRow(data);
+            break;
+        case 'announce':
+            applyAnnounce(data);
+            break;
+        case 'place_stone':
+            applyPlaceStone(data);
+            break;
+        case 'grid2_arranged':
+            applyGrid2Arranged(data);
+            break;
+    }
+}
+
+// ======================================
+// CHAT
+// ======================================
+
+function addSystemMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg system';
+    div.textContent = text;
+    document.getElementById('chatMessages').appendChild(div);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+function addChatMsg(player, name, text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    const span = document.createElement('span');
+    span.className = 'chat-sender p' + (player + 1);
+    span.textContent = name + ': ';
+    div.appendChild(span);
+    div.appendChild(document.createTextNode(text));
+    document.getElementById('chatMessages').appendChild(div);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+function sendChat() {
+    const input = document.getElementById('chatText');
+    const text = input.value.trim();
+    if (!text) return;
+    addChatMsg(myPlayer, myName, text);
+    sendNet({ type: 'chat', player: myPlayer, name: myName, text });
+    input.value = '';
+}
+
+// ======================================
+// INIT & DEAL
+// ======================================
+
+function initGame() {
+    currentGameId = Date.now().toString(36);
+    sessionLog = [];
+    historyStack = [];
+    currentRound = 1;
+    gridNumber = 1;
+    roundStarter = 0;
+    pickedOrientations = [null, null];
+    pickedIndicesPerPlayer = [[], []];
+    announcements = ['', ''];
+    playSubTurn = 0;
+
+    // Create players — host generates all stones
+    players = [
+        makePlayer(0, myPlayer === 0 ? myName : opponentName, PRIMARY_COLORS),
+        makePlayer(1, myPlayer === 1 ? myName : opponentName, SECONDARY_COLORS)
+    ];
+
+    // Create towers
+    towers = {};
+    COLORS.forEach(c => { towers[c] = { stones: [], total: 0, winner: null }; });
+
+    // Remove 3 random stones per player
+    players.forEach((p, i) => {
+        const removed = [];
+        for (let r = 0; r < 3; r++) {
+            const idx = Math.floor(Math.random() * p.allStones.length);
+            removed.push(p.allStones.splice(idx, 1)[0]);
+        }
+        p.removed = removed;
+        logAction('REMOVE_STONES', { player: i + 1, removed: removed.map(s => s.color + ':' + s.number) });
+    });
+
+    // Split remaining 18 stones into two pools of 9
+    players.forEach(p => {
+        p.gridPool1 = p.allStones.slice(0, 9);
+        p.gridPool2 = p.allStones.slice(9, 18);
+        p.gridPool = p.gridPool1.slice();
+        p.grid = [[null,null,null],[null,null,null],[null,null,null]];
+        p.hand = [];
+    });
+
+    logAction('GAME_START', {});
+
+    // Send joiner their stone data
+    sendNet({
+        type: 'game_init',
+        // Send joiner (player 2) their own stones
+        joinerStones: serializeStoneArrays(players[1]),
+        // Player names
+        p1Name: players[0].name,
+        p2Name: players[1].name
+    });
+
+    // Host starts arranging their grid
+    startGridArrange(0);
+}
+
+function serializeStoneArrays(player) {
+    return {
+        gridPool1: player.gridPool1.map(s => ({ color: s.color, number: s.number })),
+        gridPool2: player.gridPool2.map(s => ({ color: s.color, number: s.number })),
+        removed: player.removed.map(s => ({ color: s.color, number: s.number }))
+    };
+}
+
+function applyGameInit(data) {
+    // Joiner receives game initialization
+    currentGameId = Date.now().toString(36);
+    sessionLog = [];
+    historyStack = [];
+    currentRound = 1;
+    gridNumber = 1;
+    roundStarter = 0;
+    pickedOrientations = [null, null];
+    pickedIndicesPerPlayer = [[], []];
+    announcements = ['', ''];
+    playSubTurn = 0;
+
+    players = [
+        { id: 0, name: data.p1Name, colorSet: PRIMARY_COLORS, allStones: [], removed: [],
+          gridPool1: [], gridPool2: [], gridPool: [], grid: [[null,null,null],[null,null,null],[null,null,null]], hand: [], score: 0 },
+        { id: 1, name: data.p2Name, colorSet: SECONDARY_COLORS, allStones: [], removed: [],
+          gridPool1: [], gridPool2: [], gridPool: [], grid: [[null,null,null],[null,null,null],[null,null,null]], hand: [], score: 0 }
+    ];
+
+    // Apply joiner's stones
+    players[1].gridPool1 = data.joinerStones.gridPool1;
+    players[1].gridPool2 = data.joinerStones.gridPool2;
+    players[1].gridPool = players[1].gridPool1.slice();
+    players[1].removed = data.joinerStones.removed;
+
+    towers = {};
+    COLORS.forEach(c => { towers[c] = { stones: [], total: 0, winner: null }; });
+
+    // Joiner waits while host arranges grid
+    showWait('Spieler 1 ordnet sein Raster an...');
+}
+
+function makePlayer(id, name, colorSet) {
+    const stones = [];
+    colorSet.forEach(c => {
+        for (let n = 1; n <= 6; n++) {
+            stones.push({ color: c, number: n });
+        }
+    });
+    for (let i = 0; i < 3; i++) stones.push({ color: 'gray', number: 0 });
+    shuffleArray(stones);
+
+    return {
+        id, name, colorSet,
+        allStones: stones,
+        removed: [],
+        gridPool1: [],
+        gridPool2: [],
+        gridPool: [],
+        grid: [[null,null,null],[null,null,null],[null,null,null]],
+        hand: [],
+        score: 0
+    };
+}
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+// ======================================
+// SCREEN MANAGEMENT
+// ======================================
+
+function showScreen(name) {
+    gameScreen.classList.remove('active');
+    scoringScreen.classList.remove('active');
+    if (name === 'game') gameScreen.classList.add('active');
+    else if (name === 'scoring') scoringScreen.classList.add('active');
+}
+
+function showWait(message) {
+    waitTitle.textContent = 'Warten...';
+    waitMsg.textContent = message || 'Der Gegner ist am Zug';
+    waitOverlay.classList.add('active');
+}
+
+function hideWait() {
+    waitOverlay.classList.remove('active');
+}
+
+function isMyTurn() {
+    return currentPlayer === myPlayer;
+}
+
+// ======================================
+// GRID ARRANGEMENT
+// ======================================
+
+function startGridArrange(playerIdx) {
+    // Auto-arrange: shuffle pool into 3x3 grid for my player only
+    const p = players[myPlayer];
+    p.grid = [[null,null,null],[null,null,null],[null,null,null]];
+    const stones = p.gridPool.filter(s => s !== null);
+    shuffleArray(stones);
+    let idx = 0;
+    for (let r = 0; r < 3; r++)
+        for (let c = 0; c < 3; c++)
+            if (idx < stones.length) p.grid[r][c] = stones[idx++];
+    p.gridPool = p.gridPool.map(() => null);
+
+    gameState = 'GRID_ARRANGE';
+    logAction('GRID_ARRANGE', { player: myPlayer + 1, grid: gridNumber });
+
+    // Notify opponent that arrangement is done
+    sendNet({
+        type: 'grid_arranged',
+        player: myPlayer,
+        gridNumber: gridNumber
+    });
+
+    // Go straight to grid look
+    renderGridLook(myPlayer);
+}
+
+function applyGridArranged(data) {
+    // Opponent finished auto-arranging — nothing to do, wait for grid look
+}
+
+// ======================================
+// GRID LOOK
+// ======================================
+
+function renderGridLook(playerIdx) {
+    gameState = 'GRID_LOOK';
+    currentPlayer = playerIdx;
+    hideWait();
+    updateStatus('Raster anschauen');
+    renderTowers();
+
+    const p = players[myPlayer];
+    let html = '<div class="grid-area animate-in">';
+    html += `<h2>${p.name}: Dein Raster (Raster ${gridNumber})</h2>`;
+    html += '<p class="subtitle">Merke dir die Positionen — du kannst sie nicht mehr aendern!</p>';
+
+    html += '<div class="grid-3x3">';
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const s = p.grid[r][c];
+            if (s) {
+                html += `<div class="grid-cell occupied"><div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.number}</div></div>`;
+            } else {
+                html += '<div class="grid-cell"></div>';
+            }
+        }
+    }
+    html += '</div>';
+
+    html += `<button class="btn btn-gold btn-small" onclick="confirmGridLook()" style="margin-top: 10px;">Bereit</button>`;
+    html += '</div>';
+    dynamicArea.innerHTML = html;
+}
+
+function confirmGridLook() {
+    sendNet({ type: 'grid_look_done', player: myPlayer, gridNumber: gridNumber });
+
+    // Wait for opponent to also finish looking
+    showWait('Warte auf den Gegner...');
+    gridLookDone[myPlayer] = true;
+
+    if (gridLookDone[0] && gridLookDone[1]) {
+        hideWait();
+        startRound();
+    }
+}
+
+let gridLookDone = [false, false];
+
+function applyGridLookDone(data) {
+    gridLookDone[data.player] = true;
+
+    if (gridLookDone[0] && gridLookDone[1]) {
+        hideWait();
+        startRound();
+    }
+}
+
+// ======================================
+// ROUND MANAGEMENT
+// ======================================
+
+function startRound() {
+    if (currentRound > 6) {
+        showScoring();
+        return;
+    }
+
+    // Between grid 1 and grid 2 (after round 3)
+    if (currentRound === 4 && gridNumber === 1) {
+        gridNumber = 2;
+        pickedOrientations = [null, null];
+        pickedIndicesPerPlayer = [[], []];
+        gridLookDone = [false, false];
+        // Auto-arrange second grid
+        players[myPlayer].gridPool = players[myPlayer].gridPool2.slice();
+        startGridArrange(myPlayer);
+        return;
+    }
+
+    roundStarter = ROUND_STARTERS[currentRound - 1];
+    currentPlayer = roundStarter;
+    announcements = ['', ''];
+
+    startPickPhase();
+}
+
+function startPickPhase() {
+    gameState = 'PICK_ROW';
+    selectedHandIdx = null;
+    historyStack = [];
+
+    if (isMyTurn()) {
+        hideWait();
+        renderPickRow();
+    } else {
+        showWait(players[currentPlayer].name + ' waehlt eine Reihe...');
+    }
+}
+
+function startPlayPhase() {
+    playSubTurn = 0;
+    currentPlayer = roundStarter;
+    startSingleStoneTurn();
+}
+
+function startSingleStoneTurn() {
+    gameState = 'PLAY_STONES';
+    stonesPlayedThisTurn = 0;
+    selectedHandIdx = null;
+    historyStack = [];
+
+    if (isMyTurn()) {
+        hideWait();
+        renderPlayStones();
+    } else {
+        const stoneNum = Math.floor(playSubTurn / 2) + 1;
+        showWait(players[currentPlayer].name + ` legt Stein ${stoneNum}/3...`);
+    }
+}
+
+// ======================================
+// PICK ROW / COLUMN
+// ======================================
+
+function renderPickRow() {
+    updateStatus('Reihe waehlen');
+    renderTowers();
+
+    const p = players[myPlayer];
+    let html = '<div class="grid-area animate-in">';
+    html += `<h2>${p.name}: Waehle eine Reihe</h2>`;
+
+    const pickable = getPickableOptions();
+
+    if (pickable.length === 1) {
+        handlePickRow(pickable[0].type, pickable[0].index);
+        return;
+    }
+
+    html += '<div class="pick-instructions">';
+    if (pickedIndicesPerPlayer[myPlayer].length === 0) {
+        html += 'Waehle eine Reihe in beliebiger Richtung';
+    } else {
+        html += 'Waehle eine der anderen zwei Reihen';
+    }
+    html += '</div>';
+
+    html += '<div style="position: relative; display: inline-block;">';
+    html += '<div style="display: flex; gap: 6px; align-items: flex-start;">';
+    html += '<div style="display: flex; flex-direction: column; gap: 6px; justify-content: flex-start;">';
+    for (let r = 0; r < 3; r++) {
+        const isPickable = pickable.some(o => o.type === 'row' && o.index === r);
+        if (isPickable) {
+            html += `<button class="btn btn-gold btn-small" style="height: 56px; min-width: 36px;" onclick="handlePickRow('row', ${r})">&#8594;</button>`;
+        } else {
+            html += '<div style="height: 56px; min-width: 36px;"></div>';
+        }
+    }
+    html += '</div>';
+
+    html += '<div>';
+    html += '<div style="display: flex; gap: 6px; margin-bottom: 6px; margin-left: 0;">';
+    for (let c = 0; c < 3; c++) {
+        const isPickable = pickable.some(o => o.type === 'col' && o.index === c);
+        if (isPickable) {
+            html += `<button class="btn btn-gold btn-small" style="width: 56px;" onclick="handlePickRow('col', ${c})">&#8595;</button>`;
+        } else {
+            html += '<div style="width: 56px; height: 30px;"></div>';
+        }
+    }
+    html += '</div>';
+
+    html += '<div class="grid-3x3">';
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const s = p.grid[r][c];
+            const isInPickableRow = pickable.some(o => (o.type === 'row' && o.index === r) || (o.type === 'col' && o.index === c));
+            const hlClass = isInPickableRow ? ' highlight-row' : '';
+            if (s) {
+                // Show own stones face-up
+                html += `<div class="grid-cell occupied${hlClass}"><div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.number}</div></div>`;
+            } else {
+                html += `<div class="grid-cell${hlClass}"></div>`;
+            }
+        }
+    }
+    html += '</div></div></div>';
+    html += '</div>';
+    dynamicArea.innerHTML = html;
+}
+
+function getPickableOptions() {
+    const p = players[myPlayer];
+    const myPicked = pickedIndicesPerPlayer[myPlayer];
+    const myOrientation = pickedOrientations[myPlayer];
+    const options = [];
+
+    if (myPicked.length === 0) {
+        for (let i = 0; i < 3; i++) {
+            if (hasStones(p, 'row', i)) options.push({ type: 'row', index: i });
+            if (hasStones(p, 'col', i)) options.push({ type: 'col', index: i });
+        }
+    } else {
+        // Must be same orientation, either of the other two
+        for (let i = 0; i < 3; i++) {
+            if (myPicked.includes(i)) continue;
+            if (hasStones(p, myOrientation, i)) {
+                options.push({ type: myOrientation, index: i });
+            }
+        }
+    }
+    return options;
+}
+
+function hasStones(player, type, index) {
+    if (type === 'row') {
+        return player.grid[index].some(s => s !== null);
+    } else {
+        return [0,1,2].some(r => player.grid[r][index] !== null);
+    }
+}
+
+function handlePickRow(type, index) {
+    const p = players[myPlayer];
+
+    if (pickedIndicesPerPlayer[myPlayer].length === 0) {
+        pickedOrientations[myPlayer] = type;
+    }
+    pickedIndicesPerPlayer[myPlayer].push(index);
+
+    const hand = [];
+    if (type === 'row') {
+        for (let c = 0; c < 3; c++) {
+            if (p.grid[index][c]) {
+                hand.push(p.grid[index][c]);
+                p.grid[index][c] = null;
+            }
+        }
+    } else {
+        for (let r = 0; r < 3; r++) {
+            if (p.grid[r][index]) {
+                hand.push(p.grid[r][index]);
+                p.grid[r][index] = null;
+            }
+        }
+    }
+
+    p.hand = hand;
+    logAction('PICK_ROW', { player: myPlayer + 1, type, index, stones: hand.map(s => s.color + ':' + s.number) });
+
+    // Send pick info to opponent (just type and index, not stone contents)
+    sendNet({
+        type: 'pick_row',
+        player: myPlayer,
+        pickType: type,
+        pickIndex: index
+    });
+
+    // Go to announce phase
+    gameState = 'ANNOUNCE';
+    renderAnnounce();
+}
+
+function applyPickRow(data) {
+    // Opponent picked a row/column
+    const opPlayer = data.player;
+    if (pickedIndicesPerPlayer[opPlayer].length === 0) {
+        pickedOrientations[opPlayer] = data.pickType;
+    }
+    pickedIndicesPerPlayer[opPlayer].push(data.pickIndex);
+
+    // We don't know their actual stones, but track the pick
+    // The opponent will announce next
+}
+
+// ======================================
+// ANNOUNCE
+// ======================================
+
+function renderAnnounce() {
+    updateStatus('Ansage');
+    renderTowers();
+
+    const p = players[myPlayer];
+    let html = '<div class="announce-area animate-in">';
+    html += `<h2>${p.name}: Ansage</h2>`;
+    html += '<p>Sage deinem Gegner entweder die <b>Farben</b> oder die <b>Zahlen</b> deiner 3 Steine an.</p>';
+
+    html += '<div class="hand-area" style="margin: 12px 0;">';
+    p.hand.forEach(s => {
+        html += `<div class="stone stone-${s.color}">${s.color === 'gray' ? 'J' : s.number}</div>`;
+    });
+    html += '</div>';
+
+    html += '<div class="announce-btns">';
+    html += '<button class="btn btn-gold" onclick="doAnnounce(\'colors\')">Farben ansagen</button>';
+    html += '<button class="btn btn-gold" onclick="doAnnounce(\'numbers\')">Zahlen ansagen</button>';
+    html += '</div></div>';
+    dynamicArea.innerHTML = html;
+}
+
+function doAnnounce(choice) {
+    const p = players[myPlayer];
+    let text;
+
+    if (choice === 'colors') {
+        const colorList = p.hand.map(s => COLOR_NAMES[s.color]);
+        text = 'Farben: ' + colorList.join(', ');
+    } else {
+        const numList = p.hand.map(s => s.color === 'gray' ? '0' : s.number);
+        text = 'Zahlen: ' + numList.join(', ');
+    }
+
+    announcements[myPlayer] = text;
+    logAction('ANNOUNCE', { player: myPlayer + 1, choice, text });
+
+    sendNet({
+        type: 'announce',
+        player: myPlayer,
+        text: text
+    });
+
+    if (myPlayer === roundStarter) {
+        // I was the round starter who picked first.
+        // Now the other player picks.
+        currentPlayer = 1 - roundStarter;
+        showWait(players[currentPlayer].name + ' waehlt eine Reihe...');
+    } else {
+        // Both picked and announced — start alternating play
+        startPlayPhase();
+    }
+}
+
+function applyAnnounce(data) {
+    announcements[data.player] = data.text;
+
+    if (data.player === roundStarter) {
+        // Round starter announced, now it's my turn to pick (I'm the non-starter)
+        currentPlayer = 1 - roundStarter;
+        if (currentPlayer === myPlayer) {
+            hideWait();
+            startPickPhase();
+        }
+    } else {
+        // Both have announced — start play phase
+        startPlayPhase();
+    }
+}
+
+// ======================================
+// PLAY STONES
+// ======================================
+
+function renderPlayStones() {
+    const stoneNum = Math.floor(playSubTurn / 2) + 1;
+    updateStatus(`Stein legen (${stoneNum}/3)`);
+    renderTowers();
+
+    const p = players[myPlayer];
+    let html = '<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;" class="animate-in">';
+
+    // Both announcements
+    html += '<div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">';
+    for (let i = 0; i < 2; i++) {
+        if (announcements[i]) {
+            html += `<div class="announcement-display" style="font-size: 0.85em;">${players[i].name}: ${announcements[i]}</div>`;
+        }
+    }
+    html += '</div>';
+
+    // Hand
+    html += `<p style="font-size: 0.9em; color: var(--text-dim);">${p.name}: Waehle 1 Stein, dann klicke auf einen Turm</p>`;
+    html += '<div class="hand-area">';
+    p.hand.forEach((s, i) => {
+        const sel = selectedHandIdx === i ? ' selected' : '';
+        html += `<div class="stone stone-${s.color}${sel}" onclick="selectHandStone(${i})">${s.color === 'gray' ? 'J' : s.number}</div>`;
+    });
+    html += '</div>';
+
+    // Gray replacement hint
+    if (selectedHandIdx !== null) {
+        const stone = p.hand[selectedHandIdx];
+        if (stone.color !== 'gray') {
+            const replaceable = COLORS.filter(c => canReplaceGray(stone, c));
+            if (replaceable.length > 0) {
+                html += '<p style="font-size: 0.85em; color: var(--accent);">Tipp: Du kannst den Joker oben auf ' +
+                    replaceable.map(c => COLOR_NAMES[c]).join(', ') + ' ersetzen!</p>';
+            }
+        }
+    }
+
+    // Undo button
+    if (historyStack.length > 0) {
+        document.getElementById('btnUndo').style.display = '';
+    } else {
+        document.getElementById('btnUndo').style.display = 'none';
+    }
+
+    html += '</div>';
+    dynamicArea.innerHTML = html;
+}
+
+function selectHandStone(idx) {
+    if (gameState !== 'PLAY_STONES' || !isMyTurn()) return;
+    selectedHandIdx = (selectedHandIdx === idx) ? null : idx;
+    renderPlayStones();
+}
+
+function handleTowerClick(towerColor) {
+    if (gameState !== 'PLAY_STONES' || selectedHandIdx === null || !isMyTurn()) return;
+
+    const p = players[myPlayer];
+    const stone = p.hand[selectedHandIdx];
+    const stoneIdx = selectedHandIdx;
+
+    // Check if this is a gray replacement
+    if (canReplaceGray(stone, towerColor)) {
+        pushHistory();
+        doReplaceGray(stone, towerColor);
+
+        // Send to opponent
+        sendNet({
+            type: 'place_stone',
+            player: myPlayer,
+            stoneColor: stone.color,
+            stoneNumber: stone.number,
+            tower: towerColor,
+            isReplace: true
+        });
+        return;
+    }
+
+    if (!canPlaceInTower(stone, towerColor)) return;
+
+    pushHistory();
+
+    const effValue = getEffectiveValue(stone, towerColor);
+    const placedStone = { ...stone, effectiveValue: effValue, placedBy: myPlayer };
+
+    towers[towerColor].stones.push(placedStone);
+    towers[towerColor].total += effValue;
+
+    p.hand.splice(selectedHandIdx, 1);
+    selectedHandIdx = null;
+    stonesPlayedThisTurn++;
+
+    logAction('PLACE_STONE', {
+        player: myPlayer + 1,
+        stone: stone.color + ':' + stone.number,
+        tower: towerColor,
+        effValue,
+        newTotal: towers[towerColor].total
+    });
+
+    // Send to opponent
+    sendNet({
+        type: 'place_stone',
+        player: myPlayer,
+        stoneColor: stone.color,
+        stoneNumber: stone.number,
+        tower: towerColor,
+        isReplace: false
+    });
+
+    endStonePlacement();
+}
+
+function applyPlaceStone(data) {
+    const stone = { color: data.stoneColor, number: data.stoneNumber };
+    const towerColor = data.tower;
+
+    if (data.isReplace) {
+        // Gray replacement
+        const tower = towers[towerColor];
+        const removedGray = tower.stones.pop();
+        tower.total -= removedGray.effectiveValue;
+
+        const placedStone = { ...stone, effectiveValue: stone.number, placedBy: data.player };
+        tower.stones.push(placedStone);
+        tower.total += stone.number;
+    } else {
+        const effValue = getEffectiveValue(stone, towerColor);
+        const placedStone = { ...stone, effectiveValue: effValue, placedBy: data.player };
+        towers[towerColor].stones.push(placedStone);
+        towers[towerColor].total += effValue;
+    }
+
+    endStonePlacement();
+}
+
+function canPlaceInTower(stone, towerColor) {
+    const tower = towers[towerColor];
+
+    if (stone.color === 'gray') {
+        if (tower.stones.length === 0) return false;
+        if (tower.stones[tower.stones.length - 1].color === 'gray') return false;
+    } else {
+        if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
+    }
+    return true;
+}
+
+function getEffectiveValue(stone, towerColor) {
+    if (stone.color === 'gray') {
+        const tower = towers[towerColor];
+        if (tower.stones.length === 0) return 0;
+        return tower.stones[tower.stones.length - 1].effectiveValue;
+    }
+    return stone.number;
+}
+
+function canReplaceGray(stone, towerColor) {
+    const tower = towers[towerColor];
+    if (tower.stones.length === 0) return false;
+    if (stone.color === 'gray') return false;
+    if (!ADJACENT_TOWERS[stone.color].includes(towerColor)) return false;
+
+    const topStone = tower.stones[tower.stones.length - 1];
+    if (topStone.color !== 'gray') return false;
+
+    const totalWithoutGray = tower.total - topStone.effectiveValue;
+    const newTotalReplaced = totalWithoutGray + stone.number;
+    const totalWithGrayAndStone = tower.total + stone.number;
+
+    return (Math.abs(21 - newTotalReplaced) < Math.abs(21 - tower.total))
+        && (totalWithGrayAndStone > 21);
+}
+
+function doReplaceGray(stone, towerColor) {
+    const tower = towers[towerColor];
+    const removedGray = tower.stones.pop();
+    tower.total -= removedGray.effectiveValue;
+
+    const placedStone = { ...stone, effectiveValue: stone.number, placedBy: myPlayer };
+    tower.stones.push(placedStone);
+    tower.total += stone.number;
+
+    const p = players[myPlayer];
+    const idx = p.hand.indexOf(stone);
+    p.hand.splice(idx, 1);
+    selectedHandIdx = null;
+    stonesPlayedThisTurn++;
+
+    logAction('REPLACE_GRAY', {
+        player: myPlayer + 1,
+        stone: stone.color + ':' + stone.number,
+        tower: towerColor,
+        newTotal: tower.total
+    });
+
+    endStonePlacement();
+}
+
+// ======================================
+// HISTORY / UNDO
+// ======================================
+
+function pushHistory() {
+    historyStack.push({
+        towers: JSON.parse(JSON.stringify(towers)),
+        hand: players[myPlayer].hand.map(s => ({ ...s })),
+        stonesPlayedThisTurn,
+        selectedHandIdx
+    });
+}
+
+function undoMove() {
+    if (historyStack.length === 0) return;
+    // Only allow undo if it's still our turn and we haven't sent the move yet
+    // Since we send immediately, undo is not meaningful in remote — disable it
+}
+
+// ======================================
+// TURN MANAGEMENT
+// ======================================
+
+function checkInstantWin() {
+    for (let p = 0; p < 2; p++) {
+        let count21 = 0;
+        COLORS.forEach(c => {
+            const t = towers[c];
+            if (t.stones.length > 0 && t.total === 21 && t.stones[t.stones.length - 1].placedBy === p) {
+                count21++;
+            }
+        });
+        if (count21 >= 3) return p;
+    }
+    return -1;
+}
+
+function endStonePlacement() {
+    historyStack = [];
+    document.getElementById('btnUndo').style.display = 'none';
+
+    logAction('TURN_END', { player: currentPlayer + 1, round: currentRound, subTurn: playSubTurn });
+
+    // Check instant win: 3 towers at 21
+    const instantWinner = checkInstantWin();
+    if (instantWinner >= 0) {
+        logAction('INSTANT_WIN', { player: instantWinner + 1 });
+        showScoring();
+        return;
+    }
+
+    playSubTurn++;
+
+    if (playSubTurn >= 6) {
+        logAction('ROUND_END', { round: currentRound });
+        currentRound++;
+
+        if (currentRound === 4 || currentRound > 6) {
+            pickedOrientations = [null, null];
+            pickedIndicesPerPlayer = [[], []];
+        }
+
+        startRound();
+    } else {
+        currentPlayer = 1 - currentPlayer;
+        startSingleStoneTurn();
+    }
+}
+
+// ======================================
+// GRID 2 ARRANGEMENT
+// ======================================
+
+function applyGrid2Arranged(data) {
+    // Not needed — each player arranges independently
+}
+
+// ======================================
+// SCORING
+// ======================================
+
+function showScoring() {
+    gameState = 'SCORING';
+    showScreen('scoring');
+    hideWait();
+
+    let p1Score = 0, p2Score = 0;
+    let p1at21 = 0, p2at21 = 0;
+    let html = '<div class="towers-container" style="margin: 16px 0;">';
+
+    COLORS.forEach(c => {
+        const t = towers[c];
+        const is21 = t.total === 21 ? ' tower-21' : '';
+        html += `<div class="tower tower-${c}${is21}" style="min-height: 160px;">`;
+        t.stones.forEach(s => {
+            html += `<div class="stone stone-${s.color} tiny">${s.color === 'gray' ? 'J' : s.effectiveValue}</div>`;
+        });
+        if (t.stones.length > 0) {
+            const owner = t.stones[t.stones.length - 1].placedBy;
+            html += `<div class="tower-owner-dot p${owner}"></div>`;
+        }
+        html += `<div class="tower-total">${t.total}</div>`;
+        html += `<div class="tower-label" style="color: var(--stone-${c});">${COLOR_NAMES[c]}</div>`;
+        html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<table class="scoring-table"><tr><th>Turm</th><th>Summe</th><th>Letzter Stein</th><th>Besitzer</th></tr>';
+    COLORS.forEach(c => {
+        const t = towers[c];
+        let pointText, pointClass;
+
+        if (t.stones.length === 0) {
+            pointText = '—';
+            pointClass = 'no-point-cell';
+        } else {
+            const winner = t.stones[t.stones.length - 1].placedBy;
+            t.winner = winner;
+            if (winner === 0) { p1Score++; if (t.total === 21) p1at21++; }
+            else { p2Score++; if (t.total === 21) p2at21++; }
+            pointText = players[winner].name + (t.total === 21 ? ' (21!)' : '');
+            pointClass = 'winner-cell';
+        }
+
+        html += `<tr>
+            <td style="color: var(--stone-${c}); font-weight: 600;">${COLOR_NAMES[c]}</td>
+            <td>${t.total}</td>
+            <td>${t.stones.length > 0 ? (t.stones[t.stones.length - 1].color === 'gray' ? 'Joker' : COLOR_NAMES[t.stones[t.stones.length - 1].color] + ' ' + t.stones[t.stones.length - 1].effectiveValue) : '—'}</td>
+            <td class="${pointClass}">${pointText}</td>
+        </tr>`;
+    });
+    html += '</table>';
+
+    players[0].score = p1Score;
+    players[1].score = p2Score;
+
+    let resultText;
+    if (p1at21 >= 3) resultText = `${players[0].name} gewinnt mit ${p1at21} Tuermen auf 21!`;
+    else if (p2at21 >= 3) resultText = `${players[1].name} gewinnt mit ${p2at21} Tuermen auf 21!`;
+    else if (p1Score > p2Score) resultText = `${players[0].name} gewinnt ${p1Score}:${p2Score}!`;
+    else if (p2Score > p1Score) resultText = `${players[1].name} gewinnt ${p2Score}:${p1Score}!`;
+    else resultText = `Unentschieden ${p1Score}:${p2Score}!`;
+
+    html += `<div class="final-result">${resultText}</div>`;
+
+    logAction('GAME_OVER', { p1Score, p2Score, p1at21, p2at21, result: resultText });
+
+    document.getElementById('scoringContent').innerHTML = html;
+}
+
+// ======================================
+// RENDER TOWERS
+// ======================================
+
+function renderTowers() {
+    let html = '';
+    COLORS.forEach(c => {
+        const t = towers[c];
+        let droppable = '';
+        if (gameState === 'PLAY_STONES' && selectedHandIdx !== null && isMyTurn()) {
+            const stone = players[myPlayer].hand[selectedHandIdx];
+            if (canPlaceInTower(stone, c) || canReplaceGray(stone, c)) droppable = ' droppable';
+        }
+        const is21 = t.total === 21 ? ' tower-21' : '';
+        html += `<div class="tower tower-${c}${droppable}${is21}" onclick="handleTowerClick('${c}')">`;
+        t.stones.forEach(s => {
+            html += `<div class="stone stone-${s.color} small">${s.color === 'gray' ? 'J' : s.effectiveValue}</div>`;
+        });
+        if (t.stones.length > 0) {
+            const owner = t.stones[t.stones.length - 1].placedBy;
+            html += `<div class="tower-owner-dot p${owner}"></div>`;
+        }
+        html += `<div class="tower-total">${t.total || ''}</div>`;
+        html += `<div class="tower-label" style="color: var(--stone-${c});">${COLOR_NAMES[c]}</div>`;
+        html += '</div>';
+    });
+    towersArea.innerHTML = html;
+}
+
+// ======================================
+// STATUS BAR
+// ======================================
+
+function updateStatus(phase) {
+    document.getElementById('sRound').textContent = Math.min(currentRound, 6);
+    document.getElementById('sMyRole').textContent = players[myPlayer] ? players[myPlayer].name + ' (Sp.' + (myPlayer + 1) + ')' : '—';
+    document.getElementById('sPhase').textContent = phase || '—';
+
+    const s1 = players[0] ? players[0].score : 0;
+    const s2 = players[1] ? players[1].score : 0;
+    document.getElementById('sScore').textContent = `${s1} – ${s2}`;
+}
+
+// ======================================
+// CSV EXPORT
+// ======================================
+
+function logAction(action, data) {
+    sessionLog.push({
+        gameId: currentGameId,
+        round: currentRound,
+        player: typeof data.player !== 'undefined' ? data.player : (myPlayer + 1),
+        action,
+        detail: JSON.stringify(data || {}),
+        timestamp: new Date().toISOString()
+    });
+}
+
+function downloadCSV() {
+    if (sessionLog.length === 0) { alert('Keine Daten vorhanden.'); return; }
+    let csv = 'Game_ID,Round,Player,Action,Detail,Timestamp\n';
+    for (const r of sessionLog) {
+        csv += `${r.gameId},${r.round},${r.player},${r.action},"${r.detail.replace(/"/g, '""')}",${r.timestamp}\n`;
+    }
+
+    // Save to server
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({game: 'rainbow_blackjack_remote', csv: csv})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) console.log('CSV saved on server: ' + d.filename);
+        else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+    // Local download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    a.download = `rainbow_blackjack_remote_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ======================================
+// RULES MODAL
+// ======================================
+
+function openRules() {
+    rulesModal.style.display = 'block';
+}
+
+function closeRules() {
+    rulesModal.style.display = 'none';
+}
+
+// ======================================
+// ON LOAD
+// ======================================
+
+window.addEventListener('DOMContentLoaded', () => {
+    // Focus name input
+    document.getElementById('player-name').focus();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undoMove();
+    }
+});
+</script>
+</body>
+</html>

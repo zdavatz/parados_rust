@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Parados
+GenericName=Think Ahead Board Games
+Comment=Seven original board games (Kangaroo / Capovolto / Divided Loyalties / Democracy / Frankenstein / Rainbow Blackjack / MAKA LAINA)
+Exec=parados
+Icon=parados
+Terminal=false
+Categories=Game;BoardGame;
+Keywords=parados;think;ahead;board;games;puzzle;strategy;memory;
+StartupWMClass=parados

@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MAKA LAINA - The Strategic Endspurt</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0e1117;
+            --surface: #1a1d27;
+            --surface2: #242836;
+            --border: #2e3345;
+            --text: #e8eaed;
+            --text-dim: #8b8fa3;
+            --accent: #c9a227;
+            --accent-glow: rgba(201, 162, 39, 0.15);
+            --p1: #e8c547;
+            --p2: #47b8e8;
+            --red: #e85d5d;
+            --green: #5de88a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(201,162,39,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,162,39,0.03) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            text-align: center;
+            padding: 28px 20px 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2.2rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-shadow: 0 0 40px rgba(201,162,39,0.3);
+        }
+
+        header .subtitle {
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* CONNECTION SCREEN */
+        #connect-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .connect-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 420px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .connect-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2rem;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .connect-box .tagline {
+            font-size: 0.7rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .field-group input, .field-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field-group input:focus, .field-group select:focus {
+            border-color: var(--accent);
+        }
+
+        .field-group select { cursor: pointer; }
+        .field-group select option { background: var(--surface2); }
+
+        .connect-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .connect-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        .connect-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        #connect-status {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            min-height: 20px;
+        }
+
+        #connect-status.error { color: var(--red); }
+        #connect-status.success { color: var(--green); }
+
+        /* MAIN LAYOUT */
+        #game-wrap {
+            display: none;
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* BOARD */
+        .board-frame {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(12, 40px);
+            grid-template-rows: repeat(12, 40px);
+            gap: 1px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell {
+            width: 40px; height: 40px;
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+        }
+
+        .cell:hover { background: #2d3248; }
+        .cell.los { background: rgba(201,162,39,0.08); }
+        .cell.selected { background: rgba(33,150,243,0.15); box-shadow: inset 0 0 0 2px #2196f3; }
+        .cell.reachable { background: rgba(93,232,138,0.1); box-shadow: inset 0 0 6px rgba(93,232,138,0.3); }
+        .cell.placeable { background: rgba(93,232,138,0.35); box-shadow: inset 0 0 8px rgba(93,232,138,0.5); cursor: crosshair; }
+        @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(93,232,138,0.3); } 50% { box-shadow: inset 0 0 12px rgba(93,232,138,0.7); } }
+        .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
+
+        .disc {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            z-index: 2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.15s;
+        }
+
+        .cell:hover .disc { transform: scale(1.08); }
+
+        .collector {
+            width: 34px; height: 34px;
+            border-radius: 6px;
+            z-index: 3;
+            box-shadow: 0 0 12px rgba(201,162,39,0.4), 0 2px 6px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .collector.p1 {
+            background: var(--p1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: var(--bg);
+        }
+
+        .collector.p2 {
+            background: var(--p2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: var(--bg);
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .panel-title {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        #status-text {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .your-turn { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 8px rgba(201,162,39,0.3); }
+            50% { text-shadow: 0 0 20px rgba(201,162,39,0.6); }
+        }
+
+        .player-indicator {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .player-indicator.p1 { background: var(--p1); }
+        .player-indicator.p2 { background: var(--p2); }
+
+        /* Scores */
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 4px 12px;
+            font-size: 0.85rem;
+        }
+
+        .score-grid .hdr {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .score-color {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .score-val { text-align: center; font-weight: 500; }
+        .worthless { text-decoration: line-through; color: var(--text-dim); opacity: 0.4; }
+        .worthless-box { display: inline-block; border: 2px solid; padding: 1px 5px; border-radius: 4px; font-weight: bold; opacity: 0.7; }
+
+        #history-controls { display: none; background: var(--surface2); border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 1px solid var(--border); }
+        #history-controls .history-nav { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; }
+        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); font-weight: bold; font-size: 1em; }
+        #history-controls .history-nav button:hover { background: var(--border); }
+        #history-label { font-weight: bold; color: var(--accent); margin: 0; font-size: 0.9em; }
+        #history-desc { font-size: 0.8em; color: var(--text-dim); margin: 4px 0 0; }
+
+        /* Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface2);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { border-color: var(--accent); background: rgba(201,162,39,0.08); }
+
+        .action-btn.danger { border-color: #5d3333; }
+        .action-btn.danger:hover { border-color: var(--red); background: rgba(232,93,93,0.08); }
+
+        /* DRAFT PANEL */
+        #draft-panel {
+            display: none;
+            background: rgba(33, 150, 243, 0.06);
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #draft-label {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        #draft-choices {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        #draft-choices .disc {
+            width: 50px; height: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #draft-choices .disc:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(33, 150, 243, 0.5);
+        }
+
+        /* SACRIFICE PANEL */
+        #sacrifice-panel {
+            display: none;
+            background: rgba(232, 93, 93, 0.06);
+            border: 1px solid rgba(232, 93, 93, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #sacrifice-choices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        #sacrifice-choices .disc {
+            width: 38px; height: 38px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #sacrifice-choices .disc:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 8px rgba(168, 93, 232, 0.5);
+        }
+
+        #bag-count {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* CHAT */
+        #chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            max-height: 300px;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 4px;
+            padding-right: 4px;
+        }
+
+        #chat-messages::-webkit-scrollbar { width: 4px; }
+        #chat-messages::-webkit-scrollbar-track { background: transparent; }
+        #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .chat-msg {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 4px 0;
+        }
+
+        .chat-msg .sender {
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        .chat-msg .sender.p1 { color: var(--p1); }
+        .chat-msg .sender.p2 { color: var(--p2); }
+
+        .chat-msg.system {
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.75rem;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            padding: 9px 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .chat-input-row input:focus { border-color: var(--accent); }
+
+        .chat-input-row button {
+            padding: 9px 16px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .chat-input-row button:hover { filter: brightness(1.15); }
+
+        /* MODAL */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        #modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 560px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        #modal h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        #modal h3 { color: var(--text); margin: 16px 0 8px; font-size: 0.95rem; }
+        #modal p, #modal li { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+        #modal ul { padding-left: 20px; }
+        #modal li { margin-bottom: 6px; }
+        #modal b { color: var(--text); }
+
+        @media (max-width: 900px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #sidebar { width: 100%; max-width: 500px; }
+            #board { grid-template-columns: repeat(12, 32px); grid-template-rows: repeat(12, 32px); }
+            .cell { width: 32px; height: 32px; }
+            .disc { width: 26px; height: 26px; font-size: 0.7rem; }
+            .collector { width: 28px; height: 28px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- CONNECTION SCREEN -->
+<div id="connect-screen">
+    <div class="connect-box">
+        <h2>MAKA LAINA</h2>
+        <div class="tagline">The Strategic Endspurt</div>
+
+        <div class="field-group">
+            <label>Your Name</label>
+            <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+        </div>
+        <div class="field-group">
+            <label>Room ID (both players enter the same ID)</label>
+            <input type="text" id="room-id" placeholder="e.g. myroom42">
+        </div>
+
+        <button class="connect-btn" id="connect-btn" onclick="startConnection()">Connect</button>
+        <div id="connect-status"></div>
+    </div>
+</div>
+
+<!-- GAME -->
+<header>
+    <h1>MAKA LAINA</h1>
+    <div class="subtitle">The Strategic Endspurt</div>
+</header>
+
+<div id="setup-panel" style="max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
+    <p style="font-weight:bold; margin:0 0 10px; color:var(--accent);">Choose starting setup:</p>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="startRandom()">Random</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(1)">1</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(2)">2</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(3)">3</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(4)">4</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(5)">5</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(6)">6</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(7)">7</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(8)">8</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(9)">9</button>
+        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(10)">10</button>
+    </div>
+    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Host selects the starting position for both players.</p>
+</div>
+
+<div id="game-wrap">
+    <div id="game-container">
+        <div class="board-frame">
+            <div id="board"></div>
+        </div>
+        <div id="sidebar">
+            <div class="panel">
+                <div class="panel-title">Status</div>
+                <div id="status-text">Waiting…</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Scores</div>
+                <div class="score-grid">
+                    <div class="hdr">Color</div>
+                    <div class="hdr" style="text-align:center"><span class="player-indicator p1"></span>P1</div>
+                    <div class="hdr" style="text-align:center"><span class="player-indicator p2"></span>P2</div>
+                </div>
+                <div class="score-grid" id="score-body"></div>
+                <div id="bag-count"></div>
+            </div>
+
+            <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
+                <button class="action-btn" onclick="toggleRules(true)">📖 View Rules</button>
+                <button class="action-btn" id="los-toggle" onclick="toggleLOS()" style="opacity:0.6;">Show Line of Sight</button>
+                <button class="action-btn" id="csv-export-btn" onclick="downloadCSV()" style="display:none; background:#27ae60; color:white;">Export CSV</button>
+                <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Sacrifice & Move</button>
+                <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">Relinquish Turn (3/3)</button>
+                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
+                <div id="draft-panel">
+                    <p id="draft-label">Place this disc in your line of sight:</p>
+                    <div id="draft-choices"></div>
+                </div>
+                <div id="sacrifice-panel">
+                    <p style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.85rem;">SACRIFICE: Pick a disc to sacrifice (value = move range)</p>
+                    <div id="sacrifice-choices"></div>
+                </div>
+                <div id="history-controls">
+                    <p id="history-label">Move History</p>
+                    <div class="history-nav">
+                        <button onclick="stepHistory(-999)" title="First">&#x23EE;</button>
+                        <button onclick="stepHistory(-1)" title="Previous">&#x25C0;</button>
+                        <span id="history-pos" style="color:var(--text-dim); font-size:0.85em;">0 / 0</span>
+                        <button onclick="stepHistory(1)" title="Next">&#x25B6;</button>
+                        <button onclick="stepHistory(999)" title="Last">&#x23ED;</button>
+                    </div>
+                    <p id="history-desc"></p>
+                    <button class="action-btn" style="margin-top:8px; background:#27ae60; color:white;" onclick="downloadCSV()">Export CSV</button>
+                </div>
+                <button class="action-btn danger" onclick="window.location.reload()">✕ Leave Game</button>
+            </div>
+
+            <div class="panel" id="chat-panel">
+                <div class="panel-title">Chat</div>
+                <div id="chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()">
+                    <button onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RULES MODAL -->
+<div id="modal-overlay" onclick="toggleRules(false)">
+    <div id="modal" onclick="event.stopPropagation()">
+        <h2>MAKA LAINA Rules</h2>
+        <h3>Goal</h3>
+        <p>Collect discs on a 12x12 grid to score the most points. The game continues until <b>all discs are collected</b> or both players cannot move.</p>
+        <h3>Shifting & Collection</h3>
+        <ul>
+            <li>Select a disc that is <b>not</b> in your Line of Sight (LOS).</li>
+            <li>Shift it 1 square so it enters your LOS.</li>
+            <li>Your collector moves to that square and collects the disc.</li>
+            <li>LOS extends in 8 directions, blocked by other discs or collectors.</li>
+        </ul>
+        <h3>Draft System</h3>
+        <ul>
+            <li>After each collection, <b>1 new disc</b> is drawn from the bag.</li>
+            <li>You must place it <b>in your line of sight</b>.</li>
+            <li>The disc cannot be collected immediately (it's in your LOS).</li>
+            <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
+        </ul>
+        <h3>Special Mechanics</h3>
+        <ul>
+            <li><b>Number 1:</b> Immediate extra turn.</li>
+            <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
+            <li><b>Stuck?</b> Your opponent picks one of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely.</li>
+        </ul>
+        <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Verstanden!</button>
+    </div>
+</div>
+
+<script>
+// ─── NETWORKING ──────────────────────────────────────────────
+let peer = null;
+let conn = null;
+let myRole = null;    // 'host' or 'join'
+let myPlayer = null;  // 1 or 2
+let myName = '';
+let opponentName = '';
+
+function setConnStatus(msg, cls = '') {
+    const el = document.getElementById('connect-status');
+    el.textContent = msg;
+    el.className = cls;
+}
+
+function startConnection() {
+    const name = document.getElementById('player-name').value.trim();
+    const room = document.getElementById('room-id').value.trim();
+
+    if (!name) { setConnStatus('Please enter your name.', 'error'); return; }
+    if (!room) { setConnStatus('Please enter a Room ID.', 'error'); return; }
+
+    myName = name;
+    document.getElementById('connect-btn').disabled = true;
+    setConnStatus('Connecting…');
+
+    // Try to claim host. If the host ID is taken, become the joiner.
+    const hostId = `makalaina-${room}-host`;
+
+    peer = new Peer(hostId);
+
+    peer.on('open', () => {
+        // Successfully claimed host
+        myRole = 'host';
+        myPlayer = 1;
+        setConnStatus('Waiting for another player to join room "' + room + '"…');
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+        });
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            // Host already exists — join as player 2
+            peer.destroy();
+            peer = new Peer();
+            peer.on('open', () => {
+                myRole = 'join';
+                myPlayer = 2;
+                setConnStatus('Joining room "' + room + '"…');
+                conn = peer.connect(hostId, { reliable: true });
+                setupConn();
+            });
+            peer.on('error', (err2) => {
+                setConnStatus('Error: ' + err2.message, 'error');
+                document.getElementById('connect-btn').disabled = false;
+            });
+        } else {
+            setConnStatus('Error: ' + err.message, 'error');
+            document.getElementById('connect-btn').disabled = false;
+        }
+    });
+}
+
+function setupConn() {
+    conn.on('open', () => {
+        setConnStatus('Connected!', 'success');
+        conn.send({ type: 'hello', name: myName, player: myPlayer });
+        setTimeout(() => {
+            document.getElementById('connect-screen').style.display = 'none';
+            document.getElementById('game-wrap').style.display = 'block';
+            addSystemMsg('Connected! You are Player ' + myPlayer + '.');
+        }, 400);
+    });
+
+    conn.on('data', (data) => {
+        handleNetMessage(data);
+    });
+
+    conn.on('close', () => {
+        addSystemMsg('Opponent disconnected.');
+    });
+}
+
+function sendNet(msg) {
+    if (conn && conn.open) conn.send(msg);
+}
+
+function handleNetMessage(data) {
+    switch (data.type) {
+        case 'hello':
+            opponentName = data.name;
+            addSystemMsg(opponentName + ' joined as Player ' + data.player + '.');
+            break;
+        case 'chat':
+            addChatMsg(data.player, data.name, data.text);
+            break;
+        case 'click':
+            handleClick(data.idx, true);
+            break;
+        case 'sacrifice_pick':
+            applySacrificeDisc(data.discColor, data.discNum, data.discCounted, true);
+            break;
+        case 'sacrifice_request':
+            sacrificingPlayer = data.sacrificingPlayer;
+            gameState = 'SACRIFICE_OPPONENT_SELECT';
+            showSacrificePanel();
+            updateUI(); render();
+            break;
+        case 'relinquish':
+            performRelinquish(true);
+            break;
+        case 'state_sync':
+            applySyncState(data);
+            break;
+    }
+}
+
+// ─── CHAT ────────────────────────────────────────────────────
+function addSystemMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg system';
+    div.textContent = text;
+    const container = document.getElementById('chat-messages');
+    container.prepend(div);
+}
+
+function addChatMsg(player, name, text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    const span = document.createElement('span');
+    span.className = 'sender p' + player;
+    span.textContent = name + ':';
+    div.appendChild(span);
+    div.appendChild(document.createTextNode(' ' + text));
+    const container = document.getElementById('chat-messages');
+    container.prepend(div);
+}
+
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    addChatMsg(myPlayer, myName, text);
+    sendNet({ type: 'chat', player: myPlayer, name: myName, text: text });
+    input.value = '';
+}
+
+// ─── GAME STATE ──────────────────────────────────────────────
+let gameState = 'SETUP';
+let currentPlayer = 1;
+let collectors = { 1: null, 2: null };
+let selectedIdx = null;
+let cells = Array(144).fill(null);
+let bag = [];
+let playerFlags = { 1: {}, 2: {} };
+let scores = { 1: {}, 2: {} };
+let relinquished = { 1: false, 2: false };
+let relinquishCount = { 1: 0, 2: 0 };
+const RELINQUISH_LIMIT = 3;
+const allColors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+const discColorMap = {
+    red: '#e85d5d', blue: '#5d8de8', yellow: '#e8c547',
+    green: '#5de88a', orange: '#e8995d', purple: '#a85de8'
+};
+
+// Draft and sacrifice state
+let collectedDiscs = { 1: [], 2: [] };
+let draftChosen = null;
+
+let pendingExtraTurn = false;
+let sacrificeRange = 0;
+let sacrificingPlayer = 0;
+let showLOS = false;
+
+// Move history for replay
+let moveHistory = [];
+let historyIndex = -1;
+let isReviewing = false;
+
+function saveSnapshot(desc) {
+    moveHistory.push({
+        cells: cells.map(c => c ? {...c} : null),
+        collectors: { 1: collectors[1], 2: collectors[2] },
+        scores: { 1: {...scores[1]}, 2: {...scores[2]} },
+        playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
+        currentPlayer: currentPlayer,
+        bagLen: bag.length,
+        desc: desc
+    });
+}
+
+function stepHistory(delta) {
+    if (moveHistory.length === 0) return;
+    const maxIdx = moveHistory.length - 1;
+    if (!isReviewing) {
+        historyIndex = maxIdx;
+        isReviewing = true;
+    }
+    historyIndex = Math.max(0, Math.min(maxIdx, historyIndex + delta));
+    renderSnapshot(moveHistory[historyIndex]);
+    updateHistoryControls();
+}
+
+function renderSnapshot(snap) {
+    for (let i = 0; i < 144; i++) {
+        const el = document.getElementById(`cell-${i}`);
+        el.innerHTML = '';
+        el.className = 'cell';
+        if (snap.cells[i]) {
+            const d = document.createElement('div');
+            if (snap.cells[i].type === 'collector') {
+                d.className = `collector p${snap.cells[i].player}`;
+                d.textContent = snap.cells[i].player === 1 ? '♚' : '♛';
+            } else {
+                d.className = 'disc';
+                d.style.backgroundColor = discColorMap[snap.cells[i].color] || snap.cells[i].color;
+                d.textContent = snap.cells[i].num;
+            }
+            el.appendChild(d);
+        }
+    }
+    renderScoreTable(snap.scores, snap.playerFlags);
+}
+
+function updateHistoryControls() {
+    const pos = document.getElementById('history-pos');
+    const desc = document.getElementById('history-desc');
+    pos.innerText = `${historyIndex + 1} / ${moveHistory.length}`;
+    desc.innerText = moveHistory[historyIndex].desc || '';
+}
+
+function renderScoreTable(sc, flags) {
+    const body = document.getElementById('score-body');
+    body.innerHTML = '';
+    allColors.forEach(c => {
+        const hex = discColorMap[c];
+        const p1W = flags[1][c + '6'];
+        const p2W = flags[2][c + '6'];
+        const s1 = sc[1][c] || 0;
+        const s2 = sc[2][c] || 0;
+        const s1Text = p1W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s1}</span>` : s1;
+        const s2Text = p2W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s2}</span>` : s2;
+        const p1Cls = p1W ? ' worthless' : '';
+        const p2Cls = p2W ? ' worthless' : '';
+        body.innerHTML += `
+            <div class="score-color"><span class="score-dot" style="background:${hex}"></span><span style="color:${hex}; font-weight:bold;">${c}</span></div>
+            <div class="score-val${p1Cls}">${s1Text}</div>
+            <div class="score-val${p2Cls}">${s2Text}</div>`;
+    });
+}
+
+const CURATED_POSITIONS = [null,
+    {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
+    {b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
+    {b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
+    {b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
+    {b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
+    {b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
+    {b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
+    {b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
+    {b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
+    {b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
+];
+
+function startRandom() {
+    document.getElementById('setup-panel').style.display = 'none';
+    initBag();
+    gameState = 'PLACEMENT';
+    if (myRole === 'host') syncState();
+    updateUI(); render();
+}
+
+function loadCuratedPosition(posId) {
+    const pos = CURATED_POSITIONS[posId];
+    if (!pos) return;
+    document.getElementById('setup-panel').style.display = 'none';
+
+    const allDiscs = [];
+    ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => allDiscs.push({color:c, num:n, type:'primary'})));
+    ['green','orange','purple'].forEach(c => { for(let i=0;i<6;i++) allDiscs.push({color:c, num:'', type:'secondary'}); });
+
+    const blackIdx = pos.b[1] * 12 + pos.b[0];
+    const whiteIdx = pos.w[1] * 12 + pos.w[0];
+    collectors[1] = blackIdx;
+    collectors[2] = whiteIdx;
+    cells[blackIdx] = {type:'collector', player:1};
+    cells[whiteIdx] = {type:'collector', player:2};
+
+    pos.d.forEach(([x, y, color, num]) => {
+        const idx = y * 12 + x;
+        const poolIdx = allDiscs.findIndex(p => p.color === color && p.num === num);
+        if (poolIdx >= 0) {
+            cells[idx] = allDiscs.splice(poolIdx, 1)[0];
+        } else {
+            cells[idx] = {color, num, type: num !== '' ? 'primary' : 'secondary'};
+        }
+    });
+
+    allDiscs.sort(() => Math.random() - 0.5);
+    allDiscs.splice(0, 6);
+    bag = allDiscs;
+
+    allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+
+    gameState = 'PLAY';
+    currentPlayer = 1;
+    document.getElementById('csv-export-btn').style.display = '';
+    saveSnapshot('Game start — Player 1 goes first');
+    if (myRole === 'host') setTimeout(() => syncState(), 100);
+    updateUI(); render();
+}
+
+function toggleRules(show) {
+    document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function toggleLOS() {
+    showLOS = !showLOS;
+    const btn = document.getElementById('los-toggle');
+    btn.innerText = showLOS ? 'Hide Line of Sight' : 'Show Line of Sight';
+    btn.style.opacity = showLOS ? '1' : '0.6';
+    render();
+}
+
+function initBag() {
+    ['red', 'blue', 'yellow'].forEach(c =>
+        [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => bag.push({ color: c, num: n, type: 'primary' }))
+    );
+    ['green', 'orange', 'purple'].forEach(c => {
+        for (let i = 0; i < 6; i++) bag.push({ color: c, num: '', type: 'secondary' });
+    });
+    bag.sort(() => Math.random() - 0.5);
+    bag.splice(0, 6);
+    allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+}
+
+function createBoard() {
+    const boardDiv = document.getElementById('board');
+    for (let i = 0; i < 144; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${i}`;
+        cell.onclick = () => {
+            if (currentPlayer !== myPlayer) return;
+            handleClick(i, false);
+        };
+        boardDiv.appendChild(cell);
+    }
+}
+
+function handleClick(i, isRemote) {
+    if (gameState === 'SETUP') return;
+    if (gameState === 'PLACEMENT') {
+        if (cells[i]) return;
+        if (!collectors[1]) {
+            collectors[1] = i;
+            cells[i] = { type: 'collector', player: 1 };
+            currentPlayer = 2;
+        } else if (!collectors[2]) {
+            collectors[2] = i;
+            cells[i] = { type: 'collector', player: 2 };
+            startPlay();
+        }
+        if (!isRemote) sendNet({ type: 'click', idx: i });
+        render(); updateUI();
+    } else if (gameState === 'PLAY') {
+        handleMove(i, isRemote);
+    } else if (gameState === 'DRAFT_PLACE') {
+        const draftLOS = getLOS(collectors[currentPlayer]);
+        if (!cells[i] && draftLOS.includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            const draftColor = draftChosen.color;
+            const draftNum = draftChosen.num;
+            cells[i] = draftChosen;
+            draftChosen = null;
+            document.getElementById('draft-panel').style.display = 'none';
+            gameState = 'PLAY';
+            const dPName = 'Player ' + currentPlayer;
+            if (!pendingExtraTurn) {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            pendingExtraTurn = false;
+            saveSnapshot(`${dPName} places ${draftColor} ${draftNum || ''} on board`);
+            updateUI(); render();
+        }
+    } else if (gameState === 'SACRIFICE_MOVE') {
+        if (!isRemote && currentPlayer !== myPlayer) return;
+        const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
+        if (reachable.includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            const smName = 'Player ' + currentPlayer;
+            cells[collectors[currentPlayer]] = null;
+            collectors[currentPlayer] = i;
+            cells[i] = { type: 'collector', player: currentPlayer };
+            sacrificeRange = 0;
+            sacrificingPlayer = 0;
+            gameState = 'PLAY';
+            relinquished[1] = relinquished[2] = false;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            saveSnapshot(`${smName} moves collector after sacrifice`);
+            updateUI(); render();
+        }
+    }
+}
+
+function startPlay() {
+    gameState = 'PLAY';
+    currentPlayer = 1;
+    // Only host places discs, then syncs
+    if (myRole === 'host') {
+        for (let i = 0; i < 24; i++) {
+            let r;
+            do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+            cells[r] = bag.pop();
+        }
+        saveSnapshot('Game start — Player 1 goes first');
+        // Send full state to joiner
+        setTimeout(() => syncState(), 100);
+    }
+}
+
+function syncState() {
+    sendNet({
+        type: 'state_sync',
+        cells: JSON.parse(JSON.stringify(cells)),
+        collectors: { ...collectors },
+        currentPlayer,
+        scores: JSON.parse(JSON.stringify(scores)),
+        playerFlags: JSON.parse(JSON.stringify(playerFlags)),
+        relinquished: { ...relinquished },
+        relinquishCount: { ...relinquishCount },
+        gameState,
+        bag: JSON.parse(JSON.stringify(bag)),
+        collectedDiscs: JSON.parse(JSON.stringify(collectedDiscs)),
+        draftChosen: draftChosen ? JSON.parse(JSON.stringify(draftChosen)) : null,
+        pendingExtraTurn,
+        sacrificeRange,
+        sacrificingPlayer
+    });
+}
+
+function applySyncState(data) {
+    cells = data.cells;
+    collectors = data.collectors;
+    currentPlayer = data.currentPlayer;
+    scores = data.scores;
+    playerFlags = data.playerFlags;
+    relinquished = data.relinquished;
+    if (data.relinquishCount !== undefined) relinquishCount = data.relinquishCount;
+    gameState = data.gameState;
+    if (data.bag !== undefined) bag = data.bag;
+    if (data.collectedDiscs !== undefined) collectedDiscs = data.collectedDiscs;
+    if (data.draftChosen !== undefined) draftChosen = data.draftChosen;
+    if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
+    if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
+    if (data.sacrificingPlayer !== undefined) sacrificingPlayer = data.sacrificingPlayer;
+    // Re-show draft panel if syncing into a draft state
+    if (gameState === 'DRAFT_PLACE' && draftChosen) {
+        showDraftPlacePanel(draftChosen);
+    }
+    // Re-show sacrifice panel if syncing into opponent-select state
+    if (gameState === 'SACRIFICE_OPPONENT_SELECT') {
+        showSacrificePanel();
+    }
+    render(); updateUI();
+}
+
+function getLOS(idx) {
+    const los = [];
+    const r = Math.floor(idx / 12), c = idx % 12;
+    [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => {
+        for (let d = 1; d < 12; d++) {
+            let nr = r + dr * d, nc = c + dc * d;
+            if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) break;
+            let id = nr * 12 + nc;
+            los.push(id);
+            if (cells[id]) break;
+        }
+    });
+    return los;
+}
+
+function hasValidMove(player) {
+    const los = getLOS(collectors[player]);
+    for (let i = 0; i < 144; i++) {
+        if (!cells[i] || cells[i].type === 'collector') continue;
+        if (los.includes(i)) continue;
+        const r = Math.floor(i / 12), c = i % 12;
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) continue;
+                const adj = nr * 12 + nc;
+                if (!cells[adj] && los.includes(adj)) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function handleMove(i, isRemote) {
+    const los = getLOS(collectors[currentPlayer]);
+    if (selectedIdx === null) {
+        if (cells[i] && cells[i].type !== 'collector' && !los.includes(i)) {
+            selectedIdx = i;
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            render();
+        }
+    } else {
+        const dist = Math.max(
+            Math.abs(Math.floor(i / 12) - Math.floor(selectedIdx / 12)),
+            Math.abs((i % 12) - (selectedIdx % 12))
+        );
+        if (!cells[i] && dist === 1 && getLOS(collectors[currentPlayer]).includes(i)) {
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            processCollection(cells[selectedIdx], i);
+        } else {
+            selectedIdx = null;
+            if (!isRemote) sendNet({ type: 'click', idx: i });
+            render();
+        }
+    }
+}
+
+function processCollection(disc, newIdx) {
+    const pName = 'Player ' + currentPlayer;
+    const colorKey = disc.color + '6';
+    const counted = !playerFlags[currentPlayer][colorKey];
+
+    if (counted) {
+        scores[currentPlayer][disc.color] += (disc.num || 1);
+        if (disc.num === 6) playerFlags[currentPlayer][colorKey] = true;
+    }
+
+    // Track collected disc (primary only, for sacrifice)
+    if (disc.type === 'primary') {
+        collectedDiscs[currentPlayer].push({...disc, counted});
+    }
+
+    // Move collector
+    cells[collectors[currentPlayer]] = null;
+    cells[selectedIdx] = null;
+    collectors[currentPlayer] = newIdx;
+    cells[newIdx] = { type: 'collector', player: currentPlayer };
+    selectedIdx = null;
+    relinquished[1] = relinquished[2] = false;
+    saveSnapshot(`${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`);
+
+    // Check if all discs collected and bag empty
+    const remaining = cells.filter(c => c && c.type !== 'collector').length;
+    if (remaining === 0 && bag.length === 0) {
+        gameState = 'END';
+        addSystemMsg('Game Over! All discs collected.');
+        updateUI(); render();
+        return;
+    }
+
+    // Draft: draw 1 disc from bag, player must place it
+    if (bag.length > 0) {
+        pendingExtraTurn = (disc.num === 1);
+        draftChosen = bag.pop();
+        gameState = 'DRAFT_PLACE';
+        showDraftPlacePanel(draftChosen);
+        updateUI(); render();
+        return;
+    }
+
+    // No draft: normal turn switch
+    if (disc.num !== 1) {
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+    }
+    updateUI(); render();
+}
+
+// ─── DRAFT SYSTEM (1-disc placement) ────────────────────────────
+function showDraftPlacePanel(disc) {
+    const panel = document.getElementById('draft-panel');
+    panel.style.display = 'block';
+    const label = document.getElementById('draft-label');
+    label.innerText = 'Place this disc in your line of sight:';
+    const choices = document.getElementById('draft-choices');
+    choices.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'disc';
+    d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+    d.innerText = disc.num;
+    d.style.cursor = 'default';
+    d.style.boxShadow = '0 0 12px rgba(93, 232, 138, 0.5)';
+    choices.appendChild(d);
+}
+
+// ─── SACRIFICE SYSTEM ────────────────────────────────────────
+function doSacrifice() {
+    if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
+    sacrificingPlayer = currentPlayer;
+    const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+    if (primaryDiscs.length === 0) {
+        // No primary discs: forced relinquish (doesn't count against limit)
+        const rName = 'Player ' + currentPlayer;
+        relinquished[currentPlayer] = true;
+        saveSnapshot(`${rName} forced relinquish (no discs to sacrifice)`);
+        if (relinquished[1] && relinquished[2]) {
+            gameState = 'END';
+            addSystemMsg('Game Over — no moves possible.');
+        } else {
+            addSystemMsg(`Player ${currentPlayer} cannot sacrifice (no primary discs).`);
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        syncState();
+        updateUI(); render();
+        return;
+    }
+    gameState = 'SACRIFICE_OPPONENT_SELECT';
+    sendNet({ type: 'sacrifice_request', sacrificingPlayer: sacrificingPlayer });
+    updateUI(); render();
+}
+
+function showSacrificePanel() {
+    const panel = document.getElementById('sacrifice-panel');
+    panel.style.display = 'block';
+    document.getElementById('sacrifice-btn').style.display = 'none';
+    const choices = document.getElementById('sacrifice-choices');
+    choices.innerHTML = '';
+    const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+    const isOpponent = myPlayer !== sacrificingPlayer;
+    primaryDiscs.forEach((disc) => {
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = discColorMap[disc.color] || disc.color;
+        d.innerText = disc.num;
+        d.title = `Sacrifice: ${disc.counted ? 'lose ' + disc.num + ' pts from ' + disc.color + ', ' : ''}move up to ${disc.num} squares`;
+        if (isOpponent) {
+            d.onclick = () => {
+                applySacrificeDisc(disc.color, disc.num, disc.counted, false);
+            };
+        } else {
+            d.style.opacity = '0.5';
+            d.style.cursor = 'not-allowed';
+        }
+        choices.appendChild(d);
+    });
+}
+
+function applySacrificeDisc(color, num, counted, isRemote) {
+    // Find and remove the disc from sacrificingPlayer's collected
+    const arr = collectedDiscs[sacrificingPlayer];
+    const removeIdx = arr.findIndex(d => d.color === color && d.num === num && d.counted === counted);
+    if (removeIdx >= 0) arr.splice(removeIdx, 1);
+
+    sacrificeRange = num;
+
+    // Subtract value from score only if it was counted
+    if (counted) {
+        scores[sacrificingPlayer][color] -= num;
+    }
+
+    document.getElementById('sacrifice-panel').style.display = 'none';
+    // The sacrificing player now moves
+    currentPlayer = sacrificingPlayer;
+    gameState = 'SACRIFICE_MOVE';
+    saveSnapshot(`Player ${sacrificingPlayer} sacrifices ${color} ${num}`);
+    if (!isRemote) {
+        sendNet({ type: 'sacrifice_pick', discColor: color, discNum: num, discCounted: counted });
+    }
+    updateUI(); render();
+}
+
+function getReachableCells(fromIdx, range) {
+    const reachable = [];
+    const fr = Math.floor(fromIdx / 12), fc = fromIdx % 12;
+    for (let r = 0; r < 12; r++) {
+        for (let c = 0; c < 12; c++) {
+            const dist = Math.max(Math.abs(r - fr), Math.abs(c - fc));
+            const idx = r * 12 + c;
+            if (dist > 0 && dist <= range && !cells[idx]) {
+                reachable.push(idx);
+            }
+        }
+    }
+    return reachable;
+}
+
+function doRelinquish() {
+    if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
+    if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
+    performRelinquish(false);
+    sendNet({ type: 'relinquish' });
+}
+
+function performRelinquish(isRemote) {
+    if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
+    const rName = 'Player ' + currentPlayer;
+    relinquishCount[currentPlayer]++;
+    relinquished[currentPlayer] = true;
+    const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+    saveSnapshot(`${rName} relinquishes turn (${remaining} left)`);
+    if (relinquished[1] && relinquished[2]) {
+        gameState = 'END';
+        addSystemMsg('Both players relinquished. Game Over.');
+    } else {
+        addSystemMsg(`Player ${currentPlayer} relinquished their turn. (${remaining} left)`);
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+    }
+    updateUI(); render();
+}
+
+// ─── UI ──────────────────────────────────────────────────────
+function updateUI() {
+    const statusEl = document.getElementById('status-text');
+    const isMe = currentPlayer === myPlayer;
+    const who = isMe ? 'You' : 'Opponent';
+
+    switch (gameState) {
+        case 'END':
+            statusEl.textContent = '🏁 GAME OVER';
+            statusEl.classList.remove('your-turn');
+            if (moveHistory.length > 0) {
+                document.getElementById('history-controls').style.display = 'block';
+                historyIndex = moveHistory.length - 1;
+                updateHistoryControls();
+            }
+            break;
+        case 'PLACEMENT':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Place collector`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'SETUP':
+            statusEl.textContent = 'Choose a starting position above.';
+            statusEl.classList.remove('your-turn');
+            break;
+        case 'PLAY':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'YOUR TURN' : "Opponent's turn"}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'DRAFT_PLACE':
+            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${isMe ? 'Place the disc in your line of sight' : who + ': Placing disc...'}`;
+            statusEl.classList.toggle('your-turn', isMe);
+            break;
+        case 'SACRIFICE_OPPONENT_SELECT':
+            if (myPlayer !== sacrificingPlayer) {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Choose which disc to sacrifice`;
+                statusEl.classList.add('your-turn');
+            } else {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Opponent choosing sacrifice...`;
+                statusEl.classList.remove('your-turn');
+            }
+            break;
+        case 'SACRIFICE_MOVE':
+            if (myPlayer === sacrificingPlayer) {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Move collector (up to ${sacrificeRange})`;
+                statusEl.classList.add('your-turn');
+            } else {
+                statusEl.innerHTML = `<span class="player-indicator p${sacrificingPlayer}"></span> Opponent moving...`;
+                statusEl.classList.remove('your-turn');
+            }
+            break;
+    }
+
+    // Scores
+    renderScoreTable(scores, playerFlags);
+
+    // Bag count
+    const bagEl = document.getElementById('bag-count');
+    if (bagEl) bagEl.innerText = `Bag: ${bag.length} discs remaining`;
+
+    // Show/hide sacrifice & relinquish buttons based on state
+    const inPlay = gameState === 'PLAY';
+    const isMyTurn = currentPlayer === myPlayer;
+    const stuck = inPlay && !hasValidMove(currentPlayer);
+    const canRelinquish = relinquishCount[currentPlayer] < RELINQUISH_LIMIT;
+    const sacBtn = document.getElementById('sacrifice-btn');
+    const relBtn = document.getElementById('relinquish-btn');
+    const stuckHint = document.getElementById('stuck-hint');
+    if (sacBtn) sacBtn.style.display = (stuck && isMyTurn) ? 'block' : 'none';
+    if (relBtn) {
+        relBtn.style.display = (inPlay && isMyTurn && canRelinquish) ? 'block' : 'none';
+        const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+        relBtn.innerText = `Relinquish Turn (${remaining}/${RELINQUISH_LIMIT})`;
+    }
+    if (stuckHint) {
+        if (stuck && !canRelinquish) {
+            stuckHint.innerText = 'No valid move! No relinquishes left — you must sacrifice a disc!';
+        } else if (stuck) {
+            stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
+        }
+        stuckHint.style.display = (stuck && isMyTurn) ? 'block' : 'none';
+    }
+    // Force end when stuck, no relinquishes left, and no primary discs
+    if (stuck && isMyTurn && !canRelinquish) {
+        const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+        if (primaryDiscs.length === 0) {
+            relinquished[currentPlayer] = true;
+            saveSnapshot(`Player ${currentPlayer} forced end (no relinquishes, no discs to sacrifice)`);
+            if (relinquished[1] && relinquished[2]) {
+                gameState = 'END';
+                addSystemMsg('Game Over — no moves possible.');
+            } else {
+                addSystemMsg('Player ' + currentPlayer + ' cannot move or sacrifice.');
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            syncState();
+            updateUI(); render();
+        }
+    }
+}
+
+function downloadCSV() {
+    if (moveHistory.length === 0) {
+        alert('No move data to export.');
+        return;
+    }
+
+    const rows = [];
+    rows.push('Move,Player,Description,Bag_Remaining,' +
+        allColors.map(c => `Black_${c}`).join(',') + ',' +
+        allColors.map(c => `White_${c}`).join(',') + ',' +
+        allColors.map(c => `Flag_Black_${c}`).join(',') + ',' +
+        allColors.map(c => `Flag_White_${c}`).join(',') + ',' +
+        'Black_X,Black_Y,White_X,White_Y,Discs_On_Board');
+
+    moveHistory.forEach((snap, idx) => {
+        const desc = (snap.desc || '').replace(/"/g, '""');
+        const discsOnBoard = snap.cells.filter(c => c && c.type !== 'collector').length;
+        const bx = snap.collectors[1] != null ? (snap.collectors[1] % 12) : '';
+        const by = snap.collectors[1] != null ? Math.floor(snap.collectors[1] / 12) : '';
+        const wx = snap.collectors[2] != null ? (snap.collectors[2] % 12) : '';
+        const wy = snap.collectors[2] != null ? Math.floor(snap.collectors[2] / 12) : '';
+        const row = [
+            idx + 1,
+            snap.currentPlayer === 1 ? 'Black' : 'White',
+            `"${desc}"`,
+            snap.bagLen,
+            ...allColors.map(c => snap.scores[1][c] || 0),
+            ...allColors.map(c => snap.scores[2][c] || 0),
+            ...allColors.map(c => snap.playerFlags[1][c] ? 1 : 0),
+            ...allColors.map(c => snap.playerFlags[2][c] ? 1 : 0),
+            bx, by, wx, wy,
+            discsOnBoard
+        ];
+        rows.push(row.join(','));
+    });
+
+    const csvContent = rows.join('\n');
+
+    // POST to server
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({game: 'makalaina_remote', csv: csvContent})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) console.log('CSV saved on server: ' + d.filename);
+        else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+    // Local download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fname = `makalaina_remote_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+    link.download = fname;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function render() {
+    const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
+    const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
+
+    for (let i = 0; i < 144; i++) {
+        const el = document.getElementById(`cell-${i}`);
+        el.innerHTML = '';
+        let cls = 'cell';
+        if (los.includes(i)) cls += ' los';
+        if (selectedIdx === i) cls += ' selected';
+        if (reachable.includes(i)) cls += ' reachable';
+        if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) cls += ' placeable';
+        el.className = cls;
+
+        if (cells[i]) {
+            const d = document.createElement('div');
+            if (cells[i].type === 'collector') {
+                d.className = `collector p${cells[i].player}`;
+                d.textContent = cells[i].player === 1 ? '♚' : '♛';
+            } else {
+                d.className = 'disc';
+                d.style.backgroundColor = discColorMap[cells[i].color] || cells[i].color;
+                d.textContent = cells[i].num;
+            }
+            el.appendChild(d);
+        }
+    }
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+createBoard();
+render();
+</script>
+</body>
+</html>

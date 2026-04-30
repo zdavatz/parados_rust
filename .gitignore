@@ -1,0 +1,8 @@
+/target
+/Cargo.lock.bak
+/dist
+*.dmg
+*.pkg
+*.msix
+*.icns
+.DS_Store

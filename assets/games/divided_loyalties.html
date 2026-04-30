@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Divided Loyalties: Epic Master Edition</title>
+    <style>
+        :root {
+            --bg: #3d352a; --board-bg: #2b251e; --panel: #4d4336;
+            --cell-border: #5a4f41; --blue: #2196F3; --yellow: #FFEB3B;
+            --red: #F44336; --green: #4CAF50; --purple: #9C27B0; --orange: #FF9800;
+            --cs: 44px;
+            --gap: 2px;
+            --pad: 10px;
+            --tile-size: calc(var(--cs) - 6px);
+            --step: calc(var(--cs) + var(--gap));
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f5f5f5; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
+        h1 { font-size: 1.5em; margin: 5px 0; }
+        #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
+        #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: rgba(0,0,0,0.2); padding: var(--pad); border-radius: 4px; }
+        .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; position: relative; }
+        .on-board { background: var(--board-bg); cursor: pointer; border: 1px solid var(--cell-border); }
+        .off-board { background: transparent; cursor: pointer; border: 1px dashed rgba(255,255,255,0.05); }
+        .tile { width: var(--tile-size); height: var(--tile-size); border-radius: 3px; z-index: 15; box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.3); animation: placeTile 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes placeTile { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .tile.blue { background: var(--blue); } .tile.yellow { background: var(--yellow); }
+        .tile.red { background: var(--red); } .tile.green { background: var(--green); }
+        .tile.purple { background: var(--purple); } .tile.orange { background: var(--orange); }
+        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #5a4f41; }
+        .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
+        .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
+        #bridge-layer { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); pointer-events: none; z-index: 10; }
+        .bridge-line { stroke-linecap: butt; transition: stroke 0.5s; }
+        .flash-red { animation: flashRed 0.7s; }
+        @keyframes flashRed { 0% { stroke: white; stroke-width: 20; } 50% { stroke: #ff1744; stroke-width: 25; } 100% { stroke: #555; stroke-width: 10; } }
+        .btn { background: #6d4c41; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-size: 0.95em; }
+        .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; }
+        .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
+        .inv-tile.selected { border-color: white; transform: scale(1.1); }
+
+        /* Modal Styling */
+        #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: #fdfcf0; color: #222; padding: 25px; border-radius: 12px; max-width: 650px; width: 92%; max-height: 85vh; overflow-y: auto; line-height: 1.6; font-size: 0.95em; }
+        .modal-box h2 { border-bottom: 2px solid #6d4c41; padding-bottom: 10px; }
+        .modal-box h3 { margin-top: 20px; color: #5d4037; }
+        .badge { padding: 2px 6px; border-radius: 3px; font-weight: bold; color: white; }
+
+        @media (max-width: 600px) {
+            #game-layout { flex-direction: column; align-items: center; }
+            #ui-panel { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>DIVIDED LOYALTIES</h1>
+    
+    <div id="game-layout">
+        <div style="position: relative;">
+            <div id="meta-grid"></div>
+            <svg id="bridge-layer"></svg>
+        </div>
+
+        <div id="ui-panel">
+            <button class="btn" onclick="toggleRules(true)">📜 AUSFÜHRLICHE REGELN</button>
+            <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">BLAU AM ZUG</div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                <span>BLAU: <span id="blue-score">0</span></span>
+                <span>GELB: <span id="yellow-score">0</span></span>
+            </div>
+            <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
+            <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
+        </div>
+    </div>
+
+    <div id="rules-modal" onclick="toggleRules(false)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h2>📜 Die Regeln (Epic Version)</h2>
+            
+            <h3>1. Farbgruppen (Colour +)</h3>
+            [cite_start]<p>Jeder Spieler nutzt eine "Farbe +", die aus benachbarten Farben des Farbkreises besteht[cite: 8]:</p>
+            <ul>
+                [cite_start]<li><strong>Blau +</strong>: <span class="badge" style="background:var(--blue)">Blau</span>, <span class="badge" style="background:var(--purple)">Violett</span>, <span class="badge" style="background:var(--green)">Grün</span>[cite: 9, 24].</li>
+                [cite_start]<li><strong>Gelb +</strong>: <span class="badge" style="background:var(--yellow); color:black">Gelb</span>, <span class="badge" style="background:var(--orange)">Orange</span>, <span class="badge" style="background:var(--green)">Grün</span>[cite: 9, 24].</li>
+                [cite_start]<li><strong>Red + (Zerstörung)</strong>: <span class="badge" style="background:var(--red)">Rot</span>, <span class="badge" style="background:var(--purple)">Violett</span>, <span class="badge" style="background:var(--orange)">Orange</span>[cite: 9].</li>
+            </ul>
+
+            <h3>2. Brückenbau & Wertung</h3>
+            <ul>
+                [cite_start]<li>Reihen aus 3 Steinen ergeben 1 Punkt (3er-Brücke)[cite: 37].</li>
+                [cite_start]<li>Reihen aus 4 Steinen ergeben 2 Punkte (4er-Brücke)[cite: 38].</li>
+                [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
+                [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
+            </ul>
+
+            <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
+            <ul>
+                [cite_start]<li>Rote Brücken werden zur Verteidigung genutzt[cite: 43].</li>
+                [cite_start]<li>Wenn eine rote Brücke eine blaue/gelbe kreuzt, verliert diese ihren Wert[cite: 41].</li>
+                [cite_start]<li><strong>Geometrie:</strong> Brücken können nur an den <em>inneren</em> Feldern geschnitten werden; die Endfelder sind immun[cite: 42].</li>
+                [cite_start]<li>Diagonalen können sich zwischen End- und Innenfeld kreuzen[cite: 42].</li>
+            </ul>
+
+            <h3>4. Außenfelder & Boards</h3>
+            <ul>
+                [cite_start]<li>Steine dürfen ein Feld außerhalb der Boards platziert werden, wenn sie <em>sofort</em> Teil einer Brücke werden[cite: 52].</li>
+                [cite_start]<li>Nur ein Stein einer Reihe darf außerhalb liegen[cite: 53].</li>
+                [cite_start]<li><strong>Board-Besitz:</strong> Spieler erhalten 1 Punkt pro Board, auf dem sie ein "inneres" Feld einer Brücke kontrollieren[cite: 50, 51].</li>
+            </ul>
+
+            <button class="btn" onclick="toggleRules(false)">SCHLIESSEN</button>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 11;
+        let currentPlayer = 'blue', selectedColor = null, lastPlaced = null, bridgePlaced = false, moveState = 'tile';
+        let grid = Array(121).fill(null), blueInv = {blue:12, purple:9, green:6, red:6, orange:3}, yellowInv = {yellow:12, orange:9, green:6, red:6, purple:3};
+        let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0};
+        let cellSize = 44, gapSize = 2, padSize = 10;
+
+        const boards = [[12,13,14,23,24,25,34,35,36],[16,17,18,19,27,28,29,30,38,39,40,41],[2,3,4,13,24],[55,56,57,66,67,68,77,78,79],[88,89,90,91,99,100,101,102],[44,45,46,55,66],[70,71,72,81,82,83],[7,8,18,19,29,30],[48,49,50,59,60,61]];
+        const allBoardIdx = [].concat(...boards);
+
+        function calcCellSize() {
+            const vw = window.innerWidth - 20;
+            const vh = window.innerHeight - 80;
+            const maxByWidth = Math.floor((vw - 2 * padSize - 10 * gapSize) / 11);
+            const maxByHeight = Math.floor((vh - 2 * padSize - 10 * gapSize) / 11);
+            cellSize = Math.max(20, Math.min(maxByWidth, maxByHeight, 44));
+            document.documentElement.style.setProperty('--cs', cellSize + 'px');
+        }
+
+        function redrawBridges() {
+            const svg = document.getElementById('bridge-layer');
+            svg.innerHTML = '';
+            const step = cellSize + gapSize;
+            for (const b of activeBridges) {
+                const x1 = (b.s % 11) * step + cellSize / 2, y1 = Math.floor(b.s / 11) * step + cellSize / 2;
+                const x2 = (b.e % 11) * step + cellSize / 2, y2 = Math.floor(b.e / 11) * step + cellSize / 2;
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const off = cellSize * 0.43;
+                b.coords = { x1: x1 + Math.cos(angle) * off, y1: y1 + Math.sin(angle) * off, x2: x2 - Math.cos(angle) * off, y2: y2 - Math.sin(angle) * off };
+                drawBridge(b.coords, b.player, b.id);
+            }
+        }
+
+        function onResize() {
+            calcCellSize();
+            redrawBridges();
+        }
+        window.addEventListener('resize', onResize);
+
+        function init() {
+            calcCellSize();
+            const container = document.getElementById('meta-grid');
+            for(let i=0; i<121; i++) {
+                const c = document.createElement('div');
+                c.className = allBoardIdx.includes(i) ? 'cell on-board' : 'cell off-board';
+                c.onclick = () => handleClick(i);
+                container.appendChild(c);
+            }
+            updateUI();
+        }
+
+        function toggleRules(s) { document.getElementById('rules-modal').style.display = s ? 'flex' : 'none'; }
+
+        function handleClick(idx) {
+            if (moveState === 'tile') {
+                if (grid[idx] || !selectedColor) return;
+                grid[idx] = selectedColor;
+                lastPlaced = idx;
+                renderTile(idx, selectedColor);
+                currentPlayer === 'blue' ? blueInv[selectedColor]-- : yellowInv[selectedColor]--;
+                moveState = 'bridge';
+                selectedColor = null;
+                updateUI();
+            } else {
+                if (!grid[idx]) return;
+                bridgeSelection.push(idx);
+                if (bridgeSelection.length === 2) {
+                    processBridge(bridgeSelection[0], bridgeSelection[1]);
+                    bridgeSelection = [];
+                }
+            }
+        }
+
+        function getCoord(i) { return {x: i%11, y: Math.floor(i/11)}; }
+
+        function getRow(s, e) {
+            const c1 = getCoord(s), c2 = getCoord(e);
+            const dx = Math.sign(c2.x-c1.x), dy = Math.sign(c2.y-c1.y), dist = Math.max(Math.abs(c2.x-c1.x), Math.abs(c2.y-c1.y));
+            if (c1.x!==c2.x && c1.y!==c2.y && Math.abs(c2.x-c1.x)!==Math.abs(c2.y-c1.y)) return null;
+            let r = []; for(let i=0; i<=dist; i++) r.push((c1.y+i*dy)*11 + (c1.x+i*dx));
+            return r;
+        }
+
+        function processBridge(s, e) {
+            const row = getRow(s, e);
+            if (!row || row.length < 3 || row.length > 4 || !row.includes(lastPlaced)) return;
+            if (activeBridges.some(b => b.row.includes(lastPlaced))) return;
+
+            const colors = row.map(i => grid[i]);
+            if (colors.includes(null)) return;
+            const sets = { blue: ['blue','purple','green'], yellow: ['yellow','orange','green'], red: ['red','purple','orange'] };
+            
+            const isRed = colors.every(c => sets.red.includes(c));
+            const isScoring = colors.every(c => sets[currentPlayer].includes(c));
+
+            if (!isRed && !isScoring) return;
+            for(let i=0; i<colors.length-1; i++) if(colors[i]===colors[i+1]) return;
+
+            const step = cellSize + gapSize;
+            const x1 = (s%11)*step+cellSize/2, y1 = Math.floor(s/11)*step+cellSize/2, x2 = (e%11)*step+cellSize/2, y2 = Math.floor(e/11)*step+cellSize/2;
+            const angle = Math.atan2(y2-y1, x2-x1);
+            const off = cellSize * 0.43;
+            const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
+
+            const collision = checkCollision(c);
+            if (collision && !isRed) return;
+
+            if (isRed) {
+                if (collision) destroyBridge(collision.id);
+                drawBridge(c, 'red', Date.now());
+            } else {
+                bridgeScore[currentPlayer] += (row.length === 3 ? 1 : 2);
+                const bId = Date.now();
+                activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e});
+                drawBridge(c, currentPlayer, bId);
+            }
+            bridgePlaced = true; updateScore();
+        }
+
+        function checkCollision(c) {
+            for (let b of activeBridges) {
+                const ccw = (p,q,r) => (r.y-p.y)*(q.x-p.x) > (q.y-p.y)*(r.x-p.x);
+                const a={x:c.x1,y:c.y1}, b1={x:c.x2,y:c.y2}, c1={x:b.coords.x1,y:b.coords.y1}, d1={x:b.coords.x2,y:b.coords.y2};
+                if (ccw(a,c1,d1) !== ccw(b1,c1,d1) && ccw(a,b1,c1) !== ccw(a,b1,d1)) return b;
+            }
+            return null;
+        }
+
+        function drawBridge(c, type, id) {
+            const svg = document.getElementById('bridge-layer');
+            const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            l.setAttribute("x1", c.x1); l.setAttribute("y1", c.y1); l.setAttribute("x2", c.x2); l.setAttribute("y2", c.y2);
+            l.setAttribute("stroke", type==='red'?'#F44336':(type==='blue'?'#2196F3':'#FFEB3B'));
+            l.setAttribute("stroke-width", "10"); l.classList.add('bridge-line'); l.id = 'line-' + id;
+            svg.appendChild(l);
+        }
+
+        function destroyBridge(id) {
+            const bIdx = activeBridges.findIndex(b => b.id === id);
+            if (bIdx > -1) {
+                const b = activeBridges[bIdx];
+                bridgeScore[b.player] -= (b.row.length === 3 ? 1 : 2);
+                activeBridges.splice(bIdx, 1);
+                const l = document.getElementById('line-' + id);
+                if (l) { l.classList.add('flash-red'); setTimeout(() => { l.setAttribute("stroke", "#555"); l.setAttribute("stroke-dasharray", "5"); }, 600); }
+            }
+        }
+
+        function endTurn() {
+            if (lastPlaced!==null && !allBoardIdx.includes(lastPlaced) && !bridgePlaced) {
+                const c = grid[lastPlaced];
+                currentPlayer==='blue'?blueInv[c]++:yellowInv[c]++;
+                grid[lastPlaced]=null; document.getElementById('meta-grid').children[lastPlaced].innerHTML='';
+            }
+            currentPlayer = currentPlayer==='blue'?'yellow':'blue';
+            moveState='tile'; lastPlaced=null; bridgePlaced=false; bridgeSelection=[]; updateUI();
+        }
+
+        function renderTile(i, c) {
+            const t = document.createElement('div'); t.className = `tile ${c}`;
+            document.getElementById('meta-grid').children[i].appendChild(t);
+        }
+
+        function updateScore() { document.getElementById('blue-score').innerText = bridgeScore.blue; document.getElementById('yellow-score').innerText = bridgeScore.yellow; }
+
+        function updateUI() {
+            const turn = document.getElementById('turn-indicator');
+            turn.textContent = (currentPlayer === 'blue' ? "BLAU" : "GELB") + " AM ZUG";
+            turn.className = `current-player ${currentPlayer}-turn`;
+            const inv = document.getElementById('inventory-container');
+            inv.innerHTML = '';
+            const t = currentPlayer==='blue'?blueInv:yellowInv;
+            Object.keys(t).forEach(c => {
+                if(t[c]>0) {
+                    const s = document.createElement('div'); s.className='inv-slot';
+                    const d = document.createElement('div'); d.className=`inv-tile ${c} ${selectedColor===c?'selected':''}`;
+                    d.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
+                    const count = document.createElement('span'); count.innerText = t[c]; count.style.fontSize="0.7em";
+                    s.appendChild(d); s.appendChild(count); inv.appendChild(s);
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>

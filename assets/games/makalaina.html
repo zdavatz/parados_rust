@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MAKA LAINA - The Strategic Endspurt</title>
+    <style>
+        :root { --cs: 42px; --disc-size: calc(var(--cs) - 8px); --collector-size: calc(var(--cs) - 6px); }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        h1 { font-size: 1.5em; margin: 5px 0; }
+        #game-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        #board {
+            display: grid; grid-template-columns: repeat(12, var(--cs));
+            grid-template-rows: repeat(12, var(--cs)); gap: 1px;
+            background: #2c3e50; border: 4px solid #2c3e50; border-radius: 4px;
+        }
+        .cell { width: var(--cs); height: var(--cs); background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .cell.los { background: #fffde7; }
+        .cell.selected { background: #e3f2fd; border: 2px solid #2196f3; box-sizing: border-box; }
+        .cell.reachable { background: #e8f5e9; box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.4); }
+        .cell.placeable { background: #b2ff59; box-shadow: inset 0 0 8px rgba(76, 175, 80, 0.6); cursor: crosshair; }
+        @keyframes pulse-placeable { 0%,100% { box-shadow: inset 0 0 6px rgba(76,175,80,0.4); } 50% { box-shadow: inset 0 0 12px rgba(76,175,80,0.8); } }
+        .cell.placeable { animation: pulse-placeable 1.2s ease-in-out infinite; }
+        .disc { width: var(--disc-size); height: var(--disc-size); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: calc(var(--cs) * 0.35); text-shadow: 1px 1px 2px #000; z-index: 2; border: 1px solid rgba(0,0,0,0.1); }
+        .collector { width: var(--collector-size); height: var(--collector-size); border: 3px solid gold; border-radius: 6px; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .black { background: #000; }
+        .white { background: #fff; border-color: #000; }
+
+        #ui { width: 100%; max-width: 380px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn { width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 0.9em; }
+        .btn-rules { background: #3498db; color: white; }
+        .btn-action { background: #9b59b6; color: white; }
+        .btn-cancel { background: #95a5a6; color: white; }
+        .btn-reset { background: #e74c3c; color: white; margin-top: 15px; }
+
+        #draft-panel { display: none; background: #f0f7ff; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid #90caf9; }
+        #draft-choices { display: flex; gap: 12px; justify-content: center; margin: 10px 0; }
+        #draft-choices .disc { width: 50px; height: 50px; font-size: 1.1em; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        #draft-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 12px rgba(33, 150, 243, 0.5); }
+
+        #sacrifice-panel { display: none; background: #fdf0f0; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; border: 2px solid #ef9a9a; }
+        #sacrifice-choices { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
+        #sacrifice-choices .disc { width: 38px; height: 38px; cursor: pointer; transition: transform 0.2s; }
+        #sacrifice-choices .disc:hover { transform: scale(1.15); box-shadow: 0 0 8px rgba(155, 89, 182, 0.5); }
+
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+        #modal { background: white; width: 92%; max-width: 600px; padding: 25px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+        .scoring-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
+        .scoring-table td, .scoring-table th { border: 1px solid #eee; padding: 5px; text-align: center; }
+        .worthless { color: #888; }
+        .worthless-box { display: inline-block; border: 2px solid #e74c3c; background: #fde; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
+        .leader-dot { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
+        .leader-dot.black { background: #000; }
+        .leader-dot.white { background: #fff; border: 1px solid #999; }
+        .leader-dot.tied { background: #bbb; }
+
+        #winner-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        #winner-box { background: white; padding: 30px; border-radius: 16px; text-align: center; max-width: 90%; width: 400px; }
+        #winner-box h2 { font-size: 1.8em; margin-bottom: 15px; }
+        #winner-box .score-final { font-size: 1.2em; margin: 10px 0; }
+        #winner-box button { margin-top: 15px; padding: 12px 30px; font-size: 1em; cursor: pointer; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; }
+
+        #bag-count { font-size: 0.8em; color: #7f8c8d; text-align: center; margin-top: 6px; }
+
+        #history-controls { display: none; background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 2px solid #bbb; }
+        #history-controls .history-nav { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; }
+        #history-controls .history-nav button { padding: 6px 14px; cursor: pointer; border: 1px solid #999; border-radius: 4px; background: #fff; font-weight: bold; font-size: 1em; }
+        #history-controls .history-nav button:hover { background: #e0e0e0; }
+        #history-controls .history-nav button:disabled { opacity: 0.4; cursor: default; }
+        #history-label { font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.9em; }
+        #history-desc { font-size: 0.8em; color: #555; margin: 4px 0 0; }
+
+        @media (max-width: 600px) {
+            #game-container { flex-direction: column; align-items: center; }
+            #ui { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>MAKA LAINA</h1>
+    <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Choose starting setup:</p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn" style="width:auto; padding:8px 16px; background:#27ae60; color:white;" onclick="startRandom()">Random</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(1)">1</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(2)">2</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(3)">3</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(4)">4</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(5)">5</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(6)">6</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(7)">7</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(8)">8</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(9)">9</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(10)">10</button>
+        </div>
+    </div>
+    <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Who starts?</p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="chooseStarter(1)">&#9632; Black</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="chooseStarter(2)">&#9633; White</button>
+        </div>
+    </div>
+    <div id="game-container">
+        <div id="board"></div>
+        <div id="ui">
+            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">SETUP: Player 1, place both collectors.</div>
+            <button class="btn btn-rules" onclick="toggleRules(true)">View Rules</button>
+            <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">Show Line of Sight</button>
+            <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">Export CSV</button>
+            <hr>
+            <div id="game-actions" style="display:none;">
+                <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">Sacrifice & Move</button>
+                <button id="relinquish-btn" class="btn btn-cancel" onclick="relinquishTurn()" style="display:none;">Relinquish Turn</button>
+                <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
+                <div id="bag-count"></div>
+            </div>
+            <div id="draft-panel">
+                <p id="draft-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">Place this disc in your line of sight:</p>
+                <div id="draft-choices"></div>
+            </div>
+            <div id="sacrifice-panel">
+                <p id="sacrifice-label" style="font-weight:bold; color:#2c3e50; margin-bottom:8px;">SACRIFICE: Pick a disc (value = move range)</p>
+                <div id="sacrifice-choices"></div>
+            </div>
+            <table class="scoring-table">
+                <thead><tr><th>Color</th><th>&#9632;</th><th>&#9633;</th><th></th></tr></thead>
+                <tbody id="score-body"></tbody>
+            </table>
+            <div id="history-controls">
+                <p id="history-label">Move History</p>
+                <div class="history-nav">
+                    <button onclick="stepHistory(-999)" title="First">&#x23EE;</button>
+                    <button onclick="stepHistory(-1)" title="Previous">&#x25C0;</button>
+                    <span id="history-pos">0 / 0</span>
+                    <button onclick="stepHistory(1)" title="Next">&#x25B6;</button>
+                    <button onclick="stepHistory(999)" title="Last">&#x23ED;</button>
+                </div>
+                <p id="history-desc"></p>
+                <button class="btn" style="margin-top:8px; background:#27ae60; color:white;" onclick="downloadCSV()">Export CSV</button>
+            </div>
+            <button class="btn btn-reset" onclick="window.location.reload()">Reset Game</button>
+        </div>
+    </div>
+
+    <div id="modal-overlay" onclick="toggleRules(false)">
+        <div id="modal" onclick="event.stopPropagation()">
+            <div class="rules-text">
+                <h2>MAKA LAINA Rules</h2>
+                <h3>Goal</h3>
+                <p>Collect discs on a 12x12 grid to score the most points. The game continues until <b>all discs are collected</b> or both players cannot move.</p>
+                <h3>Shifting & Collection</h3>
+                <ul>
+                    <li>Select a disc that is <b>not</b> in your Line of Sight (LOS).</li>
+                    <li>Shift it 1 square so it enters your LOS.</li>
+                    <li>Your collector moves to that square and collects the disc.</li>
+                    <li>LOS extends in 8 directions, blocked by other discs or collectors.</li>
+                </ul>
+                <h3>Draft System</h3>
+                <ul>
+                    <li>After each collection, <b>1 new disc</b> is drawn from the bag.</li>
+                    <li>You must place it <b>in your line of sight</b>.</li>
+                    <li>The disc cannot be collected immediately (it's in your LOS).</li>
+                    <li>54 discs total: 24 start on the board, 24 are drafted in, 6 stay hidden.</li>
+                </ul>
+                <h3>Special Mechanics</h3>
+                <ul>
+                    <li><b>Number 1:</b> Immediate extra turn.</li>
+                    <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
+                    <li><b>Stuck?</b> Your opponent chooses which of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely.</li>
+                </ul>
+                <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Verstanden!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-overlay" onclick="this.style.display='none'">
+        <div id="winner-box" onclick="event.stopPropagation()">
+            <h2 id="winner-title"></h2>
+            <div id="winner-scores"></div>
+            <button onclick="window.location.reload()">New Game</button>
+            <button onclick="downloadCSV()" style="margin-top:10px; padding:12px 30px; font-size:1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Export CSV</button>
+        </div>
+    </div>
+
+<script>
+    let gameState = 'SETUP';
+    let currentPlayer = 1;
+    let collectors = { 1: null, 2: null };
+    let selectedIdx = null;
+    let cells = Array(144).fill(null);
+    let bag = [];
+    let playerFlags = { 1: {}, 2: {} };
+    let scores = { 1: {}, 2: {} };
+    let relinquished = { 1: false, 2: false };
+    let relinquishCount = { 1: 0, 2: 0 };
+    const RELINQUISH_LIMIT = 3;
+    const colors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+
+    // New state for draft and sacrifice
+    let collectedDiscs = { 1: [], 2: [] };
+    let draftChosen = null;
+
+    let pendingExtraTurn = false;
+    let showLOS = false;
+    let sacrificeRange = 0;
+    let sacrificingPlayer = 0;
+    let isFirstMove = true;
+
+    // Move history for replay
+    let moveHistory = [];
+    let historyIndex = -1;
+    let isReviewing = false;
+
+    const COLOR_HEX = { red: '#e74c3c', blue: '#3498db', yellow: '#d4ac0d', green: '#27ae60', orange: '#e67e22', purple: '#9b59b6' };
+
+    function saveSnapshot(desc) {
+        moveHistory.push({
+            cells: cells.map(c => c ? {...c} : null),
+            collectors: { 1: collectors[1], 2: collectors[2] },
+            scores: { 1: {...scores[1]}, 2: {...scores[2]} },
+            playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
+            currentPlayer: currentPlayer,
+            bagLen: bag.length,
+            desc: desc
+        });
+    }
+
+    function stepHistory(delta) {
+        if (moveHistory.length === 0) return;
+        const maxIdx = moveHistory.length - 1;
+        if (!isReviewing) {
+            // Enter review mode at last move
+            historyIndex = maxIdx;
+            isReviewing = true;
+        }
+        historyIndex = Math.max(0, Math.min(maxIdx, historyIndex + delta));
+        renderSnapshot(moveHistory[historyIndex]);
+        updateHistoryControls();
+    }
+
+    function renderSnapshot(snap) {
+        // Render board from snapshot
+        for (let i = 0; i < 144; i++) {
+            const el = document.getElementById(`cell-${i}`);
+            el.innerHTML = '';
+            el.className = 'cell';
+            if (snap.cells[i]) {
+                const d = document.createElement('div');
+                if (snap.cells[i].type === 'collector') d.className = `collector ${snap.cells[i].player === 1 ? 'black' : 'white'}`;
+                else { d.className = 'disc'; d.style.backgroundColor = snap.cells[i].color; d.innerText = snap.cells[i].num; }
+                el.appendChild(d);
+            }
+        }
+        // Update scoring table from snapshot
+        renderScoreTable(snap.scores, snap.playerFlags);
+    }
+
+    function updateHistoryControls() {
+        const pos = document.getElementById('history-pos');
+        const desc = document.getElementById('history-desc');
+        pos.innerText = `${historyIndex + 1} / ${moveHistory.length}`;
+        desc.innerText = moveHistory[historyIndex].desc || '';
+    }
+
+    const CURATED_POSITIONS = [null,
+        {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
+        {b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
+        {b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
+        {b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
+        {b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
+        {b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
+        {b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
+        {b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
+        {b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
+        {b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
+    ];
+
+    function startRandom() {
+        document.getElementById('setup-panel').style.display = 'none';
+        initBag();
+        gameState = 'PLACEMENT';
+        updateUI(); render();
+    }
+
+    function loadCuratedPosition(posId) {
+        const pos = CURATED_POSITIONS[posId];
+        if (!pos) return;
+        document.getElementById('setup-panel').style.display = 'none';
+
+        // Create all 54 discs
+        const allDiscs = [];
+        ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => allDiscs.push({color:c, num:n, type:'primary'})));
+        ['green','orange','purple'].forEach(c => { for(let i=0;i<6;i++) allDiscs.push({color:c, num:'', type:'secondary'}); });
+
+        // Place collectors
+        const blackIdx = pos.b[1] * 12 + pos.b[0];
+        const whiteIdx = pos.w[1] * 12 + pos.w[0];
+        collectors[1] = blackIdx;
+        collectors[2] = whiteIdx;
+        cells[blackIdx] = {type:'collector', player:1};
+        cells[whiteIdx] = {type:'collector', player:2};
+
+        // Place discs on board and remove from pool
+        pos.d.forEach(([x, y, color, num]) => {
+            const idx = y * 12 + x;
+            const poolIdx = allDiscs.findIndex(p => p.color === color && p.num === num);
+            if (poolIdx >= 0) {
+                cells[idx] = allDiscs.splice(poolIdx, 1)[0];
+            } else {
+                cells[idx] = {color, num, type: num !== '' ? 'primary' : 'secondary'};
+            }
+        });
+
+        // Remaining: shuffle, remove 6 hidden, rest is bag
+        allDiscs.sort(() => Math.random() - 0.5);
+        allDiscs.splice(0, 6);
+        bag = allDiscs;
+
+        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+
+        gameState = 'CHOOSE_STARTER';
+        document.getElementById('starter-panel').style.display = 'block';
+        updateUI(); render();
+    }
+
+    function chooseStarter(player) {
+        currentPlayer = player;
+        document.getElementById('starter-panel').style.display = 'none';
+        document.getElementById('game-actions').style.display = 'block';
+        document.getElementById('csv-export-btn').style.display = '';
+        gameState = 'PLAY';
+        isFirstMove = true;
+        saveSnapshot('Game start — ' + (player === 1 ? 'Black' : 'White') + ' goes first');
+        updateUI(); render();
+    }
+
+    function toggleRules(show) { document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none'; }
+
+    function toggleLOS() {
+        showLOS = !showLOS;
+        const btn = document.getElementById('los-toggle');
+        btn.innerText = showLOS ? 'Hide Line of Sight' : 'Show Line of Sight';
+        btn.style.background = showLOS ? '#27ae60' : '#7f8c8d';
+        render();
+    }
+
+    function initBag() {
+        ['red', 'blue', 'yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => bag.push({color:c, num:n, type:'primary'})));
+        ['green', 'orange', 'purple'].forEach(c => { for(let i=0; i<6; i++) bag.push({color:c, num:'', type:'secondary'}); });
+        bag.sort(() => Math.random() - 0.5);
+        bag.splice(0, 6);
+        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+    }
+
+    function createBoard() {
+        const boardDiv = document.getElementById('board');
+        for (let i = 0; i < 144; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `cell-${i}`;
+            cell.onclick = () => handleClick(i);
+            boardDiv.appendChild(cell);
+        }
+    }
+
+    function handleClick(i) {
+        if (gameState === 'SETUP' || gameState === 'CHOOSE_STARTER') return;
+        if (gameState === 'PLACEMENT') {
+            if (cells[i]) return;
+            if (!collectors[1]) { collectors[1] = i; cells[i] = {type:'collector', player:1}; }
+            else if (!collectors[2]) { collectors[2] = i; cells[i] = {type:'collector', player:2}; startPlay(); }
+            render();
+        } else if (gameState === 'PLAY') {
+            handleMove(i);
+        } else if (gameState === 'DRAFT_PLACE') {
+            const draftLOS = getLOS(collectors[currentPlayer]);
+            const opponentLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+            if (!cells[i] && draftLOS.includes(i) && !opponentLOS.includes(i)) {
+                isFirstMove = false;
+                const draftColor = draftChosen.color;
+                const draftNum = draftChosen.num;
+                cells[i] = draftChosen;
+                draftChosen = null;
+                document.getElementById('draft-panel').style.display = 'none';
+                gameState = 'PLAY';
+                const dPName = currentPlayer === 1 ? 'Black' : 'White';
+                if (!pendingExtraTurn) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                }
+                pendingExtraTurn = false;
+                saveSnapshot(`${dPName} places ${draftColor} ${draftNum || ''} on board`);
+                updateUI(); render();
+            }
+        } else if (gameState === 'SACRIFICE_MOVE') {
+            handleSacrificeMove(i);
+        }
+    }
+
+    function startPlay() {
+        for (let i = 0; i < 24; i++) {
+            let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+            cells[r] = bag.pop();
+        }
+        gameState = 'CHOOSE_STARTER';
+        document.getElementById('starter-panel').style.display = 'block';
+        updateUI(); render();
+    }
+
+    function getLOS(idx) {
+        const los = [];
+        const r = Math.floor(idx / 12), c = idx % 12;
+        [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => {
+            for (let d = 1; d < 12; d++) {
+                let nr = r + dr*d, nc = c + dc*d;
+                if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) break;
+                let id = nr * 12 + nc;
+                los.push(id);
+                if (cells[id]) break;
+            }
+        });
+        return los;
+    }
+
+    function hasValidMove(player) {
+        const los = getLOS(collectors[player]);
+        for (let i = 0; i < 144; i++) {
+            if (!cells[i] || cells[i].type === 'collector') continue;
+            if (los.includes(i)) continue;
+            // This disc is NOT in LOS; check if any adjacent empty cell IS in LOS
+            const r = Math.floor(i / 12), c = i % 12;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = r + dr, nc = c + dc;
+                    if (nr < 0 || nr >= 12 || nc < 0 || nc >= 12) continue;
+                    const adj = nr * 12 + nc;
+                    if (!cells[adj] && los.includes(adj)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function handleMove(i) {
+        const los = getLOS(collectors[currentPlayer]);
+        if (selectedIdx === null) {
+            if (cells[i] && cells[i].type !== 'collector' && !los.includes(i)) {
+                selectedIdx = i; render();
+            }
+        } else {
+            const dist = Math.max(Math.abs(Math.floor(i/12)-Math.floor(selectedIdx/12)), Math.abs((i%12)-(selectedIdx%12)));
+            if (!cells[i] && dist === 1 && getLOS(collectors[currentPlayer]).includes(i)) {
+                processCollection(cells[selectedIdx], i);
+            } else {
+                selectedIdx = null; render();
+            }
+        }
+    }
+
+    function processCollection(disc, newIdx) {
+        const pName = currentPlayer === 1 ? 'Black' : 'White';
+        const colorKey = disc.color + '6';
+        const counted = !playerFlags[currentPlayer][colorKey];
+
+        if (counted) {
+            scores[currentPlayer][disc.color] += (disc.num || 1);
+            if (disc.num === 6) playerFlags[currentPlayer][colorKey] = true;
+        }
+
+        // Track collected disc (primary only, for sacrifice)
+        if (disc.type === 'primary') {
+            collectedDiscs[currentPlayer].push({...disc, counted});
+        }
+
+        // Move collector
+        cells[collectors[currentPlayer]] = null;
+        cells[selectedIdx] = null;
+        collectors[currentPlayer] = newIdx;
+        cells[newIdx] = { type: 'collector', player: currentPlayer };
+        selectedIdx = null;
+        relinquished[1] = relinquished[2] = false;
+        saveSnapshot(`${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`);
+
+        // Check if all discs collected and bag empty
+        const remaining = cells.filter(c => c && c.type !== 'collector').length;
+        if (remaining === 0 && bag.length === 0) {
+            gameState = 'END';
+            updateUI(); render();
+            return;
+        }
+
+        // Draft: draw 1 disc from bag, player must place it
+        if (bag.length > 0) {
+            pendingExtraTurn = (disc.num === 1);
+            draftChosen = bag.pop();
+            gameState = 'DRAFT_PLACE';
+            showDraftPlacePanel(draftChosen);
+            updateUI(); render();
+            return;
+        }
+
+        // No draft: normal turn switch
+        if (disc.num !== 1) {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        updateUI(); render();
+    }
+
+    // --- DRAFT SYSTEM (1-disc placement) ---
+
+    function showDraftPlacePanel(disc) {
+        const panel = document.getElementById('draft-panel');
+        panel.style.display = 'block';
+        const label = document.getElementById('draft-label');
+        label.innerText = 'Place this disc in your line of sight:';
+        const choices = document.getElementById('draft-choices');
+        choices.innerHTML = '';
+        const d = document.createElement('div');
+        d.className = 'disc';
+        d.style.backgroundColor = disc.color;
+        d.innerText = disc.num;
+        d.style.cursor = 'default';
+        d.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.6)';
+        choices.appendChild(d);
+    }
+
+    // --- SACRIFICE SYSTEM ---
+
+    function sacrificeTurn() {
+        if (gameState !== 'PLAY') return;
+        sacrificingPlayer = currentPlayer;
+        const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+        if (primaryDiscs.length === 0) {
+            // No primary discs to sacrifice: forced relinquish
+            const sName = sacrificingPlayer === 1 ? 'Black' : 'White';
+            relinquished[sacrificingPlayer] = true;
+            saveSnapshot(`${sName} forced relinquish (no discs to sacrifice)`);
+            if (relinquished[1] && relinquished[2]) {
+                gameState = 'END';
+            } else {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            updateUI(); render();
+            return;
+        }
+        // Opponent picks which disc to sacrifice
+        currentPlayer = sacrificingPlayer === 1 ? 2 : 1;
+        gameState = 'SACRIFICE_SELECT';
+        showSacrificePanel();
+        updateUI();
+    }
+
+    function relinquishTurn() {
+        if (gameState !== 'PLAY') return;
+        if (relinquishCount[currentPlayer] >= RELINQUISH_LIMIT) return;
+        const rName = currentPlayer === 1 ? 'Black' : 'White';
+        relinquishCount[currentPlayer]++;
+        relinquished[currentPlayer] = true;
+        saveSnapshot(`${rName} relinquishes turn (${RELINQUISH_LIMIT - relinquishCount[currentPlayer]} left)`);
+        if (relinquished[1] && relinquished[2]) {
+            gameState = 'END';
+        } else {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        updateUI(); render();
+    }
+
+    function showSacrificePanel() {
+        const panel = document.getElementById('sacrifice-panel');
+        panel.style.display = 'block';
+        document.getElementById('sacrifice-btn').style.display = 'none';
+        document.getElementById('relinquish-btn').style.display = 'none';
+        document.getElementById('stuck-hint').style.display = 'none';
+        const label = document.getElementById('sacrifice-label');
+        const oppName = currentPlayer === 1 ? 'Black' : 'White';
+        const sacName = sacrificingPlayer === 1 ? 'Black' : 'White';
+        label.innerText = `${oppName}: Choose which disc ${sacName} must sacrifice`;
+        const choices = document.getElementById('sacrifice-choices');
+        choices.innerHTML = '';
+        const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
+        primaryDiscs.forEach((disc) => {
+            const d = document.createElement('div');
+            d.className = 'disc';
+            d.style.backgroundColor = disc.color;
+            d.innerText = disc.num;
+            d.title = `Sacrifice: ${disc.counted ? 'lose ' + disc.num + ' pts from ' + disc.color + ', ' : ''}move up to ${disc.num} squares`;
+            d.onclick = () => selectSacrificeDisc(disc);
+            choices.appendChild(d);
+        });
+    }
+
+    function selectSacrificeDisc(disc) {
+        sacrificeRange = disc.num;
+
+        // Remove disc from sacrificing player's collection
+        const arr = collectedDiscs[sacrificingPlayer];
+        const removeIdx = arr.indexOf(disc);
+        if (removeIdx >= 0) arr.splice(removeIdx, 1);
+
+        // Subtract value from score only if it was counted
+        if (disc.counted) {
+            scores[sacrificingPlayer][disc.color] -= disc.num;
+        }
+
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        // Switch back to the stuck player for the move phase
+        currentPlayer = sacrificingPlayer;
+        gameState = 'SACRIFICE_MOVE';
+        const sacName = sacrificingPlayer === 1 ? 'Black' : 'White';
+        saveSnapshot(`${sacName} sacrifices ${disc.color} ${disc.num}`);
+        updateUI(); render();
+    }
+
+    function handleSacrificeMove(i) {
+        const reachable = getReachableCells(collectors[currentPlayer], sacrificeRange);
+        if (reachable.includes(i)) {
+            const smName = currentPlayer === 1 ? 'Black' : 'White';
+            cells[collectors[currentPlayer]] = null;
+            collectors[currentPlayer] = i;
+            cells[i] = { type: 'collector', player: currentPlayer };
+            sacrificeRange = 0;
+            gameState = 'PLAY';
+            relinquished[1] = relinquished[2] = false;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            saveSnapshot(`${smName} moves collector after sacrifice`);
+            updateUI(); render();
+        }
+    }
+
+    function getReachableCells(fromIdx, range) {
+        const reachable = [];
+        const fr = Math.floor(fromIdx / 12), fc = fromIdx % 12;
+        for (let r = 0; r < 12; r++) {
+            for (let c = 0; c < 12; c++) {
+                const dist = Math.max(Math.abs(r - fr), Math.abs(c - fc));
+                const idx = r * 12 + c;
+                if (dist > 0 && dist <= range && !cells[idx]) {
+                    reachable.push(idx);
+                }
+            }
+        }
+        return reachable;
+    }
+
+    // --- UI ---
+
+    function updateUI() {
+        const status = document.getElementById('status');
+        const pLabel = currentPlayer === 1 ? 'Black' : 'White';
+        switch (gameState) {
+            case 'END':
+                status.innerText = "GAME OVER";
+                showWinner();
+                if (moveHistory.length > 0) {
+                    document.getElementById('history-controls').style.display = 'block';
+                    historyIndex = moveHistory.length - 1;
+                    updateHistoryControls();
+                }
+                break;
+            case 'PLAY':
+                status.innerText = `Turn: ${pLabel}`; break;
+            case 'DRAFT_PLACE':
+                status.innerText = `${pLabel}: Place the disc in your line of sight`; break;
+            case 'SACRIFICE_SELECT':
+                const oppLabel = currentPlayer === 1 ? 'Black' : 'White';
+                const sacLabel = sacrificingPlayer === 1 ? 'Black' : 'White';
+                status.innerText = `${oppLabel}: Choose which disc ${sacLabel} must sacrifice`; break;
+            case 'SACRIFICE_MOVE':
+                const smLabel = sacrificingPlayer === 1 ? 'Black' : 'White';
+                status.innerText = `${smLabel}: Move collector (up to ${sacrificeRange} squares)`; break;
+            case 'PLACEMENT':
+                status.innerText = `SETUP: Place ${collectors[1] ? 'White' : 'Black'} collector.`; break;
+            case 'CHOOSE_STARTER':
+                status.innerText = 'Choose who starts above.'; break;
+            case 'SETUP':
+                status.innerText = 'Choose a starting position above.'; break;
+        }
+
+        renderScoreTable(scores, playerFlags);
+
+        // Bag count
+        const bagEl = document.getElementById('bag-count');
+        if (bagEl) bagEl.innerText = `Bag: ${bag.length} discs remaining`;
+
+        // Show/hide sacrifice & relinquish buttons based on state
+        const inPlay = gameState === 'PLAY';
+        const stuck = inPlay && !hasValidMove(currentPlayer);
+        const sacBtn = document.getElementById('sacrifice-btn');
+        const relBtn = document.getElementById('relinquish-btn');
+        const stuckHint = document.getElementById('stuck-hint');
+        const canRelinquish = relinquishCount[currentPlayer] < RELINQUISH_LIMIT;
+        if (sacBtn) sacBtn.style.display = stuck ? 'block' : 'none';
+        if (relBtn) {
+            relBtn.style.display = (inPlay && canRelinquish) ? 'block' : 'none';
+            const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
+            relBtn.innerText = `Relinquish Turn (${remaining}/${RELINQUISH_LIMIT})`;
+        }
+        if (stuckHint) {
+            if (stuck && !canRelinquish) {
+                stuckHint.innerText = 'No valid move! No relinquishes left — you must sacrifice a disc!';
+            } else if (stuck) {
+                stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
+            }
+            stuckHint.style.display = stuck ? 'block' : 'none';
+        }
+        // Force sacrifice when stuck, no relinquishes left, and no primary discs
+        if (stuck && !canRelinquish) {
+            const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
+            if (primaryDiscs.length === 0) {
+                // Cannot sacrifice either — game ends
+                const fName = currentPlayer === 1 ? 'Black' : 'White';
+                relinquished[currentPlayer] = true;
+                saveSnapshot(`${fName} forced end (no relinquishes, no discs to sacrifice)`);
+                if (relinquished[1] && relinquished[2]) {
+                    gameState = 'END';
+                    updateUI(); render();
+                } else {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updateUI(); render();
+                }
+            }
+        }
+    }
+
+    function renderScoreTable(sc, flags) {
+        const body = document.getElementById('score-body');
+        body.innerHTML = '';
+        colors.forEach(c => {
+            const s1 = sc[1][c] || 0;
+            const s2 = sc[2][c] || 0;
+            const hex = COLOR_HEX[c];
+            const p1W = flags[1][c+'6'];
+            const p2W = flags[2][c+'6'];
+            const s1Text = p1W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s1}</span>` : s1;
+            const s2Text = p2W ? `<span class="worthless-box" style="border-color:${hex}; background:${hex}22;">${s2}</span>` : s2;
+            const p1Class = p1W ? 'worthless' : '';
+            const p2Class = p2W ? 'worthless' : '';
+            let leaderClass = 'tied';
+            if (s1 > s2) leaderClass = 'black';
+            else if (s2 > s1) leaderClass = 'white';
+            body.innerHTML += `<tr><td style="color:${hex}; font-weight:bold;">${c.toUpperCase()}</td><td class="${p1Class}">${s1Text}</td><td class="${p2Class}">${s2Text}</td><td><span class="leader-dot ${leaderClass}"></span></td></tr>`;
+        });
+    }
+
+    function showWinner() {
+        let winsP1 = 0, winsP2 = 0;
+        let maxSingleP1 = 0, maxSingleP2 = 0;
+        colors.forEach(c => {
+            const s1 = scores[1][c] || 0;
+            const s2 = scores[2][c] || 0;
+            if (s1 > s2) winsP1++;
+            else if (s2 > s1) winsP2++;
+            if (s1 > maxSingleP1) maxSingleP1 = s1;
+            if (s2 > maxSingleP2) maxSingleP2 = s2;
+        });
+        const title = document.getElementById('winner-title');
+        const scoresDiv = document.getElementById('winner-scores');
+        let detail = `Colors won: Black ${winsP1} \u2014 White ${winsP2}`;
+        if (winsP1 > winsP2) {
+            title.innerText = 'Black wins!';
+            title.style.color = '#000';
+        } else if (winsP2 > winsP1) {
+            title.innerText = 'White wins!';
+            title.style.color = '#555';
+        } else {
+            // Tiebreaker: highest score in any single color
+            if (maxSingleP1 > maxSingleP2) {
+                title.innerText = 'Black wins!';
+                title.style.color = '#000';
+                detail += `<br>Tiebreaker: Black's highest color (${maxSingleP1}) beats White's (${maxSingleP2})`;
+            } else if (maxSingleP2 > maxSingleP1) {
+                title.innerText = 'White wins!';
+                title.style.color = '#555';
+                detail += `<br>Tiebreaker: White's highest color (${maxSingleP2}) beats Black's (${maxSingleP1})`;
+            } else {
+                title.innerText = "It's a tie!";
+                title.style.color = '#7f8c8d';
+            }
+        }
+        scoresDiv.innerHTML = `<div class="score-final">${detail}</div>`;
+        document.getElementById('winner-overlay').style.display = 'flex';
+    }
+
+    function downloadCSV() {
+        if (moveHistory.length === 0) {
+            alert('No move data to export.');
+            return;
+        }
+
+        const rows = [];
+        rows.push('Move,Player,Description,Bag_Remaining,' +
+            colors.map(c => `Black_${c}`).join(',') + ',' +
+            colors.map(c => `White_${c}`).join(',') + ',' +
+            colors.map(c => `Flag_Black_${c}`).join(',') + ',' +
+            colors.map(c => `Flag_White_${c}`).join(',') + ',' +
+            'Black_X,Black_Y,White_X,White_Y,Discs_On_Board');
+
+        moveHistory.forEach((snap, idx) => {
+            const desc = (snap.desc || '').replace(/"/g, '""');
+            const discsOnBoard = snap.cells.filter(c => c && c.type !== 'collector').length;
+            const bx = snap.collectors[1] != null ? (snap.collectors[1] % 12) : '';
+            const by = snap.collectors[1] != null ? Math.floor(snap.collectors[1] / 12) : '';
+            const wx = snap.collectors[2] != null ? (snap.collectors[2] % 12) : '';
+            const wy = snap.collectors[2] != null ? Math.floor(snap.collectors[2] / 12) : '';
+            const row = [
+                idx + 1,
+                snap.currentPlayer === 1 ? 'Black' : 'White',
+                `"${desc}"`,
+                snap.bagLen,
+                ...colors.map(c => snap.scores[1][c] || 0),
+                ...colors.map(c => snap.scores[2][c] || 0),
+                ...colors.map(c => snap.playerFlags[1][c] ? 1 : 0),
+                ...colors.map(c => snap.playerFlags[2][c] ? 1 : 0),
+                bx, by, wx, wy,
+                discsOnBoard
+            ];
+            rows.push(row.join(','));
+        });
+
+        const csvContent = rows.join('\n');
+
+        // POST to server
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({game: 'makalaina', csv: csvContent})
+        }).then(r => r.json()).then(d => {
+            if (d.ok) console.log('CSV saved on server: ' + d.filename);
+            else console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+
+        // Local download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const fname = `makalaina_${pad(now.getHours())}${pad(now.getMinutes())}_${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}.csv`;
+        link.download = fname;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function render() {
+        const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
+        const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
+
+        for (let i = 0; i < 144; i++) {
+            const el = document.getElementById(`cell-${i}`);
+            el.innerHTML = '';
+            let cls = 'cell';
+            if (los.includes(i)) cls += ' los';
+            if (selectedIdx === i) cls += ' selected';
+            if (reachable.includes(i)) cls += ' reachable';
+            if (showLOS && gameState === 'DRAFT_PLACE' && !cells[i] && getLOS(collectors[currentPlayer]).includes(i)) {
+                const oppLOS = isFirstMove ? getLOS(collectors[currentPlayer === 1 ? 2 : 1]) : [];
+                if (!oppLOS.includes(i)) cls += ' placeable';
+            }
+            el.className = cls;
+
+            if (cells[i]) {
+                const d = document.createElement('div');
+                if (cells[i].type === 'collector') d.className = `collector ${cells[i].player === 1 ? 'black' : 'white'}`;
+                else {
+                    d.className = 'disc'; d.style.backgroundColor = cells[i].color;
+                    d.innerText = cells[i].num;
+                }
+                el.appendChild(d);
+            }
+        }
+    }
+
+    function calcCellSize() {
+        const vw = window.innerWidth - 28; // 10px padding each side + 8px border
+        const vh = window.innerHeight - 80;
+        const maxByWidth = Math.floor((vw - 11) / 12); // 11 gaps of 1px
+        const maxByHeight = Math.floor((vh - 11) / 12);
+        const cs = Math.max(18, Math.min(maxByWidth, maxByHeight, 42));
+        document.documentElement.style.setProperty('--cs', cs + 'px');
+    }
+    calcCellSize();
+    window.addEventListener('resize', calcCellSize);
+
+    createBoard(); render();
+</script>
+</body>
+</html>

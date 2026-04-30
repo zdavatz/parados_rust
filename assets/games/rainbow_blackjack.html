@@ -425,7 +425,10 @@
 
 <!-- ════════ SETUP SCREEN ════════ -->
 <div id="setupScreen" class="screen active">
-    <h1>RAINBOW BLACKJACK</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">RAINBOW BLACKJACK</h1>
+        <button class="btn btn-small" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
     <p class="subtitle">Farbiges 21 — ein Spiel von Walter Prossnitz</p>
     <div class="intro">
         <p>Zwei Spieler bauen an 6 farbigen Tuerme und versuchen, moeglichst nahe an 21 zu kommen &mdash; wie beim Blackjack, aber mit farbigen Steinen!</p>
@@ -445,7 +448,10 @@
 
 <!-- ════════ GAME SCREEN ════════ -->
 <div id="gameScreen" class="screen">
-    <h1>RAINBOW BLACKJACK</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">RAINBOW BLACKJACK</h1>
+        <button class="btn btn-small" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
     <div id="statusBar">
         <span><span class="status-label">Runde </span><span class="status-value" id="sRound">1</span><span class="status-label"> / 6</span></span>
         <span><span class="status-label">Spieler: </span><span class="status-value" id="sPlayer">1</span></span>
@@ -470,7 +476,10 @@
 
 <!-- ════════ SCORING SCREEN ════════ -->
 <div id="scoringScreen" class="screen">
-    <h1>RAINBOW BLACKJACK</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">RAINBOW BLACKJACK</h1>
+        <button class="btn btn-small" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
     <h2 style="margin-top: 12px;">Endergebnis</h2>
     <div id="scoringContent"></div>
     <div style="margin-top: 16px; display: flex; gap: 10px;">
@@ -1498,6 +1507,16 @@ function openRules() {
 function closeRules() {
     rulesModal.style.display = 'none';
     localStorage.setItem('rainbow_blackjack_rules_v1', 'true');
+}
+
+function shareOnWhatsApp() {
+    const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+    const msg = `Play Rainbow Blackjack: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+    if (inIOSApp) { window.location.href = url; return; }
+    const w = window.open(url, '_blank');
+    if (!w) { window.location.href = url; }
 }
 
 // ══════════════════════════════

@@ -524,7 +524,10 @@ button:disabled {
 </style>
 </head>
 <body>
-<h1>CAPOVOLTO</h1>
+<div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+    <h1 style="margin:5px 0;">CAPOVOLTO</h1>
+    <button class="btn-secondary" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+</div>
 <div class="subtitle">Das Wendespiel &mdash; f&uuml;r 2 Spieler</div>
 
 <div id="statusBar">
@@ -1962,6 +1965,16 @@ function openRules() {
 function closeRules() {
     document.getElementById('rulesModal').style.display = 'none';
     localStorage.setItem('capovolto_rules_v1', 'true');
+}
+
+function shareOnWhatsApp() {
+    const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+    const msg = `Play Capovolto: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+    if (inIOSApp) { window.location.href = url; return; }
+    const w = window.open(url, '_blank');
+    if (!w) { window.location.href = url; }
 }
 
 window.addEventListener('click', (e) => {

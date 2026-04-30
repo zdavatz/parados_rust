@@ -19,6 +19,12 @@ Three games offer optional PeerJS / WebRTC multiplayer; those variants open in y
 browser at `https://game.ywesee.com/parados/`. All other games run entirely offline inside
 the embedded webview (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux).
 
+Each game has a "Share on WhatsApp" button that hands the message off to the user's default
+browser (or the native WhatsApp app on macOS) via wry's navigation handler. The shared
+URL is rewritten from the in-app `parados://...` / `file://...` scheme to a public
+`https://game.ywesee.com/parados/<game>` link so the recipient can actually follow it,
+plus a block of store links (Apple App Store / Mac App Store, Google Play, Microsoft Store).
+
 The window title bar shows the running version (e.g. `Parados 1.0.2`) on every platform,
 so users can see at a glance which build they're on without an About dialog.
 

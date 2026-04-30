@@ -100,6 +100,11 @@
     </div>
 </div>
 
+<div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+    <h1 style="margin:5px 0; color: var(--accent);">DEMOCRACY IN SPACE</h1>
+    <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+</div>
+
 <div id="network-panel">
     <div><strong>Modus:</strong> <span id="mode-label" style="color:#0f0;">Lokal (2 Spieler)</span></div>
     <div style="display:flex; gap:10px; align-items:center;">
@@ -1122,6 +1127,16 @@
     function toggleRules() {
         const m = document.getElementById('rules-modal');
         m.style.display = (m.style.display==='flex')?'none':'flex';
+    }
+
+    function shareOnWhatsApp() {
+        const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+        const msg = `Play Democracy in Space: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+        if (inIOSApp) { window.location.href = url; return; }
+        const w = window.open(url, '_blank');
+        if (!w) { window.location.href = url; }
     }
 
     function calcCellSize() {

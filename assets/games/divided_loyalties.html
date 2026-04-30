@@ -6,29 +6,52 @@
     <title>Divided Loyalties: Epic Master Edition</title>
     <style>
         :root {
-            --bg: #3d352a; --board-bg: #2b251e; --panel: #4d4336;
-            --cell-border: #5a4f41; --blue: #2196F3; --yellow: #FFEB3B;
-            --red: #F44336; --green: #4CAF50; --purple: #9C27B0; --orange: #FF9800;
+            --bg: #3d5245; --panel: #4d6758;
+            --blue: #2196F3; --yellow: #FFEB3B;
+            --red: #F44336; --green: #2E7D32; --purple: #BA68C8; --orange: #FFA726;
             --cs: 44px;
             --gap: 2px;
             --pad: 10px;
-            --tile-size: calc(var(--cs) - 6px);
+            --tile-size: calc(var(--cs) - 4px);
             --step: calc(var(--cs) + var(--gap));
         }
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f5f5f5; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         h1 { font-size: 1.5em; margin: 5px 0; }
         #game-layout { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; }
-        #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: rgba(0,0,0,0.2); padding: var(--pad); border-radius: 4px; }
+        #meta-grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); gap: var(--gap); position: relative; background: #fff; padding: var(--pad); border-radius: 4px; }
         .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; position: relative; }
-        .on-board { background: var(--board-bg); cursor: pointer; border: 1px solid var(--cell-border); }
-        .off-board { background: transparent; cursor: pointer; border: 1px dashed rgba(255,255,255,0.05); }
+        .on-board { cursor: pointer; }
+        /* Off-board cells default to nothing — no grid, no dot. The placement dot
+           appears only on cells the position designer (Walter) explicitly marked. */
+        .off-board { background: transparent; cursor: pointer; }
+        .off-board.has-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.45); }
+
+        /* All-gray boards (3 shades, no near-black/near-white). Per Walter:
+           3x3 darkest, 3x2 (W) middle, 3x4 (G) lightest — stones carry the color. */
+        .on-board.large  { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.08); }
+        .on-board.small  { background: #6a6a6a; border: 1px solid rgba(255,255,255,0.10); }
+        .on-board.medium { background: #9a9a9a; border: 1px solid rgba(0,0,0,0.12); }
+
+        /* Outer frames: subtle, contrast direction depends on fill */
+        .on-board.large[data-outer~="N"]  { border-top:    2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="S"]  { border-bottom: 2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="W"]  { border-left:   2px solid rgba(255,255,255,0.35); }
+        .on-board.large[data-outer~="E"]  { border-right:  2px solid rgba(255,255,255,0.35); }
+        .on-board.small[data-outer~="N"]  { border-top:    2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="S"]  { border-bottom: 2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="W"]  { border-left:   2px solid rgba(255,255,255,0.25); }
+        .on-board.small[data-outer~="E"]  { border-right:  2px solid rgba(255,255,255,0.25); }
+        .on-board.medium[data-outer~="N"] { border-top:    2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="S"] { border-bottom: 2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="W"] { border-left:   2px solid rgba(0,0,0,0.30); }
+        .on-board.medium[data-outer~="E"] { border-right:  2px solid rgba(0,0,0,0.30); }
         .tile { width: var(--tile-size); height: var(--tile-size); border-radius: 3px; z-index: 15; box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.3); animation: placeTile 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes placeTile { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .tile.blue { background: var(--blue); } .tile.yellow { background: var(--yellow); }
         .tile.red { background: var(--red); } .tile.green { background: var(--green); }
         .tile.purple { background: var(--purple); } .tile.orange { background: var(--orange); }
-        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #5a4f41; }
+        #ui-panel { width: 100%; max-width: 340px; padding: 15px; background: var(--panel); border-radius: 8px; border: 1px solid #3d5245; }
         .current-player { font-size: 1.1em; margin-bottom: 12px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
         .blue-turn { background: #1565C0; color: white; } .yellow-turn { background: #fbc02d; color: #333; }
         #bridge-layer { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); pointer-events: none; z-index: 10; }
@@ -39,6 +62,15 @@
         .inv-slot { background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; }
         .inv-tile { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; }
         .inv-tile.selected { border-color: white; transform: scale(1.1); }
+
+        /* Setup overlay */
+        #setup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; }
+        .setup-box { background: #fdfcf0; color: #222; padding: 25px; border-radius: 12px; max-width: 600px; width: 92%; max-height: 85vh; overflow-y: auto; line-height: 1.5; }
+        .setup-box h2 { margin-top: 0; border-bottom: 2px solid #3d5245; padding-bottom: 10px; }
+        #position-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .position-btn { padding: 18px 10px; background: #3d5245; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em; text-align: left; }
+        .position-btn:hover { background: #4d6758; }
+        .position-btn .sub { display: block; font-weight: normal; font-size: 0.85em; opacity: 0.8; margin-top: 3px; }
 
         /* Modal Styling */
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
@@ -55,8 +87,19 @@
 </head>
 <body>
 
-    <h1>DIVIDED LOYALTIES</h1>
-    
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">DIVIDED LOYALTIES</h1>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
+
+    <div id="setup-overlay">
+        <div class="setup-box">
+            <h2>Startstellung wählen</h2>
+            <p style="margin:8px 0 0;">Wähle eine der 6 Startstellungen — die Board‑Teile werden entsprechend auf dem Raster platziert.</p>
+            <div id="position-grid"></div>
+        </div>
+    </div>
+
     <div id="game-layout">
         <div style="position: relative;">
             <div id="meta-grid"></div>
@@ -72,6 +115,50 @@
             </div>
             <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
             <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
+            <button class="btn" style="background: #3d5245;" onclick="showSetup()">NEUES SPIEL</button>
+        </div>
+    </div>
+
+    <div id="editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
+        <div style="max-width:880px; margin:0 auto; background:#fdfcf0; color:#222; padding:18px; border-radius:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2em;">Editor — Eigene Startstellung</h2>
+                <input id="editor-name" type="text" placeholder="Name der Stellung" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
+                <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
+                    Breite:
+                    <select id="editor-size-w" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('w', this.value)"></select>
+                </label>
+                <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
+                    Höhe:
+                    <select id="editor-size-h" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('h', this.value)"></select>
+                </label>
+            </div>
+            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">Wähle ein Board (S = 3×3 dunkel, W = Pyramide mittel, G = 3×4 hell), dann tippe Felder an. Mehrere Boards desselben Typs (z.B. S1, S2, …) bleiben getrennt. Breite und Höhe können unterschiedlich sein (z.B. 15×9). Mit dem <strong>• Punkt</strong>-Pinsel markierst du Felder, auf denen Steine gesetzt werden dürfen, wenn sie eine Brücke vervollständigen — sonst bleibt das Feld leer.</div>
+            <div id="editor-brush-bar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
+            <div style="background:#fff; padding:10px; border-radius:6px; display:flex; justify-content:center; overflow:auto; border:1px solid #ccc;">
+                <div id="editor-grid" style="display:grid; gap:2px; background:transparent; padding:4px; border-radius:4px;"></div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:center;">
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="saveCustomPosition()">💾 Speichern (im Browser)</button>
+                <button class="btn" style="width:auto; background:#25D366;" onclick="shareEditorViaWhatsApp()">📤 Per WhatsApp senden</button>
+                <button class="btn" style="width:auto; background:#6d4c41;" onclick="exportEditorCSV()">📋 Als CSV exportieren</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="closeEditor()">✕ Schliessen</button>
+            </div>
+            <p style="font-size:0.82em; color:#666; margin-top:12px; line-height:1.5;">
+                <strong>Speichern</strong> legt die Stellung lokal in deinem Browser ab — sie erscheint dann in der Auswahl mit ★. <strong>Als CSV</strong> erzeugt einen Block, den man an <code>divided_loyalties_starting_positions.csv</code> anfügen kann (für alle Spieler).
+            </p>
+        </div>
+    </div>
+
+    <div id="csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:3500; justify-content:center; align-items:center; padding:15px;">
+        <div style="background:#fdfcf0; color:#222; padding:20px; border-radius:10px; max-width:720px; width:100%;">
+            <h3 style="margin-top:0;">CSV-Block</h3>
+            <p style="font-size:0.9em; margin:6px 0 10px;">Kopiere diesen Block und füge ihn an <code>divided_loyalties_starting_positions.csv</code> an. Passe ggf. <code>position_id</code> auf die nächste freie Nummer an.</p>
+            <textarea id="csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
+            <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="copyCSVToClipboard()">In Zwischenablage kopieren</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="document.getElementById('csv-modal').style.display='none'">Schliessen</button>
+            </div>
         </div>
     </div>
 
@@ -105,8 +192,9 @@
 
             <h3>4. Außenfelder & Boards</h3>
             <ul>
-                [cite_start]<li>Steine dürfen ein Feld außerhalb der Boards platziert werden, wenn sie <em>sofort</em> Teil einer Brücke werden[cite: 52].</li>
+                <li><strong>Punkte (•):</strong> Die kleinen Punkte zeigen Felder außerhalb der Boards. Steine dürfen <em>nur</em> auf solche Punktfelder gesetzt werden, wenn sie damit <em>im selben Zug</em> eine Brücke vervollständigen.</li>
                 [cite_start]<li>Nur ein Stein einer Reihe darf außerhalb liegen[cite: 53].</li>
+                <li>Andres Kuusk (Weltmeister im abstrakten Spiel) nennt diese Regel „an excellent rule":-)</li>
                 [cite_start]<li><strong>Board-Besitz:</strong> Spieler erhalten 1 Punkt pro Board, auf dem sie ein "inneres" Feld einer Brücke kontrollieren[cite: 50, 51].</li>
             </ul>
 
@@ -115,21 +203,114 @@
     </div>
 
     <script>
-        const GRID_SIZE = 11;
+        let GRID_W = 11, GRID_H = 11;  // recomputed per position from CSV (max(x)+2, max(y)+2)
         let currentPlayer = 'blue', selectedColor = null, lastPlaced = null, bridgePlaced = false, moveState = 'tile';
-        let grid = Array(121).fill(null), blueInv = {blue:12, purple:9, green:6, red:6, orange:3}, yellowInv = {yellow:12, orange:9, green:6, red:6, purple:3};
+        let grid = Array(GRID_W * GRID_H).fill(null), blueInv = {blue:12, purple:9, green:6, red:6, orange:3}, yellowInv = {yellow:12, orange:9, green:6, red:6, purple:3};
         let activeBridges = [], bridgeSelection = [], bridgeScore = {blue:0, yellow:0};
         let cellSize = 44, gapSize = 2, padSize = 10;
 
-        const boards = [[12,13,14,23,24,25,34,35,36],[16,17,18,19,27,28,29,30,38,39,40,41],[2,3,4,13,24],[55,56,57,66,67,68,77,78,79],[88,89,90,91,99,100,101,102],[44,45,46,55,66],[70,71,72,81,82,83],[7,8,18,19,29,30],[48,49,50,59,60,61]];
-        const allBoardIdx = [].concat(...boards);
+        // Boards stored as [x,y] pair arrays (grid-size agnostic).
+        // Loaded from divided_loyalties_starting_positions.csv at startup;
+        // falls back to HARDCODED_POSITIONS if fetch fails. Order matches Walter's
+        // 6 numbered photos (1 Windrad, 2 Raute, 3 Asymm., 4 Zwei-Säulen, 5 H, 6 Kreuz).
+        const HARDCODED_POSITIONS = [
+            {
+                name: "Windrad", sub: "5 × 3×3 + 4 Pyramiden (rotationssymmetrisch)",
+                boards: [
+                    [[2,0],[3,0],[4,0],[2,1],[3,1],[4,1],[2,2],[3,2],[4,2]],
+                    [[8,2],[9,2],[10,2],[8,3],[9,3],[10,3],[8,4],[9,4],[10,4]],
+                    [[4,4],[5,4],[6,4],[4,5],[5,5],[6,5],[4,6],[5,6],[6,6]],
+                    [[6,8],[7,8],[8,8],[6,9],[7,9],[8,9],[6,10],[7,10],[8,10]],
+                    [[0,6],[1,6],[2,6],[0,7],[1,7],[2,7],[0,8],[1,8],[2,8]],
+                    [[5,0],[6,0],[7,0],[6,1],[7,1],[7,2]],
+                    [[8,5],[9,5],[10,5],[9,6],[10,6],[10,7]],
+                    [[3,10],[4,10],[5,10],[3,9],[4,9],[3,8]],
+                    [[0,5],[1,5],[2,5],[0,4],[1,4],[0,3]]
+                ]
+            },
+            {
+                name: "Raute", sub: "5 × 3×3 + 4 Pyramiden (Diamant)",
+                boards: [
+                    [[4,0],[5,0],[6,0],[4,1],[5,1],[6,1],[4,2],[5,2],[6,2]],
+                    [[1,4],[2,4],[3,4],[1,5],[2,5],[3,5],[1,6],[2,6],[3,6]],
+                    [[4,4],[5,4],[6,4],[4,5],[5,5],[6,5],[4,6],[5,6],[6,6]],
+                    [[7,4],[8,4],[9,4],[7,5],[8,5],[9,5],[7,6],[8,6],[9,6]],
+                    [[4,8],[5,8],[6,8],[4,9],[5,9],[6,9],[4,10],[5,10],[6,10]],
+                    [[1,2],[2,2],[3,2],[1,3],[2,3],[3,3]],
+                    [[7,2],[8,2],[9,2],[7,3],[8,3],[9,3]],
+                    [[1,7],[2,7],[3,7],[1,8],[2,8],[3,8]],
+                    [[7,7],[8,7],[9,7],[7,8],[8,8],[9,8]]
+                ]
+            },
+            {
+                name: "Asymmetrisch", sub: "3 × 3×3 + 2 × 4×3 + 4 Pyramiden",
+                boards: [
+                    [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2],[0,3],[1,3],[2,3]],
+                    [[7,0],[8,0],[9,0],[7,1],[8,1],[9,1],[7,2],[8,2],[9,2]],
+                    [[4,1],[5,1],[6,1],[5,2],[6,2],[6,3]],
+                    [[0,5],[1,5],[2,5],[0,6],[1,6],[2,6],[0,7],[1,7],[2,7]],
+                    [[5,5],[6,5],[7,5],[8,5],[5,6],[6,6],[7,6],[8,6],[5,7],[6,7],[7,7],[8,7]],
+                    [[8,4],[9,4],[10,4],[9,5],[10,5],[10,6]],
+                    [[8,8],[9,8],[10,8],[8,9],[9,9],[10,9],[8,10],[9,10],[10,10]],
+                    [[3,8],[4,8],[3,9],[4,9],[3,10],[4,10]],
+                    [[0,9],[1,9],[2,9],[0,10],[1,10],[2,10]]
+                ]
+            },
+            {
+                name: "Zwei-Säulen", sub: "2 × 3×3 + 2 × 4×3 + 4 Pyramiden",
+                boards: [
+                    [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]],
+                    [[4,0],[5,0],[6,0],[4,1],[5,1],[6,1],[4,2],[5,2],[6,2],[4,3],[5,3],[6,3]],
+                    [[7,0],[8,0],[9,0],[8,1],[9,1],[9,2]],
+                    [[0,4],[1,4],[2,4],[1,5],[2,5],[2,6]],
+                    [[4,5],[5,5],[6,5],[4,6],[5,6],[6,6],[4,7],[5,7],[6,7],[4,8],[5,8],[6,8]],
+                    [[7,4],[8,4],[9,4],[8,5],[9,5],[9,6]],
+                    [[0,7],[1,7],[2,7],[0,8],[1,8],[2,8],[0,9],[1,9],[2,9]],
+                    [[7,8],[8,8],[9,8],[8,9],[9,9],[9,10]]
+                ]
+            },
+            {
+                name: "H", sub: "5 × 3×3 + 4 Pyramiden (H-Form)",
+                boards: [
+                    [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]],
+                    [[8,0],[9,0],[10,0],[8,1],[9,1],[10,1],[8,2],[9,2],[10,2]],
+                    [[4,4],[5,4],[6,4],[4,5],[5,5],[6,5],[4,6],[5,6],[6,6]],
+                    [[0,8],[1,8],[2,8],[0,9],[1,9],[2,9],[0,10],[1,10],[2,10]],
+                    [[8,8],[9,8],[10,8],[8,9],[9,9],[10,9],[8,10],[9,10],[10,10]],
+                    [[4,2],[5,2],[6,2],[4,3],[5,3],[6,3]],
+                    [[4,7],[5,7],[6,7],[4,8],[5,8],[6,8]],
+                    [[2,4],[3,4],[2,5],[3,5],[2,6],[3,6]],
+                    [[7,4],[8,4],[7,5],[8,5],[7,6],[8,6]]
+                ]
+            },
+            {
+                name: "Kreuz", sub: "5 × 3×3 + 4 Pyramiden (+)",
+                boards: [
+                    [[4,0],[5,0],[6,0],[4,1],[5,1],[6,1],[4,2],[5,2],[6,2]],
+                    [[0,4],[1,4],[2,4],[0,5],[1,5],[2,5],[0,6],[1,6],[2,6]],
+                    [[4,4],[5,4],[6,4],[4,5],[5,5],[6,5],[4,6],[5,6],[6,6]],
+                    [[8,4],[9,4],[10,4],[8,5],[9,5],[10,5],[8,6],[9,6],[10,6]],
+                    [[4,8],[5,8],[6,8],[4,9],[5,9],[6,9],[4,10],[5,10],[6,10]],
+                    [[1,1],[1,2],[2,2],[1,3],[2,3],[3,3]],
+                    [[9,1],[8,2],[9,2],[7,3],[8,3],[9,3]],
+                    [[1,7],[2,7],[3,7],[1,8],[2,8],[1,9]],
+                    [[7,7],[8,7],[9,7],[8,8],[9,8],[9,9]]
+                ]
+            }
+        ];
+
+        let STARTING_POSITIONS = HARDCODED_POSITIONS;
+        let boards = [];           // array of flat-index arrays, one per board
+        let boardTokens = [];      // parallel array of token strings (for color class)
+        let allBoardIdx = [];
+        let playDots = new Set();  // flat-indices of off-board cells that show a placement dot
 
         function calcCellSize() {
             const vw = window.innerWidth - 20;
             const vh = window.innerHeight - 80;
-            const maxByWidth = Math.floor((vw - 2 * padSize - 10 * gapSize) / 11);
-            const maxByHeight = Math.floor((vh - 2 * padSize - 10 * gapSize) / 11);
-            cellSize = Math.max(20, Math.min(maxByWidth, maxByHeight, 44));
+            const maxByWidth = Math.floor((vw - 2 * padSize - (GRID_W - 1) * gapSize) / GRID_W);
+            const maxByHeight = Math.floor((vh - 2 * padSize - (GRID_H - 1) * gapSize) / GRID_H);
+            cellSize = Math.max(16, Math.min(maxByWidth, maxByHeight, 44));
             document.documentElement.style.setProperty('--cs', cellSize + 'px');
         }
 
@@ -138,10 +319,10 @@
             svg.innerHTML = '';
             const step = cellSize + gapSize;
             for (const b of activeBridges) {
-                const x1 = (b.s % 11) * step + cellSize / 2, y1 = Math.floor(b.s / 11) * step + cellSize / 2;
-                const x2 = (b.e % 11) * step + cellSize / 2, y2 = Math.floor(b.e / 11) * step + cellSize / 2;
+                const x1 = (b.s % GRID_W) * step + cellSize / 2, y1 = Math.floor(b.s / GRID_W) * step + cellSize / 2;
+                const x2 = (b.e % GRID_W) * step + cellSize / 2, y2 = Math.floor(b.e / GRID_W) * step + cellSize / 2;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const off = cellSize * 0.43;
+                const off = cellSize * 0.50;
                 b.coords = { x1: x1 + Math.cos(angle) * off, y1: y1 + Math.sin(angle) * off, x2: x2 - Math.cos(angle) * off, y2: y2 - Math.sin(angle) * off };
                 drawBridge(b.coords, b.player, b.id);
             }
@@ -156,9 +337,41 @@
         function init() {
             calcCellSize();
             const container = document.getElementById('meta-grid');
-            for(let i=0; i<121; i++) {
+            container.style.gridTemplateColumns = `repeat(${GRID_W}, var(--cs))`;
+            container.style.gridTemplateRows = `repeat(${GRID_H}, var(--cs))`;
+
+            // Map each on-board cell to its board (first-write-wins on overlap)
+            const cellBoard = {};
+            boards.forEach((b, idx) => b.forEach(ci => { if (!(ci in cellBoard)) cellBoard[ci] = idx; }));
+            // Size class: prefer S/W/G token prefix, fall back to cell count
+            // 9=large (black), 7–12=medium (grey), ≤6=small (white)
+            const classFromToken = (tok) => {
+                if (!tok) return null;
+                const ch = tok[0].toUpperCase();
+                if (ch === 'S') return 'large';
+                if (ch === 'G') return 'medium';
+                if (ch === 'W') return 'small';
+                return null;
+            };
+            const sizeOf = (n) => n === 9 ? 'large' : (n >= 7 ? 'medium' : 'small');
+            const boardSize = boards.map((b, idx) => classFromToken(boardTokens[idx]) || sizeOf(b.length));
+
+            const total = GRID_W * GRID_H;
+            for(let i=0; i<total; i++) {
                 const c = document.createElement('div');
-                c.className = allBoardIdx.includes(i) ? 'cell on-board' : 'cell off-board';
+                const bIdx = cellBoard[i];
+                if (bIdx !== undefined) {
+                    c.className = `cell on-board ${boardSize[bIdx]}`;
+                    const row = Math.floor(i/GRID_W), col = i%GRID_W, outers = [];
+                    if (row === 0             || cellBoard[i-GRID_W] !== bIdx) outers.push('N');
+                    if (row === GRID_H - 1    || cellBoard[i+GRID_W] !== bIdx) outers.push('S');
+                    if (col === 0             || cellBoard[i-1]         !== bIdx) outers.push('W');
+                    if (col === GRID_W - 1 || cellBoard[i+1]         !== bIdx) outers.push('E');
+                    c.setAttribute('data-outer', outers.join(' '));
+                } else {
+                    c.className = 'cell off-board';
+                    if (playDots.has(i)) c.classList.add('has-dot');
+                }
                 c.onclick = () => handleClick(i);
                 container.appendChild(c);
             }
@@ -166,6 +379,125 @@
         }
 
         function toggleRules(s) { document.getElementById('rules-modal').style.display = s ? 'flex' : 'none'; }
+
+        function showSetup() {
+            const g = document.getElementById('position-grid');
+            g.innerHTML = '';
+            const customs = loadCustomPositions();
+            const all = STARTING_POSITIONS.concat(customs);
+            all.forEach((p, i) => {
+                const isCustom = !!p.customId;
+                const wrapper = document.createElement('div');
+                wrapper.style.position = 'relative';
+                const b = document.createElement('button');
+                b.className = 'position-btn';
+                b.style.width = '100%';
+                const prefix = isCustom ? '★ ' : `${i+1}: `;
+                b.innerHTML = `${prefix}${p.name}<span class="sub">${p.sub || ''}</span>`;
+                b.onclick = () => startWithPosition(p);
+                wrapper.appendChild(b);
+                const editBtn = document.createElement('button');
+                editBtn.textContent = '✏';
+                editBtn.title = isCustom ? 'Bearbeiten' : 'Als Vorlage öffnen';
+                editBtn.style.cssText = 'position:absolute; top:6px; right:' + (isCustom ? '34px' : '6px') + '; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (isCustom) { openEditor(p); }
+                    else { openEditor({ name: p.name + ' (Kopie)', sub: 'Eigene Stellung', boards: p.boards, customId: null }); }
+                };
+                wrapper.appendChild(editBtn);
+                if (isCustom) {
+                    // shift edit btn left to make room for share btn
+                    editBtn.style.right = '62px';
+                    const shareBtn = document.createElement('button');
+                    shareBtn.textContent = '📤';
+                    shareBtn.title = 'Per WhatsApp senden';
+                    shareBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:#25D366; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
+                    shareBtn.onclick = (e) => { e.stopPropagation(); shareCustomPositionViaWhatsApp(p); };
+                    wrapper.appendChild(shareBtn);
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '✕';
+                    delBtn.title = 'Löschen';
+                    delBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(244,67,54,0.65); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (confirm(`Stellung „${p.name}" löschen?`)) {
+                            deleteCustomPosition(p.customId);
+                            showSetup();
+                        }
+                    };
+                    wrapper.appendChild(delBtn);
+                }
+                g.appendChild(wrapper);
+            });
+            const newBtn = document.createElement('button');
+            newBtn.className = 'position-btn';
+            newBtn.style.cssText = 'background:#6d4c41; grid-column:1 / -1;';
+            newBtn.innerHTML = `➕ Neue Stellung erstellen<span class="sub">Editor öffnen</span>`;
+            newBtn.onclick = () => openEditor(null);
+            g.appendChild(newBtn);
+            document.getElementById('setup-overlay').style.display = 'flex';
+        }
+
+        function startWith(idx) {
+            startWithPosition(STARTING_POSITIONS[idx]);
+        }
+
+        function startWithPosition(pos) {
+            // Normalize: each entry becomes {token, cells:[[x,y],…]}. Hardcoded uses plain [x,y][]
+            // arrays; derive a token from cell count for those (9→'S', 7-12→'G', ≤6→'W').
+            const norm = pos.boards.map(b => {
+                if (Array.isArray(b)) {
+                    const n = b.length;
+                    const tok = n === 9 ? 'S' : (n >= 7 ? 'G' : 'W');
+                    return { token: tok, cells: b };
+                }
+                return b;
+            });
+            const positionDots = pos.dots || [];
+            // Compute grid size from max (x,y) across all boards AND dots; +2 margin
+            let maxX = 0, maxY = 0;
+            norm.forEach(b => b.cells.forEach(([x,y]) => {
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }));
+            positionDots.forEach(([x,y]) => {
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
+            GRID_W = maxX + 2;
+            GRID_H = maxY + 2;
+            boards = norm.map(b => b.cells.map(([x,y]) => y * GRID_W + x));
+            boardTokens = norm.map(b => b.token);
+            allBoardIdx = [].concat(...boards);
+            playDots = new Set(positionDots.map(([x,y]) => y * GRID_W + x));
+            grid = Array(GRID_W * GRID_H).fill(null);
+            currentPlayer = 'blue';
+            selectedColor = null;
+            lastPlaced = null;
+            bridgePlaced = false;
+            moveState = 'tile';
+            blueInv = {blue:12, purple:9, green:6, red:6, orange:3};
+            yellowInv = {yellow:12, orange:9, green:6, red:6, purple:3};
+            activeBridges = [];
+            bridgeSelection = [];
+            bridgeScore = {blue:0, yellow:0};
+            document.getElementById('meta-grid').innerHTML = '';
+            document.getElementById('bridge-layer').innerHTML = '';
+            document.getElementById('setup-overlay').style.display = 'none';
+            init();
+            updateScore();
+        }
+
+        function shareOnWhatsApp() {
+            const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+            const msg = `Play Divided Loyalties: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+            const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+            if (inIOSApp) { window.location.href = url; return; }
+            const w = window.open(url, '_blank');
+            if (!w) { window.location.href = url; }
+        }
 
         function handleClick(idx) {
             if (moveState === 'tile') {
@@ -187,13 +519,13 @@
             }
         }
 
-        function getCoord(i) { return {x: i%11, y: Math.floor(i/11)}; }
+        function getCoord(i) { return {x: i%GRID_W, y: Math.floor(i/GRID_W)}; }
 
         function getRow(s, e) {
             const c1 = getCoord(s), c2 = getCoord(e);
             const dx = Math.sign(c2.x-c1.x), dy = Math.sign(c2.y-c1.y), dist = Math.max(Math.abs(c2.x-c1.x), Math.abs(c2.y-c1.y));
             if (c1.x!==c2.x && c1.y!==c2.y && Math.abs(c2.x-c1.x)!==Math.abs(c2.y-c1.y)) return null;
-            let r = []; for(let i=0; i<=dist; i++) r.push((c1.y+i*dy)*11 + (c1.x+i*dx));
+            let r = []; for(let i=0; i<=dist; i++) r.push((c1.y+i*dy)*GRID_W + (c1.x+i*dx));
             return r;
         }
 
@@ -213,9 +545,9 @@
             for(let i=0; i<colors.length-1; i++) if(colors[i]===colors[i+1]) return;
 
             const step = cellSize + gapSize;
-            const x1 = (s%11)*step+cellSize/2, y1 = Math.floor(s/11)*step+cellSize/2, x2 = (e%11)*step+cellSize/2, y2 = Math.floor(e/11)*step+cellSize/2;
+            const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2, x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
             const angle = Math.atan2(y2-y1, x2-x1);
-            const off = cellSize * 0.43;
+            const off = cellSize * 0.50;
             const c = { x1: x1 + Math.cos(angle)*off, y1: y1 + Math.sin(angle)*off, x2: x2 - Math.cos(angle)*off, y2: y2 - Math.sin(angle)*off };
 
             const collision = checkCollision(c);
@@ -246,7 +578,7 @@
             const svg = document.getElementById('bridge-layer');
             const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
             l.setAttribute("x1", c.x1); l.setAttribute("y1", c.y1); l.setAttribute("x2", c.x2); l.setAttribute("y2", c.y2);
-            l.setAttribute("stroke", type==='red'?'#F44336':(type==='blue'?'#2196F3':'#FFEB3B'));
+            l.setAttribute("stroke", type==='red'?'#D32F2F':(type==='blue'?'#1976D2':'#FDD835'));
             l.setAttribute("stroke-width", "10"); l.classList.add('bridge-line'); l.id = 'line-' + id;
             svg.appendChild(l);
         }
@@ -289,14 +621,463 @@
             Object.keys(t).forEach(c => {
                 if(t[c]>0) {
                     const s = document.createElement('div'); s.className='inv-slot';
+                    s.style.cursor = 'pointer';
+                    s.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
                     const d = document.createElement('div'); d.className=`inv-tile ${c} ${selectedColor===c?'selected':''}`;
-                    d.onclick = () => { if(moveState==='tile') { selectedColor=c; updateUI(); }};
                     const count = document.createElement('span'); count.innerText = t[c]; count.style.fontSize="0.7em";
                     s.appendChild(d); s.appendChild(count); inv.appendChild(s);
                 }
             });
         }
-        init();
+        // CSV format: position_id, position_name, row, c0, c1, c2, ... — each cell its own column.
+        // Cell values: '.' = empty. Any other token is a board id. Each UNIQUE token is its own
+        // separate board — even if two boards touch, their borders stay visible and they score
+        // separately. Convention: S1,S2,S3… = black 3x3; W1,W2,W3… = white pyramid; G1,G2… = grey 4x3.
+        // Color class is derived from the first letter (S/W/G), with cell-count fallback.
+        function parsePositionsCSV(text) {
+            const lines = text.split(/\r?\n/).map(l => l.replace(/\r/g, '')).filter(l => l && !l.trimStart().startsWith('#'));
+            if (lines.length < 2) return null;
+            const header = lines[0].split(',').map(s => s.trim().toLowerCase());
+            const iPid  = header.indexOf('position_id');
+            const iName = header.indexOf('position_name');
+            const iRow  = header.indexOf('row');
+            if (iPid < 0 || iName < 0 || iRow < 0) return null;
+            const cellStart = iRow + 1;
+
+            const positions = {};
+            const order = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',').map(s => s.trim());
+                if (parts.length <= cellStart) continue;
+                const pid  = parts[iPid];
+                const pname = parts[iName];
+                const y = parseInt(parts[iRow]);
+                if (isNaN(y)) continue;
+                const cells = parts.slice(cellStart).map(s => (s === '' ? '.' : s));
+                if (!positions[pid]) { positions[pid] = { name: pname, rows: {} }; order.push(pid); }
+                positions[pid].rows[y] = cells;
+            }
+
+            return order.map(pid => {
+                const pos = positions[pid];
+                const rowNums = Object.keys(pos.rows).map(Number);
+                // Collect cells by token; each unique token = one separate board.
+                // 'o' / 'O' = placement dot (where stones may go when completing a bridge).
+                const byToken = {};
+                const tokenOrder = [];
+                const dots = [];
+                rowNums.forEach(y => {
+                    const r = pos.rows[y];
+                    for (let x = 0; x < r.length; x++) {
+                        const tok = r[x];
+                        if (!tok || tok === '.') continue;
+                        if (tok === 'o' || tok === 'O') { dots.push([x, y]); continue; }
+                        if (!byToken[tok]) { byToken[tok] = []; tokenOrder.push(tok); }
+                        byToken[tok].push([x, y]);
+                    }
+                });
+                return {
+                    name: pos.name,
+                    sub: '',
+                    boards: tokenOrder.map(tok => ({ token: tok, cells: byToken[tok] })),
+                    dots
+                };
+            });
+        }
+
+        // ---------- Position editor (custom positions stored in localStorage) ----------
+        // Indices are y * editorGridW + x (W = column count = stride).
+        let editorPaint = {};       // { [index]: token }  e.g. { 12: 'S1', 13: 'S1', ... }
+        let editorBrush = 'S1';
+        let editorGridW = 17;
+        let editorGridH = 17;
+        let editorPositionName = '';
+        let editingCustomId = null;
+        const EDITOR_TOKENS = ['S1','S2','S3','S4','S5','W1','W2','W3','W4','W5','G1','G2','G3','G4'];
+        const EDITOR_SIZES = [9, 11, 13, 15, 17, 19, 21, 23, 25];
+
+        function loadCustomPositions() {
+            try {
+                const data = localStorage.getItem('dl_custom_positions');
+                return data ? JSON.parse(data) : [];
+            } catch (e) { return []; }
+        }
+
+        function saveCustomPositionsArr(arr) {
+            try { localStorage.setItem('dl_custom_positions', JSON.stringify(arr)); }
+            catch (e) { alert('Speichern fehlgeschlagen: ' + e.message); }
+        }
+
+        function deleteCustomPosition(customId) {
+            saveCustomPositionsArr(loadCustomPositions().filter(p => p.customId !== customId));
+        }
+
+        function openEditor(existingPos) {
+            editorPaint = {};
+            if (existingPos) {
+                let maxX = 0, maxY = 0;
+                existingPos.boards.forEach(b => {
+                    const cells = Array.isArray(b) ? b : b.cells;
+                    cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+                });
+                const existingDots = existingPos.dots || [];
+                existingDots.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+                // Open the editor snug to the position's bounds (+2-cell margin).
+                // Walter can grow it via the Breite/Höhe dropdowns.
+                editorGridW = maxX + 2;
+                editorGridH = maxY + 2;
+                // Synthesize numeric tokens for hardcoded positions (which only have 'S'/'W'/'G' single-letter tokens)
+                const usedByPrefix = { S:0, W:0, G:0 };
+                existingPos.boards.forEach(b => {
+                    const isArr = Array.isArray(b);
+                    const cells = isArr ? b : b.cells;
+                    let tok = isArr ? null : b.token;
+                    if (!tok || tok.length === 1) {
+                        const prefix = (tok && tok[0]) || (cells.length === 9 ? 'S' : (cells.length >= 7 ? 'G' : 'W'));
+                        usedByPrefix[prefix] = (usedByPrefix[prefix] || 0) + 1;
+                        tok = prefix + usedByPrefix[prefix];
+                    }
+                    cells.forEach(([x,y]) => { editorPaint[y * editorGridW + x] = tok; });
+                });
+                existingDots.forEach(([x,y]) => { editorPaint[y * editorGridW + x] = 'DOT'; });
+                editorPositionName = existingPos.name;
+                editingCustomId = existingPos.customId || null;
+            } else {
+                editorGridW = 17;
+                editorGridH = 17;
+                editorPositionName = '';
+                editingCustomId = null;
+            }
+            editorBrush = 'S1';
+            document.getElementById('setup-overlay').style.display = 'none';
+            document.getElementById('editor-overlay').style.display = 'block';
+            document.getElementById('editor-name').value = editorPositionName;
+            rebuildSizeSelectors();
+            renderBrushBar();
+            renderEditor();
+        }
+
+        function rebuildSizeSelectors() {
+            const fill = (sel, current) => {
+                if (!sel) return;
+                sel.innerHTML = '';
+                const sizes = EDITOR_SIZES.slice();
+                if (!sizes.includes(current)) sizes.push(current);
+                sizes.sort((a,b) => a-b);
+                sizes.forEach(s => {
+                    const o = document.createElement('option');
+                    o.value = s; o.textContent = s;
+                    if (s === current) o.selected = true;
+                    sel.appendChild(o);
+                });
+            };
+            fill(document.getElementById('editor-size-w'), editorGridW);
+            fill(document.getElementById('editor-size-h'), editorGridH);
+        }
+
+        // axis: 'w' (width / column count) or 'h' (height / row count)
+        function setEditorGridDim(axis, newSize) {
+            newSize = parseInt(newSize);
+            if (!newSize) return;
+            const oldW = editorGridW, oldH = editorGridH;
+            const newW = axis === 'w' ? newSize : oldW;
+            const newH = axis === 'h' ? newSize : oldH;
+            if (newW === oldW && newH === oldH) return;
+            const wouldDrop = Object.keys(editorPaint).some(idx => {
+                const i = parseInt(idx);
+                const x = i % oldW, y = Math.floor(i / oldW);
+                return x >= newW || y >= newH;
+            });
+            if (wouldDrop && !confirm('Beim Verkleinern würden bemalte Felder verloren gehen. Trotzdem verkleinern?')) {
+                rebuildSizeSelectors();
+                return;
+            }
+            const oldPaint = editorPaint;
+            editorPaint = {};
+            Object.keys(oldPaint).forEach(idx => {
+                const i = parseInt(idx);
+                const x = i % oldW, y = Math.floor(i / oldW);
+                if (x < newW && y < newH) editorPaint[y * newW + x] = oldPaint[idx];
+            });
+            editorGridW = newW;
+            editorGridH = newH;
+            renderEditor();
+        }
+
+        function closeEditor() {
+            document.getElementById('editor-overlay').style.display = 'none';
+            showSetup();
+        }
+
+        function editorClick(i) {
+            if (editorBrush === 'erase') { delete editorPaint[i]; }
+            else { editorPaint[i] = editorBrush; }
+            renderEditor();
+        }
+
+        function renderBrushBar() {
+            const bar = document.getElementById('editor-brush-bar');
+            bar.innerHTML = '';
+            EDITOR_TOKENS.forEach(tok => {
+                const ch = tok[0];
+                const bg = ch === 'S' ? '#3a3a3a' : (ch === 'W' ? '#6a6a6a' : '#9a9a9a');
+                const fg = ch === 'G' ? '#000' : '#fff';
+                const btn = document.createElement('button');
+                btn.style.cssText = `background:${bg}; color:${fg}; border:3px solid ${editorBrush===tok?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; min-width:42px;`;
+                btn.textContent = tok;
+                btn.onclick = () => { editorBrush = tok; renderBrushBar(); };
+                bar.appendChild(btn);
+            });
+            // Punkt brush: marks cells where stones may be placed off-board when
+            // completing a bridge (Walter's manual placement, replaces auto-dots).
+            const dotBtn = document.createElement('button');
+            dotBtn.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='DOT'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; display:inline-flex; align-items:center; gap:5px;`;
+            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> Punkt';
+            dotBtn.onclick = () => { editorBrush = 'DOT'; renderBrushBar(); };
+            bar.appendChild(dotBtn);
+            const eraser = document.createElement('button');
+            eraser.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+            eraser.textContent = '✕ Radieren';
+            eraser.onclick = () => { editorBrush = 'erase'; renderBrushBar(); };
+            bar.appendChild(eraser);
+        }
+
+        function renderEditor() {
+            const g = document.getElementById('editor-grid');
+            g.innerHTML = '';
+            // ecs is sized off the larger axis so the grid fits the viewport;
+            // the container has overflow:auto so anything wider/taller is scrollable.
+            const maxAxis = Math.max(editorGridW, editorGridH);
+            const ecs = Math.max(16, Math.min(38, Math.floor((Math.min(window.innerWidth, 820) - 80) / maxAxis)));
+            g.style.gridTemplateColumns = `repeat(${editorGridW}, ${ecs}px)`;
+            g.style.gridTemplateRows = `repeat(${editorGridH}, ${ecs}px)`;
+            const fontSize = Math.max(8, Math.floor(ecs * 0.32));
+            for (let i = 0; i < editorGridW * editorGridH; i++) {
+                const c = document.createElement('div');
+                // Faint grid border in the editor so Walter can see the cells he's painting on.
+                // Empty cells have no fill — only this thin outline; on the play grid the
+                // border is gone entirely so empty space is just white.
+                c.style.cssText = `width:${ecs}px; height:${ecs}px; cursor:pointer; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.10);`;
+                const tok = editorPaint[i];
+                if (tok === 'DOT') {
+                    // Placement dot — Walter marks where stones may go off-board
+                    c.style.background = 'transparent';
+                    const dotSize = Math.max(6, Math.floor(ecs * 0.22));
+                    c.innerHTML = `<span style="display:inline-block; width:${dotSize}px; height:${dotSize}px; border-radius:50%; background:#000;"></span>`;
+                } else if (tok) {
+                    const ch = tok[0];
+                    const bg = ch === 'S' ? '#3a3a3a' : (ch === 'W' ? '#6a6a6a' : '#9a9a9a');
+                    const fg = ch === 'G' ? '#000' : '#fff';
+                    c.style.background = bg;
+                    c.style.border = '1px solid rgba(0,0,0,0.20)';
+                    c.innerHTML = `<span style="font-size:${fontSize}px; color:${fg}; font-weight:bold;">${tok}</span>`;
+                } else {
+                    // Empty cell — blank white, no auto-dot. Walter places dots manually.
+                    c.style.background = 'transparent';
+                    c.innerHTML = '';
+                }
+                c.onclick = () => editorClick(i);
+                g.appendChild(c);
+            }
+        }
+
+        function paintToBoards() {
+            const byToken = {};
+            const order = [];
+            Object.keys(editorPaint).forEach(idx => {
+                const tok = editorPaint[idx];
+                if (tok === 'DOT') return;  // dots collected separately via paintToDots()
+                const i = parseInt(idx);
+                const x = i % editorGridW, y = Math.floor(i / editorGridW);
+                if (!byToken[tok]) { byToken[tok] = []; order.push(tok); }
+                byToken[tok].push([x, y]);
+            });
+            return order.map(tok => ({ token: tok, cells: byToken[tok] }));
+        }
+
+        function paintToDots() {
+            const dots = [];
+            Object.keys(editorPaint).forEach(idx => {
+                if (editorPaint[idx] !== 'DOT') return;
+                const i = parseInt(idx);
+                dots.push([i % editorGridW, Math.floor(i / editorGridW)]);
+            });
+            return dots;
+        }
+
+        function saveCustomPosition() {
+            if (Object.keys(editorPaint).length === 0) {
+                alert('Bitte mindestens ein Board platzieren!');
+                return;
+            }
+            const nameInput = document.getElementById('editor-name');
+            let name = (nameInput.value || '').trim();
+            if (!name) name = (prompt('Name der Stellung:', 'Meine Stellung') || '').trim();
+            if (!name) return;
+            const newPos = {
+                customId: editingCustomId || ('c' + Date.now()),
+                name: name,
+                sub: 'Eigene Stellung',
+                boards: paintToBoards(),
+                dots: paintToDots()
+            };
+            const customs = loadCustomPositions();
+            const idx = customs.findIndex(p => p.customId === newPos.customId);
+            if (idx >= 0) customs[idx] = newPos; else customs.push(newPos);
+            saveCustomPositionsArr(customs);
+            editingCustomId = newPos.customId;
+            editorPositionName = name;
+            nameInput.value = name;
+            alert(`„${name}" gespeichert!`);
+        }
+
+        // gridW = grid stride (column count). The CSV format is row-keyed,
+        // so only the width matters for indexing; the height is implicit in maxY.
+        function buildPositionCSV(paint, gridW, name) {
+            let maxX = 0, maxY = 0;
+            Object.keys(paint).forEach(idx => {
+                const i = parseInt(idx);
+                const x = i % gridW, y = Math.floor(i / gridW);
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
+            const numCols = Math.max(maxX + 1, 12);
+            const pid = STARTING_POSITIONS.length + 1;
+            const headers = ['position_id','position_name','row'];
+            for (let c = 0; c < numCols; c++) headers.push('c' + c);
+            let csv = headers.join(',') + '\n';
+            for (let y = 0; y <= maxY; y++) {
+                const row = [pid, name, y];
+                for (let x = 0; x < numCols; x++) {
+                    const v = paint[y * gridW + x];
+                    row.push(v === 'DOT' ? 'o' : (v || '.'));
+                }
+                csv += row.join(',') + '\n';
+            }
+            return csv;
+        }
+
+        // Convert a saved/loaded position object back to a paint dict (used for sharing
+        // existing custom positions without re-opening the editor)
+        function positionToPaint(pos) {
+            let maxX = 0, maxY = 0;
+            pos.boards.forEach(b => {
+                const cells = Array.isArray(b) ? b : b.cells;
+                cells.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+            });
+            const dots = pos.dots || [];
+            dots.forEach(([x,y]) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+            const gridW = maxX + 2;
+            const gridH = maxY + 2;
+            const paint = {};
+            const usedByPrefix = { S:0, W:0, G:0 };
+            pos.boards.forEach(b => {
+                const isArr = Array.isArray(b);
+                const cells = isArr ? b : b.cells;
+                let tok = isArr ? null : b.token;
+                if (!tok || tok.length === 1) {
+                    const prefix = (tok && tok[0]) || (cells.length === 9 ? 'S' : (cells.length >= 7 ? 'G' : 'W'));
+                    usedByPrefix[prefix] = (usedByPrefix[prefix] || 0) + 1;
+                    tok = prefix + usedByPrefix[prefix];
+                }
+                cells.forEach(([x,y]) => { paint[y * gridW + x] = tok; });
+            });
+            dots.forEach(([x,y]) => { paint[y * gridW + x] = 'DOT'; });
+            return { paint, gridW, gridH };
+        }
+
+        function exportEditorCSV() {
+            if (Object.keys(editorPaint).length === 0) {
+                alert('Bitte mindestens ein Board platzieren!');
+                return;
+            }
+            const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
+            const csv = buildPositionCSV(editorPaint, editorGridW, name);
+            document.getElementById('csv-output').value = csv;
+            document.getElementById('csv-modal').style.display = 'flex';
+        }
+
+        // Share a CSV file via the OS share sheet (incl. WhatsApp on iOS/Android,
+        // both in the browser and inside the Parados WebView). Falls back to
+        // download + wa.me text message on platforms without files-share support.
+        async function shareCSVViaWhatsApp(name, csvText) {
+            const safe = (name || 'custom').replace(/[^\w\-äöüÄÖÜß]+/g, '_');
+            const filename = `divided_loyalties_${safe}.csv`;
+            const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+            try {
+                if (navigator.canShare) {
+                    const file = new File([blob], filename, { type: 'text/csv' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: `Divided Loyalties: ${name}`,
+                            text: `Neue Startstellung für Divided Loyalties: ${name}`
+                        });
+                        return;
+                    }
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return; // user cancelled the share sheet
+                console.warn('navigator.share failed, falling back:', e);
+            }
+            // Fallback: download the file, then open WhatsApp text with a note
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            const msg = `Neue Startstellung für Divided Loyalties: ${name}\n\n(CSV-Datei „${filename}" wurde heruntergeladen — bitte als Anhang anfügen.)`;
+            const wa = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+            if (inIOSApp) { window.location.href = wa; return; }
+            const w = window.open(wa, '_blank');
+            if (!w) { window.location.href = wa; }
+        }
+
+        async function shareEditorViaWhatsApp() {
+            if (Object.keys(editorPaint).length === 0) {
+                alert('Bitte mindestens ein Board platzieren!');
+                return;
+            }
+            const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
+            const csv = buildPositionCSV(editorPaint, editorGridW, name);
+            await shareCSVViaWhatsApp(name, csv);
+        }
+
+        async function shareCustomPositionViaWhatsApp(pos) {
+            const { paint, gridW } = positionToPaint(pos);
+            const csv = buildPositionCSV(paint, gridW, pos.name);
+            await shareCSVViaWhatsApp(pos.name, csv);
+        }
+
+        function copyCSVToClipboard() {
+            const ta = document.getElementById('csv-output');
+            const text = ta.value;
+            const fallback = () => { ta.select(); document.execCommand('copy'); };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => alert('Kopiert!'), () => { fallback(); alert('Kopiert!'); });
+            } else { fallback(); alert('Kopiert!'); }
+        }
+
+        async function loadPositions() {
+            try {
+                const resp = await fetch('divided_loyalties_starting_positions.csv');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const text = await resp.text();
+                const parsed = parsePositionsCSV(text);
+                if (parsed && parsed.length > 0) return parsed;
+            } catch (e) {
+                console.warn('CSV fetch failed, using hardcoded positions:', e);
+            }
+            return HARDCODED_POSITIONS;
+        }
+
+        async function startup() {
+            STARTING_POSITIONS = await loadPositions();
+            showSetup();
+        }
+
+        startup();
     </script>
 </body>
 </html>

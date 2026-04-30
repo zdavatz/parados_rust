@@ -79,7 +79,10 @@
 </head>
 <body>
 
-    <h1>MAKA LAINA</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">MAKA LAINA</h1>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
     <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
         <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Choose starting setup:</p>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
@@ -196,7 +199,7 @@
     let scores = { 1: {}, 2: {} };
     let relinquished = { 1: false, 2: false };
     let relinquishCount = { 1: 0, 2: 0 };
-    const RELINQUISH_LIMIT = 3;
+    const RELINQUISH_LIMIT = 2;
     const colors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
 
     // New state for draft and sacrifice
@@ -338,6 +341,16 @@
     }
 
     function toggleRules(show) { document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none'; }
+
+    function shareOnWhatsApp() {
+        const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+        const msg = `Play MAKA LAINA: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+        if (inIOSApp) { window.location.href = url; return; }
+        const w = window.open(url, '_blank');
+        if (!w) { window.location.href = url; }
+    }
 
     function toggleLOS() {
         showLOS = !showLOS;
@@ -652,7 +665,7 @@
         const pLabel = currentPlayer === 1 ? 'Black' : 'White';
         switch (gameState) {
             case 'END':
-                status.innerText = "GAME OVER";
+                status.innerText = computeWinner().shortText;
                 showWinner();
                 if (moveHistory.length > 0) {
                     document.getElementById('history-controls').style.display = 'block';
@@ -745,9 +758,8 @@
         });
     }
 
-    function showWinner() {
-        let winsP1 = 0, winsP2 = 0;
-        let maxSingleP1 = 0, maxSingleP2 = 0;
+    function computeWinner() {
+        let winsP1 = 0, winsP2 = 0, maxSingleP1 = 0, maxSingleP2 = 0;
         colors.forEach(c => {
             const s1 = scores[1][c] || 0;
             const s2 = scores[2][c] || 0;
@@ -756,29 +768,34 @@
             if (s1 > maxSingleP1) maxSingleP1 = s1;
             if (s2 > maxSingleP2) maxSingleP2 = s2;
         });
+        let winner = null, tiebroken = false;
+        if (winsP1 > winsP2) winner = 'Black';
+        else if (winsP2 > winsP1) winner = 'White';
+        else if (maxSingleP1 > maxSingleP2) { winner = 'Black'; tiebroken = true; }
+        else if (maxSingleP2 > maxSingleP1) { winner = 'White'; tiebroken = true; }
+        const scoreFmt = `${winsP1}\u2013${winsP2}`;
+        const shortText = winner
+            ? (tiebroken ? `${winner} wins (tiebreak)! ${scoreFmt}` : `${winner} wins! ${scoreFmt}`)
+            : `Tie ${scoreFmt}`;
+        return { winsP1, winsP2, maxSingleP1, maxSingleP2, winner, tiebroken, shortText };
+    }
+
+    function showWinner() {
+        const w = computeWinner();
         const title = document.getElementById('winner-title');
         const scoresDiv = document.getElementById('winner-scores');
-        let detail = `Colors won: Black ${winsP1} \u2014 White ${winsP2}`;
-        if (winsP1 > winsP2) {
+        let detail = `Colors won: Black ${w.winsP1} \u2014 White ${w.winsP2}`;
+        if (w.winner === 'Black') {
             title.innerText = 'Black wins!';
             title.style.color = '#000';
-        } else if (winsP2 > winsP1) {
+            if (w.tiebroken) detail += `<br>Tiebreaker: Black's highest color (${w.maxSingleP1}) beats White's (${w.maxSingleP2})`;
+        } else if (w.winner === 'White') {
             title.innerText = 'White wins!';
             title.style.color = '#555';
+            if (w.tiebroken) detail += `<br>Tiebreaker: White's highest color (${w.maxSingleP2}) beats Black's (${w.maxSingleP1})`;
         } else {
-            // Tiebreaker: highest score in any single color
-            if (maxSingleP1 > maxSingleP2) {
-                title.innerText = 'Black wins!';
-                title.style.color = '#000';
-                detail += `<br>Tiebreaker: Black's highest color (${maxSingleP1}) beats White's (${maxSingleP2})`;
-            } else if (maxSingleP2 > maxSingleP1) {
-                title.innerText = 'White wins!';
-                title.style.color = '#555';
-                detail += `<br>Tiebreaker: White's highest color (${maxSingleP2}) beats Black's (${maxSingleP1})`;
-            } else {
-                title.innerText = "It's a tie!";
-                title.style.color = '#7f8c8d';
-            }
+            title.innerText = "It's a tie!";
+            title.style.color = '#7f8c8d';
         }
         scoresDiv.innerHTML = `<div class="score-final">${detail}</div>`;
         document.getElementById('winner-overlay').style.display = 'flex';

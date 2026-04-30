@@ -62,9 +62,27 @@ Single binary (`parados`) — no library, no helper crates. Runtime structure:
   Android — kept always-visible on desktop because mouse-driven users don't need the
   hide/reveal dance.
 
-The HTML game files live in `assets/games/` and are committed verbatim from
-`parados_ios/Parados/Resources/Games/`. Don't modify them in this repo — sync from iOS
-when the games change so the three ports stay in lockstep.
+The HTML game files live in `assets/games/` and are synced verbatim from the
+upstream **games repo** at `https://github.com/zdavatz/parados/` (locally:
+`~/software/parados/`). That repo is also the upstream for the iOS / Android ports
+and for the live `https://game.ywesee.com/parados/` web build, so all four
+deployments stay in lockstep. Don't edit `assets/games/*.html` here directly — push
+fixes upstream then `cp ~/software/parados/*.html ~/software/parados_rust/assets/games/`.
+
+The custom-protocol scheme is a known quantity to the games' `shareOnWhatsApp()`
+helper: it tests `window.location.protocol` against the regex `/^(file|parados):$/`
+and rewrites the share URL to `https://game.ywesee.com/parados/<file>` so the
+WhatsApp recipient gets a public, openable link instead of `parados://localhost/...`
+or `file:///...`. If a new game is added, make sure its share helper uses the
+same regex (the `iOS / Mac / Android / Windows` store-link block in the message
+body is also part of the canonical pattern).
+
+`with_navigation_handler` and `with_new_window_req_handler` on the wry webview
+intercept any `http(s)://` navigation a game triggers (e.g. `window.open` or
+`window.location.href = "https://wa.me/..."` from the share button) and shell
+out to `open::that(url)`. On macOS that lands in the native WhatsApp app via
+its URL handler; on Windows / Linux in the user's default browser. Without these
+handlers the embedded webview would try (and fail) to render wa.me itself.
 
 ## Mac App Store private-API status
 
@@ -171,7 +189,8 @@ three when the wording changes:
 `src/games.rs` mirrors `GameInfo.swift` / `GameInfo.kt`. Whenever Walter Prossnitz adds a
 new game or renames an existing one:
 
-1. Add the HTML file to `assets/games/` (copy from `parados_ios/Parados/Resources/Games/`).
+1. Add the HTML file to `assets/games/` (copy from `~/software/parados/`, the upstream
+   games repo — same source the iOS / Android ports and the web build draw from).
 2. Append a `Game { ... }` literal to `GAMES` in `src/games.rs` matching the iOS / Android
    entries character-for-character; also extend `ALL_FILENAMES` so the runtime
    "Spiele aktualisieren" worker downloads the new file.

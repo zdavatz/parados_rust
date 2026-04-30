@@ -590,7 +590,10 @@
 
 <!-- GAME -->
 <header>
-    <h1>MAKA LAINA</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <h1 style="margin:5px 0;">MAKA LAINA</h1>
+        <button class="action-btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+    </div>
     <div class="subtitle">The Strategic Endspurt</div>
 </header>
 
@@ -639,7 +642,7 @@
                 <button class="action-btn" id="los-toggle" onclick="toggleLOS()" style="opacity:0.6;">Show Line of Sight</button>
                 <button class="action-btn" id="csv-export-btn" onclick="downloadCSV()" style="display:none; background:#27ae60; color:white;">Export CSV</button>
                 <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Sacrifice & Move</button>
-                <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">Relinquish Turn (3/3)</button>
+                <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">Relinquish Turn (2/2)</button>
                 <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
                 <div id="draft-panel">
                     <p id="draft-label">Place this disc in your line of sight:</p>
@@ -866,7 +869,7 @@ let playerFlags = { 1: {}, 2: {} };
 let scores = { 1: {}, 2: {} };
 let relinquished = { 1: false, 2: false };
 let relinquishCount = { 1: 0, 2: 0 };
-const RELINQUISH_LIMIT = 3;
+const RELINQUISH_LIMIT = 2;
 const allColors = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
 const discColorMap = {
     red: '#e85d5d', blue: '#5d8de8', yellow: '#e8c547',
@@ -1022,6 +1025,16 @@ function loadCuratedPosition(posId) {
 
 function toggleRules(show) {
     document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function shareOnWhatsApp() {
+    const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+    const msg = `Play MAKA LAINA: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
+    if (inIOSApp) { window.location.href = url; return; }
+    const w = window.open(url, '_blank');
+    if (!w) { window.location.href = url; }
 }
 
 function toggleLOS() {
@@ -1415,6 +1428,28 @@ function performRelinquish(isRemote) {
     updateUI(); render();
 }
 
+function computeWinner() {
+    let winsP1 = 0, winsP2 = 0, maxSingleP1 = 0, maxSingleP2 = 0;
+    allColors.forEach(c => {
+        const s1 = scores[1][c] || 0;
+        const s2 = scores[2][c] || 0;
+        if (s1 > s2) winsP1++;
+        else if (s2 > s1) winsP2++;
+        if (s1 > maxSingleP1) maxSingleP1 = s1;
+        if (s2 > maxSingleP2) maxSingleP2 = s2;
+    });
+    let winner = null, tiebroken = false;
+    if (winsP1 > winsP2) winner = 'P1';
+    else if (winsP2 > winsP1) winner = 'P2';
+    else if (maxSingleP1 > maxSingleP2) { winner = 'P1'; tiebroken = true; }
+    else if (maxSingleP2 > maxSingleP1) { winner = 'P2'; tiebroken = true; }
+    const scoreFmt = `${winsP1}\u2013${winsP2}`;
+    const shortText = winner
+        ? (tiebroken ? `${winner} wins (tiebreak)! ${scoreFmt}` : `${winner} wins! ${scoreFmt}`)
+        : `Tie ${scoreFmt}`;
+    return { winsP1, winsP2, maxSingleP1, maxSingleP2, winner, tiebroken, shortText };
+}
+
 // ─── UI ──────────────────────────────────────────────────────
 function updateUI() {
     const statusEl = document.getElementById('status-text');
@@ -1423,7 +1458,10 @@ function updateUI() {
 
     switch (gameState) {
         case 'END':
-            statusEl.textContent = '🏁 GAME OVER';
+            const w = computeWinner();
+            statusEl.innerHTML = w.winner
+                ? `<span class="player-indicator ${w.winner === 'P1' ? 'p1' : 'p2'}"></span> ${w.shortText}`
+                : `🏁 ${w.shortText}`;
             statusEl.classList.remove('your-turn');
             if (moveHistory.length > 0) {
                 document.getElementById('history-controls').style.display = 'block';

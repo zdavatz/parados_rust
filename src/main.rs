@@ -180,8 +180,13 @@ fn main() -> wry::Result<()> {
     let proxy = event_loop.create_proxy();
 
     let icon = decode_icon(ICON_PNG);
+    // Show the running version after the app name in the title bar —
+    // identical wording on every platform (tao maps with_title to
+    // NSWindow.title on macOS, the WS_CAPTION text on Windows, and
+    // the X11/Wayland window title on Linux).
+    let title = format!("Parados {}", env!("CARGO_PKG_VERSION"));
     let mut window_builder = WindowBuilder::new()
-        .with_title("Parados")
+        .with_title(&title)
         .with_inner_size(tao::dpi::LogicalSize::new(960.0, 720.0))
         .with_min_inner_size(tao::dpi::LogicalSize::new(480.0, 480.0));
     if let Some(ref icon) = icon {

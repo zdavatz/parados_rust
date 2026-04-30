@@ -19,6 +19,9 @@ Three games offer optional PeerJS / WebRTC multiplayer; those variants open in y
 browser at `https://game.ywesee.com/parados/`. All other games run entirely offline inside
 the embedded webview (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux).
 
+The window title bar shows the running version (e.g. `Parados 1.0.2`) on every platform,
+so users can see at a glance which build they're on without an About dialog.
+
 ## Refreshing games at runtime
 
 Click the kangaroo logo in the top-right of the menu page to download fresh game HTML from

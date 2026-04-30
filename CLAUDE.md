@@ -40,6 +40,11 @@ Single binary (`parados`) — no library, no helper crates. Runtime structure:
     `screenshots/macos/capture.sh`); a `--screenshot` CLI arg additionally injects
     `RULES_DISMISS_JS` to auto-close every game's rules modal so screenshots show
     actual gameplay.
+  - The window title is built at startup as `format!("Parados {}", env!("CARGO_PKG_VERSION"))`
+    so the running version is visible in the macOS title bar / Windows caption / Linux
+    WM title without the user having to open an "About" dialog. `tao` maps
+    `with_title` to `NSWindow.title` / WS_CAPTION / X11 / Wayland identically — one
+    code path covers all three platforms.
 - `src/games.rs` — direct port of `GameInfo.swift` / `GameInfo.kt`. Keep titles /
   descriptions / variant lists byte-identical with the iOS and Android sources so the App
   Store / Play Store / Microsoft Store listings stay coherent. Also exposes

@@ -18,7 +18,14 @@
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Parados</DisplayName>
+    <!-- DisplayName must EXACTLY match a reserved name in Partner
+         Center — "Parados - Think Ahead!" (with the exclamation
+         mark) is the reservation `9N7RTWZQQ0K7` carries.  Microsoft
+         rejects the submission with `Die Manifestdatei dieses
+         Pakets verwendet einen nicht reservierten Anzeigenamen` if
+         this drifts.  Don't shorten to "Parados" — that name is
+         not separately reserved. -->
+    <DisplayName>Parados - Think Ahead!</DisplayName>
     <PublisherDisplayName>ywesee GmbH</PublisherDisplayName>
     <Logo>assets\StoreLogo.png</Logo>
     <Description>Parados — seven original Think Ahead board games. Offline. No ads.</Description>

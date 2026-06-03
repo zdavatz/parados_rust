@@ -17,6 +17,22 @@ list the same product family.
 
 ## Architecture
 
+> **UPDATED 2026-06-03 — the menu is now the SHARED `index.html`, not native-rendered.**
+> Per Walter ("the index.html has to be the same everywhere: web, macOS, Windows, Linux,
+> iOS and Android"), the desktop app no longer generates its own menu. `src/index_html.rs`
+> and `games::GAMES`/`Game`/`Variant` were **deleted**. `handle_request` now serves the
+> bundled/overlay `index.html` (the same file shipped on web + iOS + Android) at `/`, and
+> serves games at the root so `index.html`'s relative links resolve (the legacy
+> `games/<file>` form still works for the screenshot script). `UPDATE_BUTTON_JS` (injected
+> at document start on the menu page only) supplies the kangaroo "Spiele aktualisieren"
+> button, since the shared `index.html` has no update control of its own. Remote variants
+> (`*_remote.html`) are routed to `https://game.ywesee.com/parados/<file>` in the browser
+> by `internal_remote_variant` in the nav handlers. `src/games.rs` is now just
+> `ALL_FILENAMES`. **`update_games_blocking` is dynamic**: it downloads `index.html`, parses
+> its `href` links (`linked_files`), unions them with `ALL_FILENAMES` and fetches all — so a
+> brand-new game added on the website + linked in `index.html` is fully OTA (no new build).
+> The bullets below describing `index_html::render` / `GAMES` are historical.
+
 Single binary (`parados`) — no library, no helper crates. Runtime structure:
 
 - `src/main.rs` — opens a `tao` window with the kangaroo PNG decoded into a native icon,

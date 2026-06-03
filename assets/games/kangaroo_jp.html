@@ -125,6 +125,7 @@
         .cell {
             width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
             border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
+            touch-action: manipulation;
         }
         .cell:hover { background-color: rgba(255,255,255,0.3); }
 
@@ -184,7 +185,7 @@
     </div>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">せっかちなカンガルー 🦘</h1>
+        <h1 style="margin:5px 0;">せっかちなカンガルー 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div class="subtitle">The Impatient Kangaroo</div>
@@ -274,6 +275,8 @@
 
             <h3>重要！(Important!)</h3>
             <p>各ジャンプの前に、任意のお皿1枚を好きな方向へ1マス動かすことができます（絶対に動かすべきです！）。</p>
+            <p>💡 <b>ヒント：</b>動かしたいお皿をダブルクリック（またはダブルタップ）すれば、あとは目的のマスを1回クリックするだけで移動できます。「🖐️ お皿を動かす」ボタンも引き続き使えます。</p>
+            <p>💡 盤面の片側（左右または上下）で一方の色が3枚以上多い場合は、「<b>新しいゲーム</b>」をクリックすればよりバランスの取れた盤面になります。</p>
             <p>この移動なしで勝つことは不可能です…。熟練のプレイヤーは、カンギーがそのエリアに到達するずっと前にお皿を動かして準備しておきます。</p>
 
             <h3>戦術のヒント (Tactical tips)</h3>
@@ -290,7 +293,7 @@
      */
     const LEVEL_DATABASE = [
         {
-            id: 'tut1',
+            id: 'first-steps',
             group: '初級',
             name: 'レベル 1: はじめてのステップ',
             cols: 10, rows: 10,
@@ -310,7 +313,7 @@
             startHintB: {x: 6, y: 6}
         },
         {
-            id: 'tut2',
+            id: 'the-block',
             group: '初級',
             name: 'レベル 2: ブロック',
             cols: 10, rows: 10,
@@ -330,7 +333,7 @@
             startHintB: {x: 6, y: 5}
         },
         {
-            id: 'tut3',
+            id: 'shifting',
             group: '初級',
             name: 'レベル 3: お皿を動かす練習',
             cols: 10, rows: 10,
@@ -350,7 +353,7 @@
             startHintB: {x: 2, y: 5}
         },
         {
-            id: 'mid1',
+            id: 'staircase',
             group: '中級',
             name: 'レベル 1: 階段',
             cols: 10, rows: 10,
@@ -369,7 +372,7 @@
             startHint: {x: 5, y: 8}
         },
         {
-            id: 'mid2',
+            id: 'scattered',
             group: '中級',
             name: 'レベル 2: 散在',
             cols: 10, rows: 10,
@@ -388,7 +391,7 @@
             startHint: {x: 1, y: 1}
         },
         {
-            id: 'mid3',
+            id: 'slant',
             group: '中級',
             name: 'レベル 3: 斜め',
             cols: 10, rows: 10,
@@ -407,7 +410,7 @@
             startHint: {x: 8, y: 8}
         },
         {
-            id: 'adv1',
+            id: 'the-cross',
             group: '上級',
             name: 'レベル 1: クロス',
             cols: 10, rows: 10,
@@ -549,8 +552,9 @@
         if (gameState === 'PLAYING' && board.some(row => row.includes('G') || row.includes('B'))) {
             if (!confirm("ゲームを中止してモードを変更しますか？")) return;
         }
-        
+
         currentMode = mode;
+        setPositionTitle('');
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
         
@@ -594,6 +598,7 @@
             const lvlIndex = document.getElementById('levelSelect').value;
             const lvl = LEVEL_DATABASE[lvlIndex];
             currentLevelData = lvl;
+            setPositionTitle(lvl.name);
             // Show/hide A/B toggle based on whether level has two start positions
             const hasVariants = !!lvl.startHintB;
             document.querySelector('.variant-toggle').style.display = hasVariants ? 'inline-flex' : 'none';
@@ -613,6 +618,7 @@
             if (gameState === 'PLAYING') logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Auto Kangy placed");
 
         } else if (currentMode === 'RANDOM') {
+            setPositionTitle('');
             const sizeVal = document.getElementById('boardSize').value.split('x');
             COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
@@ -779,6 +785,7 @@
                 }
 
                 cell.onclick = () => handleCellClick(x, y);
+                cell.ondblclick = () => handleCellDblClick(x, y);
 
                 if (gameState === 'PLAYING') {
                     if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
@@ -876,6 +883,17 @@
                 }
             }
         }
+    }
+
+    function handleCellDblClick(x, y) {
+        if (gameState !== 'PLAYING') return;
+        if (!dishMoveAvailable) return;
+        const c = board[y][x];
+        if (c !== 'G' && c !== 'B') return;
+        isMovingDish = true;
+        selectedDishPos = { x, y };
+        renderBoard();
+        updateUI();
     }
 
     // --- MOVE & JUMP LOGIC ---
@@ -1073,14 +1091,51 @@
         localStorage.setItem('kangy_jp_v1', 'true');
     }
 
+    function setPositionTitle(label) {
+        const pt = document.getElementById('position-title');
+        if (pt) pt.textContent = label ? ' — ' + label : '';
+        document.title = label ? 'せっかちなカンガルー — ' + label : 'せっかちなカンガルー';
+    }
+
+    // Hash format:
+    //   #tut1 / #mid2 / #adv1   → level by id
+    //   #1..#7                   → level by 1-based index in LEVEL_DATABASE
+    //   trailing 'b'             → start variant B (e.g. #adv1b, #1b)
+    function findLevelByHash(hash) {
+        const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim().toLowerCase();
+        if (!raw) return null;
+        const m = raw.match(/^([a-z0-9-]+?)([ab])?$/);
+        if (!m) return null;
+        const key = m[1];
+        const variant = (m[2] || 'a').toUpperCase();
+        if (/^\d+$/.test(key)) {
+            const i = parseInt(key, 10) - 1;
+            if (i >= 0 && i < LEVEL_DATABASE.length) return { index: i, variant };
+        }
+        const idx = LEVEL_DATABASE.findIndex(l => l.id === key);
+        if (idx >= 0) return { index: idx, variant };
+        return null;
+    }
+
+    function currentLevelHash() {
+        if (currentMode !== 'LEVEL' || !currentLevelData) return '';
+        const v = (selectedVariant === 'B' && currentLevelData.startHintB) ? 'b' : '';
+        return currentLevelData.id + v;
+    }
+
     function shareOnWhatsApp() {
-        const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-        const msg = `Play DUK — The Impatient Kangaroo: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
-        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
-        if (inIOSApp) { window.location.href = url; return; }
-        const w = window.open(url, '_blank');
-        if (!w) { window.location.href = url; }
+        let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+        const slug = currentLevelHash();
+        if (slug) shareUrl += '#' + slug;
+        const posLabel = currentMode === 'LEVEL' && currentLevelData ? ` — ${currentLevelData.name}` : '';
+        const msg = `せっかちなカンガルーをプレイ${posLabel}: ${shareUrl}\n\nParados アプリを入手:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+        // No share API (Android WebView, in-app browsers): copy to clipboard.
+        // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+        const note = 'メッセージをコピーしました。WhatsApp に貼り付けてください。';
+        const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+        else fallback();
     }
     
     window.onclick = (e) => { 
@@ -1091,7 +1146,30 @@
     
     // START
     populateLevelSelect();
-    initGame();
+
+    function applyHashLevel() {
+        const m = findLevelByHash(location.hash);
+        if (!m) return false;
+        const sel = document.getElementById('levelSelect');
+        sel.value = m.index;
+        selectedVariant = m.variant;
+        const lvl = LEVEL_DATABASE[m.index];
+        if (lvl.startHintB) {
+            document.getElementById('btnVariantA').classList.toggle('active', selectedVariant === 'A');
+            document.getElementById('btnVariantB').classList.toggle('active', selectedVariant === 'B');
+        }
+        if (currentMode !== 'LEVEL') switchMode('LEVEL');
+        else initGame();
+        return true;
+    }
+
+    if (location.hash === '#rules') { initGame(); openRules(); }
+    else if (!applyHashLevel()) initGame();
+
+    window.addEventListener('hashchange', () => {
+        if (location.hash === '#rules') { openRules(); return; }
+        applyHashLevel();
+    });
 
 </script>
 </body>

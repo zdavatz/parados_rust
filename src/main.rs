@@ -13,9 +13,11 @@
 //! 1. `tao` opens a window with the kangaroo PNG decoded into a
 //!    platform-native icon (Dock / taskbar / GNOME Activities).
 //! 2. `wry` mounts a webview with a `parados://` custom protocol
-//!    handler that serves *embedded* resources — the menu HTML
-//!    rendered on the fly from `index_html::render`, the seven game
-//!    HTML files baked in via `include_dir!`, and the kangaroo logo.
+//!    handler that serves the shared `index.html` landing page (the
+//!    SAME file the website + iOS + Android ship) and every game HTML
+//!    file, baked in via `include_dir!`, plus the kangaroo logo.  A
+//!    downloaded "overlay" copy takes precedence so "Spiele
+//!    aktualisieren" refreshes the landing page too.
 //! 3. The menu page links to `parados://localhost/games/<file>` for
 //!    local play and emits `open-external:<https url>` IPC messages
 //!    for the three remote-multiplayer variants, which we route to
@@ -40,7 +42,6 @@ use tao::{
 use wry::{http::Response, WebViewBuilder};
 
 mod games;
-mod index_html;
 
 /// Every HTML game file (and `makalaina_starting_positions.csv`) is
 /// embedded directly into the binary at compile time.  Keeps the
@@ -159,6 +160,85 @@ const BACK_BUTTON_JS: &str = r#"
 })();
 "#;
 
+/// Injected on the MENU page only.  The shared `index.html` (identical on
+/// web / iOS / Android / desktop) has no update control of its own, so we
+/// add the kangaroo "Spiele aktualisieren" button top-right at document
+/// start, wired to the `update-games` IPC with a toast + spinner — the same
+/// UX the native iOS toolbar and Android menu provide.  On success it
+/// reloads so the freshly-downloaded index.html (and games) take effect.
+const UPDATE_BUTTON_JS: &str = r#"
+(function () {
+    var p = window.location.pathname;
+    if (!(p === '/' || p === '/index.html' || p === '')) return; // menu page only
+    function install() {
+        if (document.getElementById('__parados_update')) return;
+        var style = document.createElement('style');
+        style.textContent =
+            '#__parados_update{position:fixed;top:12px;right:14px;z-index:2147483647;'
+          + 'border:none;background:transparent;cursor:pointer;padding:0;line-height:0;}'
+          + '#__parados_update img{width:40px;height:40px;border-radius:8px;object-fit:cover;'
+          + 'background:#f5f0e8;transition:transform .15s ease,opacity .2s ease;}'
+          + '#__parados_update:hover img{transform:scale(1.05);}'
+          + '#__parados_update.busy img{opacity:.5;animation:__pk_spin .9s linear infinite;}'
+          + '@keyframes __pk_spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}'
+          + '#__parados_toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(40px);'
+          + 'background:#37474f;color:#ffd700;padding:10px 18px;border-radius:24px;font:600 14px '
+          + '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.5);'
+          + 'opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease;z-index:2147483647;}'
+          + '#__parados_toast.show{opacity:1;transform:translateX(-50%) translateY(0);}';
+        document.head.appendChild(style);
+
+        var btn = document.createElement('button');
+        btn.id = '__parados_update';
+        btn.title = 'Spiele aktualisieren';
+        var img = document.createElement('img');
+        img.src = '/assets/kangy.jpg';   // relative: works under parados:// and wry's Windows proxy
+        img.alt = 'Update';
+        btn.appendChild(img);
+
+        var toast = document.createElement('div');
+        toast.id = '__parados_toast';
+
+        var busy = false, toastT = null;
+        function showToast(msg, ms) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            if (toastT) clearTimeout(toastT);
+            toastT = setTimeout(function () { toast.classList.remove('show'); }, ms || 3000);
+        }
+        btn.addEventListener('click', function () {
+            if (busy) return;
+            busy = true;
+            btn.classList.add('busy');
+            showToast('Spiele werden aktualisiert…', 30000);
+            try { window.ipc.postMessage('update-games'); }
+            catch (e) {
+                busy = false;
+                btn.classList.remove('busy');
+                showToast('Update fehlgeschlagen: IPC nicht verfügbar', 4000);
+            }
+        });
+        window.parados_update_done = function (updated, total, error) {
+            busy = false;
+            btn.classList.remove('busy');
+            if (error && updated === 0) {
+                showToast('Update fehlgeschlagen: ' + error, 5000);
+            } else if (updated > 0) {
+                showToast(updated + ' Dateien aktualisiert');
+                setTimeout(function () { window.location.reload(); }, 1200);
+            } else {
+                showToast('Keine Updates verfügbar');
+            }
+        };
+
+        document.body.appendChild(btn);
+        document.body.appendChild(toast);
+    }
+    if (document.body) install();
+    else document.addEventListener('DOMContentLoaded', install);
+})();
+"#;
+
 fn main() -> wry::Result<()> {
     // Optional `--url <url>` arg deep-links into a specific game on
     // launch.  Used by `screenshots/macos/capture.sh` to pre-load each
@@ -209,9 +289,9 @@ fn main() -> wry::Result<()> {
     // button; in `--screenshot` mode also inject the rules-dismiss
     // helper so screenshots show gameplay, not the rules modal.
     let init_script = if screenshot_mode {
-        format!("{}\n{}", BACK_BUTTON_JS, RULES_DISMISS_JS)
+        format!("{}\n{}\n{}", BACK_BUTTON_JS, UPDATE_BUTTON_JS, RULES_DISMISS_JS)
     } else {
-        BACK_BUTTON_JS.to_string()
+        format!("{}\n{}", BACK_BUTTON_JS, UPDATE_BUTTON_JS)
     };
 
     let webview = WebViewBuilder::new(&window)
@@ -229,6 +309,17 @@ fn main() -> wry::Result<()> {
         // webview, which fails because PeerJS / WhatsApp Web require
         // browser features we don't expose.
         .with_navigation_handler(|url: String| {
+            // Remote-multiplayer variants need an https origin for
+            // PeerJS/WebRTC; the shared index.html links them as local
+            // *_remote.html, so route those to the public site in the
+            // default browser (same as the iOS/Android ports' `url:`).
+            if let Some(file) = internal_remote_variant(&url) {
+                let ext = format!("https://game.ywesee.com/parados/{file}");
+                if let Err(e) = open::that(&ext) {
+                    eprintln!("parados: failed to open {ext} externally: {e}");
+                }
+                return false;
+            }
             if is_external_http(&url) {
                 if let Err(e) = open::that(&url) {
                     eprintln!("parados: failed to open {url} externally: {e}");
@@ -244,6 +335,13 @@ fn main() -> wry::Result<()> {
         // `window.open` first, falls back to `window.location.href`, so
         // we have to catch both sites.
         .with_new_window_req_handler(|url: String| {
+            if let Some(file) = internal_remote_variant(&url) {
+                let ext = format!("https://game.ywesee.com/parados/{file}");
+                if let Err(e) = open::that(&ext) {
+                    eprintln!("parados: failed to open {ext} externally: {e}");
+                }
+                return false;
+            }
             if is_external_http(&url) {
                 if let Err(e) = open::that(&url) {
                     eprintln!("parados: failed to open {url} externally: {e}");
@@ -372,30 +470,9 @@ fn handle_request(
     let path = request.uri().path();
     let trimmed = path.trim_start_matches('/');
 
-    // Menu page (the `/` and `/index.html` aliases).
-    if trimmed.is_empty() || trimmed == "index.html" {
-        let body = index_html::render();
-        return ok(body.into_bytes(), "text/html; charset=utf-8");
-    }
-
-    // Game HTML / CSV — `parados://localhost/games/<file>`.  Check
-    // the overlay (downloaded refreshes) first, fall back to the
-    // embedded bundle.  HTML responses are run through
-    // `patch_share_url_check` to fix up `shareOnWhatsApp()` for
-    // wry's Windows proxy form (see that fn for context).
-    if let Some(rest) = trimmed.strip_prefix("games/") {
-        let mime = guess_mime(rest);
-        if let Ok(guard) = overlay().lock() {
-            if let Some(bytes) = guard.get(rest) {
-                return ok(maybe_patch(bytes.clone(), mime), mime);
-            }
-        }
-        if let Some(file) = GAMES_DIR.get_file(rest) {
-            return ok(maybe_patch(file.contents().to_vec(), mime), mime);
-        }
-    }
-
-    // Bundled assets — currently just the kangaroo logo.
+    // Bundled assets (kangaroo logo used by the injected update button, and
+    // the window icon).  Checked first so they never collide with the
+    // game-file lookup below.
     if trimmed == "assets/kangy.jpg" {
         return ok(KANGY_JPG.to_vec(), "image/jpeg");
     }
@@ -403,7 +480,27 @@ fn handle_request(
         return ok(ICON_PNG.to_vec(), "image/png");
     }
 
-    not_found(trimmed)
+    // Everything else is served from the games overlay (downloaded refresh)
+    // first, embedded bundle second.  `/` aliases to index.html — the SAME
+    // landing page the website + iOS + Android ship (Walter, 2026-06-03:
+    // "the index.html has to be the same everywhere").  index.html links its
+    // games with relative paths ("kangaroo.html"), so we serve them at the
+    // root; the legacy "games/<file>" form (screenshots/macos/capture.sh) is
+    // still accepted.  HTML is run through `patch_share_url_check` for wry's
+    // Windows proxy form (see that fn).
+    let name = if trimmed.is_empty() { "index.html" } else { trimmed };
+    let name = name.strip_prefix("games/").unwrap_or(name);
+    let mime = guess_mime(name);
+    if let Ok(guard) = overlay().lock() {
+        if let Some(bytes) = guard.get(name) {
+            return ok(maybe_patch(bytes.clone(), mime), mime);
+        }
+    }
+    if let Some(file) = GAMES_DIR.get_file(name) {
+        return ok(maybe_patch(file.contents().to_vec(), mime), mime);
+    }
+
+    not_found(name)
 }
 
 fn ok(body: Vec<u8>, mime: &str) -> Response<Cow<'static, [u8]>> {
@@ -475,6 +572,30 @@ fn patch_share_url_check(bytes: Vec<u8>) -> Vec<u8> {
     match std::str::from_utf8(&bytes) {
         Ok(text) if text.contains(NEEDLE) => text.replace(NEEDLE, REPLACE).into_bytes(),
         _ => bytes,
+    }
+}
+
+/// If `url` is an INTERNAL navigation (parados:// or wry's Windows
+/// `http(s)://parados.localhost/` proxy form) to a `*_remote.html` file,
+/// return that filename.  Remote-multiplayer games need a real https origin
+/// for PeerJS/WebRTC, so the caller opens
+/// `https://game.ywesee.com/parados/<file>` in the default browser instead
+/// of loading the file inside the embedded webview.  Returns `None` for the
+/// menu, ordinary games, and already-external links (which `is_external_http`
+/// handles).
+fn internal_remote_variant(url: &str) -> Option<String> {
+    let is_internal = url.starts_with("parados://")
+        || url.starts_with("http://parados.localhost")
+        || url.starts_with("https://parados.localhost");
+    if !is_internal {
+        return None;
+    }
+    let path = url.split(|c| c == '?' || c == '#').next().unwrap_or(url);
+    let file = path.rsplit('/').next().unwrap_or("");
+    if file.ends_with("_remote.html") {
+        Some(file.to_string())
+    } else {
+        None
     }
 }
 

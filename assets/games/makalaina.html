@@ -80,41 +80,81 @@
 <body>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">MAKA LAINA</h1>
+        <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Choose starting setup:</p>
+        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Start a new game:</p>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-            <button class="btn" style="width:auto; padding:8px 16px; background:#27ae60; color:white;" onclick="startRandom()">Random</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(1)">1</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(2)">2</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(3)">3</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(4)">4</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(5)">5</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(6)">6</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(7)">7</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(8)">8</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(9)">9</button>
-            <button class="btn" style="width:auto; padding:8px 16px; background:#3498db; color:white;" onclick="loadCuratedPosition(10)">10</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#27ae60; color:white; font-size:1em;" onclick="startRandom()">▶ Start</button>
+        </div>
+        <p style="margin:10px 0 0; font-size:0.85em; color:#7f8c8d;">24 random discs are placed first. Then <b>Player 1</b> places both collectors. <b>Player 2</b> picks which colour to play.</p>
+        <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn" style="width:auto; padding:8px 16px; background:#9b59b6; color:white;" onclick="mlOpenEditor(null)">✏️ Editor — Custom Position</button>
+            <button class="btn" style="width:auto; padding:8px 16px; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 Load opening (CSV)</button>
+            <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
+        </div>
+        <p style="margin:8px 0 0; font-size:0.8em; color:#7f8c8d;">An <b>Export opening</b> CSV with both collectors loads as a preset: discs <i>and</i> collectors fixed — no live placement, Player 2 still picks the colour.</p>
+        <div id="ml-custom-list" style="margin-top:12px;"></div>
+    </div>
+    <div id="ml-editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
+        <div style="max-width:760px; margin:0 auto; background:#fff; border-radius:8px; padding:15px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2em;">Editor — Custom MAKA LAINA Position</h2>
+            </div>
+            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">
+                Pick a brush, then click cells on the 12×12 board to paint the disc layout. <b>Collectors are optional:</b> place both (Black = Player 1, White = Player 2) to make a <b>preset opening</b> — no live placement, Player 2 still picks the colour. Leave them out for a disc-only layout where Player 1 places them live.
+            </p>
+            <div id="ml-editor-brush-bar" style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
+            <details style="margin-bottom:10px; border:1px solid #ddd; border-radius:4px; padding:6px 8px;">
+                <summary style="cursor:pointer; font-size:0.9em; color:#555; font-weight:bold;">🎨 Disc colours — pick your own</summary>
+                <div id="ml-editor-colors" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px;"></div>
+                <p style="margin:8px 0 0; color:#777; font-size:0.8em;">Applies to every MAKA LAINA game on this device (board, score table, editor). Saved automatically.</p>
+            </details>
+            <div style="overflow:auto; margin-bottom:10px;">
+                <div id="ml-editor-grid" style="display:grid; gap:1px; background:#2c3e50; padding:2px; border-radius:4px; width:max-content; margin:0 auto;"></div>
+            </div>
+            <div id="ml-editor-summary" style="font-size:0.85em; color:#555; text-align:center; margin-bottom:10px;"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+                <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlSaveCustomPosition()">💾 Save (browser)</button>
+                <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlPlayFromEditor()">▶ Test play</button>
+                <button class="btn" style="width:auto; background:#6d4c41; color:white;" onclick="mlExportEditorCSV()">📋 Export CSV</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white;" onclick="mlShareEditorCSV()">📤 Share via WhatsApp</button>
+                <button class="btn" style="width:auto; background:#455a64; color:white;" onclick="mlCloseEditor()">✕ Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="ml-csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2600; justify-content:center; align-items:center;">
+        <div style="background:#fff; width:92%; max-width:640px; padding:20px; border-radius:10px;">
+            <h3 style="margin:0 0 10px;">CSV — Custom Position</h3>
+            <p style="margin:0 0 8px; color:#555; font-size:0.9em;">Long format. If you placed both collectors, the CSV includes <code>collector_black</code> / <code>collector_white</code> rows and loads back as a preset opening; otherwise it is disc-only (Player 1 places collectors live).</p>
+            <textarea id="ml-csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
+                <button class="btn" style="width:auto; background:#3498db; color:white;" onclick="mlCopyCSVToClipboard()">📋 Copy</button>
+                <button class="btn" style="width:auto; background:#27ae60; color:white;" onclick="mlDownloadCSV()">💾 Download</button>
+                <button class="btn" style="width:auto; background:#455a64; color:white;" onclick="document.getElementById('ml-csv-modal').style.display='none'">✕ Close</button>
+            </div>
         </div>
     </div>
     <div id="starter-panel" style="display:none; margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-        <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Who starts?</p>
+        <p style="font-weight:bold; margin:0 0 4px; color:#2c3e50;">Player 2: pick your colour</p>
+        <p style="margin:0 0 10px; font-size:0.85em; color:#7f8c8d;">Player 1 will start the game with the other one.</p>
         <div style="display:flex; gap:12px; justify-content:center;">
-            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="chooseStarter(1)">&#9632; Black</button>
-            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="chooseStarter(2)">&#9633; White</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="p2PicksColor(1)">I'll play &#9632; Black</button>
+            <button class="btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="p2PicksColor(2)">I'll play &#9633; White</button>
         </div>
     </div>
     <div id="game-container">
         <div id="board"></div>
         <div id="ui">
-            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">SETUP: Player 1, place both collectors.</div>
+            <div id="status" style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">SETUP: Click ▶ Start above.</div>
             <button class="btn btn-rules" onclick="toggleRules(true)">View Rules</button>
             <button id="los-toggle" class="btn" style="background:#7f8c8d;color:white;" onclick="toggleLOS()">Show Line of Sight</button>
             <button id="csv-export-btn" class="btn" style="background:#27ae60;color:white;display:none;" onclick="downloadCSV()">Export CSV</button>
+            <button id="opening-export-btn" class="btn" style="background:#6d4c41;color:white;" onclick="exportOpeningCSV()">📋 Export opening (CSV)</button>
             <hr>
             <div id="game-actions" style="display:none;">
+                <button id="undo-btn" class="btn" style="background:#5d4037; color:white;" onclick="undoMove()">↶ Undo move</button>
                 <button id="sacrifice-btn" class="btn btn-action" onclick="sacrificeTurn()">Sacrifice & Move</button>
                 <button id="relinquish-btn" class="btn btn-cancel" onclick="relinquishTurn()" style="display:none;">Relinquish Turn</button>
                 <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
@@ -172,9 +212,9 @@
                 <ul>
                     <li><b>Number 1:</b> Immediate extra turn.</li>
                     <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
-                    <li><b>Stuck?</b> Your opponent chooses which of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely.</li>
+                    <li><b>Stuck?</b> Your opponent chooses which of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely. <b>Nothing to sacrifice?</b> You still get a free escape move of up to 2 squares — so being trapped early is never an instant loss.</li>
                 </ul>
-                <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Verstanden!</button>
+                <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Got it!</button>
             </div>
         </div>
     </div>
@@ -218,6 +258,22 @@
     let isReviewing = false;
 
     const COLOR_HEX = { red: '#e74c3c', blue: '#3498db', yellow: '#d4ac0d', green: '#27ae60', orange: '#e67e22', purple: '#9b59b6' };
+    // Walter-customisable disc colours. COLOR_HEX is the single source of
+    // truth for every disc render (board, score table, editor); a saved
+    // override in localStorage["ml_colors"] is mutated onto it at startup.
+    const COLOR_HEX_DEFAULT = { ...COLOR_HEX };
+    const ML_COLOR_NAMES = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+    function mlLoadColorPrefs() {
+        try { return JSON.parse(localStorage.getItem('ml_colors') || '{}') || {}; }
+        catch (e) { return {}; }
+    }
+    function mlApplyColorPrefs() {
+        const p = mlLoadColorPrefs();
+        ML_COLOR_NAMES.forEach(c => {
+            COLOR_HEX[c] = /^#[0-9a-fA-F]{6}$/.test(p[c]) ? p[c] : COLOR_HEX_DEFAULT[c];
+        });
+    }
+    mlApplyColorPrefs();
 
     function saveSnapshot(desc) {
         moveHistory.push({
@@ -227,8 +283,72 @@
             playerFlags: { 1: {...playerFlags[1]}, 2: {...playerFlags[2]} },
             currentPlayer: currentPlayer,
             bagLen: bag.length,
+            // Extra state for undo (post-game review path only uses cells/scores/playerFlags above)
+            bag: bag.map(d => ({...d})),
+            gameState,
+            selectedIdx,
+            relinquished: { 1: relinquished[1], 2: relinquished[2] },
+            relinquishCount: { 1: relinquishCount[1], 2: relinquishCount[2] },
+            collectedDiscs: {
+                1: collectedDiscs[1].map(d => ({...d})),
+                2: collectedDiscs[2].map(d => ({...d}))
+            },
+            draftChosen: draftChosen ? {...draftChosen} : null,
+            pendingExtraTurn,
+            sacrificeRange,
+            sacrificingPlayer,
+            isFirstMove,
             desc: desc
         });
+    }
+
+    function undoMove() {
+        // Need at least 2 snapshots: keep the "Game start ..." entry as the
+        // pristine baseline, undo the most recent move on top of it.
+        if (moveHistory.length <= 1) return;
+        if (gameState === 'END') return;
+        moveHistory.pop();
+        const snap = moveHistory[moveHistory.length - 1];
+
+        for (let i = 0; i < 144; i++) cells[i] = snap.cells[i] ? {...snap.cells[i]} : null;
+        collectors = { 1: snap.collectors[1], 2: snap.collectors[2] };
+        scores = { 1: {...snap.scores[1]}, 2: {...snap.scores[2]} };
+        playerFlags = { 1: {...snap.playerFlags[1]}, 2: {...snap.playerFlags[2]} };
+        currentPlayer = snap.currentPlayer;
+        bag = (snap.bag || []).map(d => ({...d}));
+        gameState = snap.gameState || 'PLAY';
+        selectedIdx = (snap.selectedIdx == null) ? null : snap.selectedIdx;
+        relinquished = snap.relinquished
+            ? { 1: snap.relinquished[1], 2: snap.relinquished[2] }
+            : { 1: false, 2: false };
+        relinquishCount = snap.relinquishCount
+            ? { 1: snap.relinquishCount[1], 2: snap.relinquishCount[2] }
+            : { 1: 0, 2: 0 };
+        collectedDiscs = snap.collectedDiscs
+            ? {
+                1: snap.collectedDiscs[1].map(d => ({...d})),
+                2: snap.collectedDiscs[2].map(d => ({...d}))
+              }
+            : { 1: [], 2: [] };
+        draftChosen = snap.draftChosen ? {...snap.draftChosen} : null;
+        pendingExtraTurn = !!snap.pendingExtraTurn;
+        sacrificeRange = snap.sacrificeRange || 0;
+        sacrificingPlayer = snap.sacrificingPlayer || 0;
+        isFirstMove = !!snap.isFirstMove;
+
+        // Transient panels: hide the sacrifice (opponent-pick) panel; but if we
+        // landed back on a DRAFT_PLACE snapshot, re-show the draft panel so the
+        // drafted disc is in hand again, ready to re-place on another square.
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        if (gameState === 'DRAFT_PLACE' && draftChosen) {
+            showDraftPlacePanel(draftChosen);
+        } else {
+            document.getElementById('draft-panel').style.display = 'none';
+        }
+        // Exit post-game review mode if it was active
+        isReviewing = false;
+
+        updateUI(); render();
     }
 
     function stepHistory(delta) {
@@ -268,45 +388,86 @@
         desc.innerText = moveHistory[historyIndex].desc || '';
     }
 
-    const CURATED_POSITIONS = [null,
-        {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
-        {b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
-        {b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
-        {b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
-        {b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
-        {b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
-        {b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
-        {b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
-        {b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
-        {b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
-    ];
+    let currentPosition = null;   // 'random' for random start, custom-id for an editor custom, null before setup
+
+    function setPositionTitle(label) {
+        const pt = document.getElementById('position-title');
+        if (pt) pt.textContent = label ? ' — ' + label : '';
+        document.title = label ? 'MAKA LAINA — ' + label : 'MAKA LAINA';
+    }
+
+    // Reset all per-game state. Called by both Random and Custom start paths
+    // before placing discs.
+    function resetGameState() {
+        for (let i = 0; i < 144; i++) cells[i] = null;
+        collectors = { 1: null, 2: null };
+        moveHistory = [];
+        historyIndex = -1;
+        isReviewing = false;
+        document.getElementById('history-controls').style.display = 'none';
+        document.getElementById('draft-panel').style.display = 'none';
+        document.getElementById('sacrifice-panel').style.display = 'none';
+        document.getElementById('winner-overlay').style.display = 'none';
+        playerFlags = { 1: {}, 2: {} };
+        relinquished = { 1: false, 2: false };
+        relinquishCount = { 1: 0, 2: 0 };
+        collectedDiscs = { 1: [], 2: [] };
+        draftChosen = null;
+        pendingExtraTurn = false;
+        selectedIdx = null;
+        sacrificeRange = 0;
+        sacrificingPlayer = 0;
+        isFirstMove = true;
+        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+    }
 
     function startRandom() {
+        currentPosition = 'random';
+        setPositionTitle('');
         document.getElementById('setup-panel').style.display = 'none';
+        resetGameState();
         initBag();
+        // Drop 24 random discs FIRST so Player 1 can see the layout when
+        // deciding where to put the collectors (Walter's rule).
+        for (let i = 0; i < 24; i++) {
+            let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+            cells[r] = bag.pop();
+        }
         gameState = 'PLACEMENT';
         updateUI(); render();
     }
 
-    function loadCuratedPosition(posId) {
-        const pos = CURATED_POSITIONS[posId];
-        if (!pos) return;
+    // True when a saved position carries baked-in collector cells (imported
+    // from an "Export opening" CSV). Legacy `b`/`w` fields are deliberately
+    // NOT honoured here — only the explicit `coll:{b,w}` set by the importer,
+    // and only if both cells are on-board, distinct, and disc-free.
+    function mlPresetCollectors(pos) {
+        const c = pos && pos.coll;
+        if (!c) return null;
+        const b = c.b, w = c.w;
+        if (!Number.isInteger(b) || !Number.isInteger(w)) return null;
+        if (b < 0 || b >= 144 || w < 0 || w >= 144 || b === w) return null;
+        return { b, w };
+    }
+
+    // For custom positions. pos.d is the disc layout. If pos.coll is present
+    // (imported preset opening) both collectors are placed from it and the
+    // game skips PLACEMENT straight to P2_CHOOSE (Walter, 2026-05-18 — live
+    // placement is too slow for a "light" game; fairness still comes from
+    // Player 2's colour pick). Otherwise Player 1 places collectors live, and
+    // legacy pos.b / pos.w are ignored, just like Random.
+    function applyPositionData(pos) {
+        setPositionTitle('');
         document.getElementById('setup-panel').style.display = 'none';
 
-        // Create all 54 discs
+        resetGameState();
+
+        // Create all 54 discs (pool); used ones come off the pool as we place pos.d.
         const allDiscs = [];
         ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => allDiscs.push({color:c, num:n, type:'primary'})));
         ['green','orange','purple'].forEach(c => { for(let i=0;i<6;i++) allDiscs.push({color:c, num:'', type:'secondary'}); });
 
-        // Place collectors
-        const blackIdx = pos.b[1] * 12 + pos.b[0];
-        const whiteIdx = pos.w[1] * 12 + pos.w[0];
-        collectors[1] = blackIdx;
-        collectors[2] = whiteIdx;
-        cells[blackIdx] = {type:'collector', player:1};
-        cells[whiteIdx] = {type:'collector', player:2};
-
-        // Place discs on board and remove from pool
+        // Place discs from the custom layout
         pos.d.forEach(([x, y, color, num]) => {
             const idx = y * 12 + x;
             const poolIdx = allDiscs.findIndex(p => p.color === color && p.num === num);
@@ -322,34 +483,66 @@
         allDiscs.splice(0, 6);
         bag = allDiscs;
 
-        colors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+        // Preset opening: place both collectors and skip live placement,
+        // but only if their cells are free (a disc row must not sit there).
+        const pc = mlPresetCollectors(pos);
+        if (pc && !cells[pc.b] && !cells[pc.w]) {
+            collectors[1] = pc.b; cells[pc.b] = { type: 'collector', player: 1 };
+            collectors[2] = pc.w; cells[pc.w] = { type: 'collector', player: 2 };
+            goToP2Choose();
+            return;
+        }
 
-        gameState = 'CHOOSE_STARTER';
-        document.getElementById('starter-panel').style.display = 'block';
+        gameState = 'PLACEMENT';
         updateUI(); render();
     }
 
-    function chooseStarter(player) {
-        currentPlayer = player;
+    function loadCustomPosition(customId) {
+        const pos = mlLoadCustomPositions().find(p => p.customId === customId);
+        if (!pos) return;
+        currentPosition = customId;
+        applyPositionData(pos);
+    }
+
+    // Built-in preset opening: parse its CSV the same way the 📥 Load opening
+    // button does, then hand the { d, coll } to applyPositionData — which
+    // places both collectors and goes straight to P2's colour pick.
+    function loadBuiltinOpening(i) {
+        const csv = ML_BUILTIN_OPENING_CSVS[i];
+        if (csv == null) return;
+        const parsed = mlParseOpeningCSV(csv);
+        currentPosition = 'opening' + (i + 1);
+        applyPositionData({ d: parsed.d, coll: parsed.coll });
+    }
+
+    // Called when Player 2 picks their colour after Player 1 has placed both collectors.
+    // Player 1 then plays the OTHER colour and starts the first turn.
+    //   color = 1 (Black)  → P2 plays Black → P1 plays White → currentPlayer = 2
+    //   color = 2 (White)  → P2 plays White → P1 plays Black → currentPlayer = 1
+    function p2PicksColor(color) {
+        currentPlayer = (color === 1) ? 2 : 1;
         document.getElementById('starter-panel').style.display = 'none';
         document.getElementById('game-actions').style.display = 'block';
         document.getElementById('csv-export-btn').style.display = '';
         gameState = 'PLAY';
         isFirstMove = true;
-        saveSnapshot('Game start — ' + (player === 1 ? 'Black' : 'White') + ' goes first');
+        const starterName = (currentPlayer === 1 ? 'Black' : 'White');
+        saveSnapshot('Game start — ' + starterName + ' goes first (P2 took ' + (color === 1 ? 'Black' : 'White') + ')');
         updateUI(); render();
     }
 
     function toggleRules(show) { document.getElementById('modal-overlay').style.display = show ? 'flex' : 'none'; }
 
     function shareOnWhatsApp() {
-        const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+        let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
         const msg = `Play MAKA LAINA: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
-        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
-        if (inIOSApp) { window.location.href = url; return; }
-        const w = window.open(url, '_blank');
-        if (!w) { window.location.href = url; }
+        if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+        // No share API (Android WebView, in-app browsers): copy to clipboard.
+        // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+        const note = 'Message copied — paste it into WhatsApp.';
+        const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+        else fallback();
     }
 
     function toggleLOS() {
@@ -380,12 +573,12 @@
     }
 
     function handleClick(i) {
-        if (gameState === 'SETUP' || gameState === 'CHOOSE_STARTER') return;
+        if (gameState === 'SETUP' || gameState === 'P2_CHOOSE') return;
         if (gameState === 'PLACEMENT') {
             if (cells[i]) return;
             if (!collectors[1]) { collectors[1] = i; cells[i] = {type:'collector', player:1}; }
-            else if (!collectors[2]) { collectors[2] = i; cells[i] = {type:'collector', player:2}; startPlay(); }
-            render();
+            else if (!collectors[2]) { collectors[2] = i; cells[i] = {type:'collector', player:2}; goToP2Choose(); }
+            render(); updateUI();
         } else if (gameState === 'PLAY') {
             handleMove(i);
         } else if (gameState === 'DRAFT_PLACE') {
@@ -412,12 +605,8 @@
         }
     }
 
-    function startPlay() {
-        for (let i = 0; i < 24; i++) {
-            let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
-            cells[r] = bag.pop();
-        }
-        gameState = 'CHOOSE_STARTER';
+    function goToP2Choose() {
+        gameState = 'P2_CHOOSE';
         document.getElementById('starter-panel').style.display = 'block';
         updateUI(); render();
     }
@@ -495,30 +684,37 @@
         cells[newIdx] = { type: 'collector', player: currentPlayer };
         selectedIdx = null;
         relinquished[1] = relinquished[2] = false;
-        saveSnapshot(`${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`);
+        const collectDesc = `${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`;
 
         // Check if all discs collected and bag empty
         const remaining = cells.filter(c => c && c.type !== 'collector').length;
         if (remaining === 0 && bag.length === 0) {
             gameState = 'END';
+            saveSnapshot(collectDesc);
             updateUI(); render();
             return;
         }
 
-        // Draft: draw 1 disc from bag, player must place it
+        // Draft: draw 1 disc from bag, player must place it. Snapshot the
+        // DRAFT_PLACE state (disc already in hand) so undoing the placement
+        // returns the player here, disc ready to re-place on another square.
         if (bag.length > 0) {
             pendingExtraTurn = (disc.num === 1);
             draftChosen = bag.pop();
             gameState = 'DRAFT_PLACE';
+            saveSnapshot(collectDesc);
             showDraftPlacePanel(draftChosen);
             updateUI(); render();
             return;
         }
 
-        // No draft: normal turn switch
+        // No draft (bag empty): switch the turn FIRST, then snapshot — so the
+        // saved state records whose turn it now is. Snapshotting before the
+        // switch made undo restore the previous mover as the current player.
         if (disc.num !== 1) {
             currentPlayer = currentPlayer === 1 ? 2 : 1;
         }
+        saveSnapshot(collectDesc);
         updateUI(); render();
     }
 
@@ -542,19 +738,36 @@
 
     // --- SACRIFICE SYSTEM ---
 
+    // Walter's escape rule (2026-05-29): a trapped player with nothing to
+    // sacrifice gets a free move of up to 2 squares instead of being stuck
+    // (which used to be a near-certain loss). This discourages trapping the
+    // opponent too early — an early trap no longer wins on the spot. Returns
+    // true if a free move was set up; false if even a 2-square move is
+    // impossible (truly boxed in).
+    function freeEscapeMove(player) {
+        if (getReachableCells(collectors[player], 2).length === 0) return false;
+        sacrificingPlayer = player;
+        sacrificeRange = 2;
+        currentPlayer = player;
+        gameState = 'SACRIFICE_MOVE';
+        return true;
+    }
+
     function sacrificeTurn() {
         if (gameState !== 'PLAY') return;
         sacrificingPlayer = currentPlayer;
         const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
         if (primaryDiscs.length === 0) {
-            // No primary discs to sacrifice: forced relinquish
+            // Nothing to sacrifice → free escape move (Walter's rule).
             const sName = sacrificingPlayer === 1 ? 'Black' : 'White';
-            relinquished[sacrificingPlayer] = true;
-            saveSnapshot(`${sName} forced relinquish (no discs to sacrifice)`);
-            if (relinquished[1] && relinquished[2]) {
-                gameState = 'END';
+            if (freeEscapeMove(sacrificingPlayer)) {
+                saveSnapshot(`${sName} has nothing to sacrifice — free move (up to 2)`);
             } else {
-                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                // Truly boxed in: relinquish as a last resort.
+                relinquished[sacrificingPlayer] = true;
+                if (relinquished[1] && relinquished[2]) gameState = 'END';
+                else currentPlayer = sacrificingPlayer === 1 ? 2 : 1;
+                saveSnapshot(`${sName} forced relinquish (no escape)`);
             }
             updateUI(); render();
             return;
@@ -572,12 +785,14 @@
         const rName = currentPlayer === 1 ? 'Black' : 'White';
         relinquishCount[currentPlayer]++;
         relinquished[currentPlayer] = true;
-        saveSnapshot(`${rName} relinquishes turn (${RELINQUISH_LIMIT - relinquishCount[currentPlayer]} left)`);
+        const rLeft = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
         if (relinquished[1] && relinquished[2]) {
             gameState = 'END';
         } else {
             currentPlayer = currentPlayer === 1 ? 2 : 1;
         }
+        // Snapshot AFTER the switch so undo restores whose turn it now is.
+        saveSnapshot(`${rName} relinquishes turn (${rLeft} left)`);
         updateUI(); render();
     }
 
@@ -685,11 +900,11 @@
                 const smLabel = sacrificingPlayer === 1 ? 'Black' : 'White';
                 status.innerText = `${smLabel}: Move collector (up to ${sacrificeRange} squares)`; break;
             case 'PLACEMENT':
-                status.innerText = `SETUP: Place ${collectors[1] ? 'White' : 'Black'} collector.`; break;
-            case 'CHOOSE_STARTER':
-                status.innerText = 'Choose who starts above.'; break;
+                status.innerText = `Player 1: place the ${collectors[1] ? 'White' : 'Black'} collector.`; break;
+            case 'P2_CHOOSE':
+                status.innerText = 'Player 2: pick your colour above.'; break;
             case 'SETUP':
-                status.innerText = 'Choose a starting position above.'; break;
+                status.innerText = 'Click ▶ Start above.'; break;
         }
 
         renderScoreTable(scores, playerFlags);
@@ -712,26 +927,38 @@
             relBtn.innerText = `Relinquish Turn (${remaining}/${RELINQUISH_LIMIT})`;
         }
         if (stuckHint) {
-            if (stuck && !canRelinquish) {
+            const noDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary').length === 0;
+            if (stuck && noDiscs) {
+                stuckHint.innerText = 'No valid move & nothing to sacrifice — press “Sacrifice & Move” to escape up to 2 squares.';
+            } else if (stuck && !canRelinquish) {
                 stuckHint.innerText = 'No valid move! No relinquishes left — you must sacrifice a disc!';
             } else if (stuck) {
                 stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
             }
             stuckHint.style.display = stuck ? 'block' : 'none';
         }
-        // Force sacrifice when stuck, no relinquishes left, and no primary discs
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) {
+            const canUndo = moveHistory.length > 1 && gameState !== 'END';
+            undoBtn.disabled = !canUndo;
+            undoBtn.style.opacity = canUndo ? '1' : '0.4';
+            undoBtn.style.cursor = canUndo ? 'pointer' : 'default';
+        }
+        // Stuck, no relinquishes left, nothing to sacrifice: grant a free
+        // escape move (Walter's rule) instead of ending the game; only end if
+        // even a 2-square move is impossible (truly boxed in).
         if (stuck && !canRelinquish) {
             const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
             if (primaryDiscs.length === 0) {
-                // Cannot sacrifice either — game ends
                 const fName = currentPlayer === 1 ? 'Black' : 'White';
-                relinquished[currentPlayer] = true;
-                saveSnapshot(`${fName} forced end (no relinquishes, no discs to sacrifice)`);
-                if (relinquished[1] && relinquished[2]) {
-                    gameState = 'END';
+                if (freeEscapeMove(currentPlayer)) {
+                    saveSnapshot(`${fName} has nothing to sacrifice — free move (up to 2)`);
                     updateUI(); render();
                 } else {
-                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    relinquished[currentPlayer] = true;
+                    saveSnapshot(`${fName} forced end (no escape)`);
+                    if (relinquished[1] && relinquished[2]) { gameState = 'END'; }
+                    else { currentPlayer = currentPlayer === 1 ? 2 : 1; }
                     updateUI(); render();
                 }
             }
@@ -864,6 +1091,92 @@
         URL.revokeObjectURL(url);
     }
 
+    // Serialise the current board (discs AND both collectors) as a position
+    // CSV. Unlike the editor export (disc-only — collectors are normally
+    // live), the in-game "Export opening" keeps the collectors so Walter can
+    // capture a whole opening (Walter, 2026-05-17). collector_black = P1,
+    // collector_white = P2.
+    function buildOpeningCSV() {
+        const lines = ['position_id,element,x,y,color,number'];
+        for (let i = 0; i < 144; i++) {
+            const c = cells[i];
+            if (!c) continue;
+            const x = i % 12, y = Math.floor(i / 12);
+            if (c.type === 'collector') {
+                lines.push(`1,${c.player === 1 ? 'collector_black' : 'collector_white'},${x},${y},,`);
+            } else {
+                lines.push(`1,disc,${x},${y},${c.color},${c.num === '' || c.num == null ? '' : c.num}`);
+            }
+        }
+        return lines.join('\n') + '\n';
+    }
+
+    // Put text on the clipboard so it can be pasted directly into a WhatsApp
+    // message box. navigator.clipboard first, then a temp-textarea +
+    // execCommand fallback (works inside the app WebView).
+    function mlCopyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).then(() => true, () => mlLegacyCopy(text));
+        }
+        return Promise.resolve(mlLegacyCopy(text));
+    }
+    function mlLegacyCopy(text) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+        } catch (e) { return false; }
+    }
+
+    async function exportOpeningCSV() {
+        if (collectors[1] == null || collectors[2] == null) {
+            alert('Place both collectors first — then the opening can be exported.');
+            return;
+        }
+        const csv = buildOpeningCSV();
+        const filename = 'makalaina_opening.csv';
+        // Copy the opening to the clipboard up front, so it can be pasted as
+        // text into WhatsApp even if the file share is dropped/unavailable.
+        const copied = await mlCopyTextToClipboard(csv);
+        // Fire-and-forget server copy (same endpoint as the move-log export).
+        fetch('cgi-bin/save_csv.py', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game: 'makalaina_opening', csv })
+        }).then(r => r.json()).then(d => {
+            if (!d.ok) console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+        }).catch(e => console.warn('Server CSV save failed: ' + e));
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    // No `text:` alongside `files:` — Android WhatsApp drops the
+                    // file when both are present (Divided Loyalties lesson).
+                    await navigator.share({ files: [file], title: 'MAKA LAINA opening' });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        // Fallback: download + clipboard — never wa.me on Android WebView.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(copied
+            ? `Opening copied to clipboard — long-press the WhatsApp message box and Paste it. (Also saved as ${filename}.)`
+            : `Saved ${filename}. Attach it to your WhatsApp message manually.`);
+    }
+
     function render() {
         const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
         const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
@@ -885,7 +1198,7 @@
                 const d = document.createElement('div');
                 if (cells[i].type === 'collector') d.className = `collector ${cells[i].player === 1 ? 'black' : 'white'}`;
                 else {
-                    d.className = 'disc'; d.style.backgroundColor = cells[i].color;
+                    d.className = 'disc'; d.style.backgroundColor = COLOR_HEX[cells[i].color] || cells[i].color;
                     d.innerText = cells[i].num;
                 }
                 el.appendChild(d);
@@ -905,6 +1218,900 @@
     window.addEventListener('resize', calcCellSize);
 
     createBoard(); render();
+
+    // ---------- Custom-position editor ----------
+    // Token shape: 'CB' / 'CW' for collectors, '<COLOR><NUM>' for primary discs
+    // (R/B/Y × 1-6), '<COLOR>' for secondaries (G/O/P). Paint is keyed by y*12+x.
+    let mlEditorPaint = {};
+    let mlEditorBrush = 'CB';
+    let mlEditingCustomId = null;
+
+    const ML_COLOR_FOR = { R:'red', B:'blue', Y:'yellow', G:'green', O:'orange', P:'purple' };
+    const ML_PRIMARY_LETTERS = ['R','B','Y'];
+    const ML_SECONDARY_LETTERS = ['G','O','P'];
+
+    // Built-in fair openings (Walter, 2026-05-19). Each is a full "Export
+    // opening" CSV — discs PLUS both collectors — so it loads via the preset
+    // flow: no live placement, Player 2 still picks the colour (fairness comes
+    // from that pick, not the disc layout; Walter: "alle diese Startpositionen
+    // sind eigentlich egal, sie müssen nur gerecht sein, ohne FPA"). Stored as
+    // raw CSV text and run through the same mlParseOpeningCSV() the 📥 Load
+    // opening button uses, so behaviour is identical to a loaded CSV. To add
+    // more, just append another CSV string here (in either ML variant).
+    const ML_BUILTIN_OPENING_CSVS = [
+`position_id,element,x,y,color,number
+1,disc,0,0,blue,6
+1,disc,1,0,yellow,1
+1,disc,9,0,red,2
+1,disc,5,1,yellow,3
+1,disc,3,2,green,
+1,disc,7,2,blue,4
+1,disc,1,3,purple,
+1,disc,4,3,green,
+1,collector_black,5,3,,
+1,disc,8,3,yellow,3
+1,disc,3,4,red,4
+1,disc,9,4,yellow,4
+1,disc,4,5,red,3
+1,disc,8,5,purple,
+1,disc,11,5,red,4
+1,disc,2,6,purple,
+1,disc,6,6,blue,3
+1,disc,11,6,yellow,2
+1,collector_white,1,7,,
+1,disc,5,7,purple,
+1,disc,3,8,blue,4
+1,disc,6,9,blue,3
+1,disc,3,10,red,1
+1,disc,7,10,green,
+1,disc,5,11,blue,4
+1,disc,11,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,red,2
+1,disc,2,1,purple,
+1,collector_black,8,1,,
+1,disc,11,1,blue,3
+1,disc,5,2,yellow,2
+1,disc,11,4,orange,
+1,disc,0,5,yellow,1
+1,disc,5,5,blue,5
+1,disc,8,5,red,3
+1,disc,11,5,yellow,3
+1,disc,2,6,purple,
+1,disc,3,7,orange,
+1,disc,5,7,orange,
+1,disc,6,7,purple,
+1,disc,0,8,blue,4
+1,disc,5,8,green,
+1,disc,6,8,yellow,4
+1,disc,11,8,red,4
+1,disc,6,9,blue,1
+1,disc,10,9,purple,
+1,disc,2,10,blue,2
+1,collector_white,4,10,,
+1,disc,3,11,green,
+1,disc,4,11,blue,6
+1,disc,5,11,yellow,2
+1,disc,9,11,green,`,
+`position_id,element,x,y,color,number
+1,disc,4,0,blue,2
+1,disc,10,0,red,4
+1,disc,11,1,purple,
+1,disc,4,2,blue,6
+1,disc,5,2,yellow,4
+1,disc,7,2,blue,5
+1,disc,9,2,purple,
+1,disc,0,3,orange,
+1,disc,2,3,yellow,2
+1,disc,7,3,blue,2
+1,disc,4,4,purple,
+1,disc,3,5,yellow,6
+1,disc,5,5,red,5
+1,collector_white,7,5,,
+1,disc,9,5,purple,
+1,disc,9,6,blue,3
+1,collector_black,2,7,,
+1,disc,7,7,orange,
+1,disc,3,8,orange,
+1,disc,3,9,orange,
+1,disc,5,9,yellow,2
+1,disc,8,9,red,4
+1,disc,11,9,red,6
+1,disc,11,10,blue,3
+1,disc,4,11,green,
+1,disc,5,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,3,0,purple,
+1,disc,7,0,red,3
+1,disc,0,1,green,
+1,collector_white,2,1,,
+1,disc,0,2,green,
+1,disc,4,2,blue,4
+1,disc,5,2,green,
+1,disc,10,2,orange,
+1,disc,11,2,yellow,2
+1,disc,6,3,red,2
+1,disc,5,4,yellow,5
+1,disc,3,5,blue,2
+1,collector_black,9,5,,
+1,disc,5,6,blue,1
+1,disc,9,6,blue,6
+1,disc,0,7,yellow,3
+1,disc,9,7,yellow,3
+1,disc,10,7,blue,3
+1,disc,10,8,yellow,4
+1,disc,7,9,blue,2
+1,disc,0,10,red,2
+1,disc,5,10,purple,
+1,disc,7,10,yellow,4
+1,disc,11,10,green,
+1,disc,1,11,blue,5
+1,disc,2,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,green,
+1,disc,8,0,orange,
+1,collector_black,0,1,,
+1,collector_white,5,1,,
+1,disc,7,1,purple,
+1,disc,7,2,yellow,3
+1,disc,5,3,yellow,1
+1,disc,3,4,yellow,4
+1,disc,5,4,green,
+1,disc,6,4,purple,
+1,disc,8,4,yellow,3
+1,disc,2,5,blue,3
+1,disc,3,5,red,4
+1,disc,4,5,orange,
+1,disc,1,6,blue,3
+1,disc,7,6,blue,5
+1,disc,1,7,orange,
+1,disc,11,7,yellow,4
+1,disc,1,8,green,
+1,disc,4,8,yellow,5
+1,disc,7,8,blue,1
+1,disc,0,9,red,6
+1,disc,6,9,yellow,4
+1,disc,0,11,yellow,5
+1,disc,8,11,red,2
+1,disc,11,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,2,0,red,3
+1,disc,3,1,green,
+1,disc,8,1,red,1
+1,disc,9,1,blue,2
+1,disc,10,1,yellow,4
+1,disc,11,1,blue,2
+1,disc,0,2,blue,3
+1,disc,6,3,orange,
+1,disc,10,3,red,6
+1,disc,4,4,red,4
+1,disc,8,4,purple,
+1,disc,2,5,yellow,2
+1,disc,1,6,yellow,4
+1,disc,9,6,orange,
+1,disc,7,7,green,
+1,disc,10,7,blue,4
+1,disc,0,8,red,5
+1,disc,3,8,purple,
+1,disc,0,9,yellow,2
+1,collector_white,6,9,,
+1,collector_black,9,9,,
+1,disc,11,9,yellow,3
+1,disc,2,10,yellow,5
+1,disc,6,10,blue,3
+1,disc,7,10,green,
+1,disc,5,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,5,0,yellow,2
+1,disc,9,0,orange,
+1,disc,1,1,red,2
+1,disc,9,1,blue,5
+1,disc,4,2,yellow,5
+1,disc,6,2,purple,
+1,disc,7,2,orange,
+1,disc,10,2,blue,3
+1,disc,6,3,blue,4
+1,disc,1,4,blue,4
+1,disc,0,5,green,
+1,disc,4,5,purple,
+1,disc,10,5,green,
+1,disc,1,7,blue,5
+1,disc,4,7,purple,
+1,disc,5,7,yellow,3
+1,disc,8,7,orange,
+1,collector_white,9,7,,
+1,disc,11,7,blue,3
+1,disc,6,8,green,
+1,disc,8,9,yellow,3
+1,collector_black,3,10,,
+1,disc,10,10,red,5
+1,disc,0,11,yellow,5
+1,disc,1,11,yellow,3
+1,disc,9,11,yellow,4`,
+`position_id,element,x,y,color,number
+1,disc,0,1,purple,
+1,disc,1,1,red,3
+1,disc,3,1,red,3
+1,disc,6,1,green,
+1,collector_white,8,1,,
+1,disc,0,2,yellow,4
+1,disc,5,2,blue,2
+1,disc,6,2,purple,
+1,disc,11,2,yellow,3
+1,disc,1,3,yellow,2
+1,disc,7,3,orange,
+1,disc,4,4,yellow,4
+1,disc,6,5,red,4
+1,disc,2,6,blue,5
+1,disc,3,6,red,1
+1,disc,6,7,blue,4
+1,disc,5,8,yellow,1
+1,disc,8,8,red,6
+1,collector_black,11,8,,
+1,disc,3,9,yellow,5
+1,disc,8,9,blue,5
+1,disc,2,10,purple,
+1,disc,6,10,yellow,3
+1,disc,4,11,orange,
+1,disc,7,11,red,2
+1,disc,10,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,3,0,blue,3
+1,disc,4,0,red,5
+1,disc,5,0,yellow,3
+1,disc,8,0,yellow,3
+1,disc,10,0,blue,3
+1,disc,4,1,red,6
+1,disc,4,2,yellow,2
+1,disc,7,2,blue,4
+1,disc,10,2,yellow,4
+1,disc,3,3,purple,
+1,disc,4,3,blue,5
+1,disc,8,3,orange,
+1,disc,9,3,orange,
+1,disc,6,4,green,
+1,collector_white,0,5,,
+1,collector_black,9,5,,
+1,disc,9,6,yellow,4
+1,disc,4,7,red,4
+1,disc,1,9,yellow,1
+1,disc,3,9,purple,
+1,disc,8,9,red,3
+1,disc,1,10,red,3
+1,disc,2,10,yellow,3
+1,disc,6,10,blue,1
+1,disc,10,10,purple,
+1,disc,8,11,blue,5`,
+`position_id,element,x,y,color,number
+1,disc,8,0,orange,
+1,disc,9,0,green,
+1,disc,3,1,red,4
+1,disc,4,1,red,6
+1,disc,11,1,yellow,2
+1,collector_white,5,2,,
+1,collector_black,9,2,,
+1,disc,10,2,green,
+1,disc,2,3,purple,
+1,disc,7,3,yellow,4
+1,disc,0,4,orange,
+1,disc,2,4,blue,3
+1,disc,10,4,purple,
+1,disc,6,5,red,3
+1,disc,0,6,red,5
+1,disc,8,6,yellow,4
+1,disc,9,7,purple,
+1,disc,10,7,blue,5
+1,disc,2,9,yellow,6
+1,disc,5,9,blue,6
+1,disc,7,9,yellow,5
+1,disc,11,9,blue,2
+1,disc,1,10,red,1
+1,disc,5,10,orange,
+1,disc,10,10,blue,4
+1,disc,3,11,yellow,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,purple,
+1,disc,8,0,blue,1
+1,disc,9,0,green,
+1,disc,2,1,yellow,2
+1,disc,7,4,yellow,5
+1,collector_black,10,4,,
+1,disc,6,5,yellow,3
+1,disc,7,5,purple,
+1,disc,0,6,blue,3
+1,disc,3,6,orange,
+1,disc,4,6,yellow,1
+1,disc,9,7,yellow,2
+1,disc,1,8,blue,4
+1,disc,2,8,yellow,3
+1,disc,3,8,orange,
+1,disc,5,8,orange,
+1,collector_white,7,8,,
+1,disc,8,8,blue,5
+1,disc,10,8,red,6
+1,disc,11,8,yellow,5
+1,disc,3,10,blue,5
+1,disc,4,10,blue,6
+1,disc,7,10,yellow,3
+1,disc,8,10,yellow,4
+1,disc,9,10,orange,
+1,disc,0,11,blue,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,purple,
+1,disc,3,0,yellow,2
+1,disc,9,1,blue,4
+1,collector_white,0,2,,
+1,disc,4,2,red,4
+1,disc,5,2,red,5
+1,collector_black,7,2,,
+1,disc,11,2,orange,
+1,disc,0,3,green,
+1,disc,5,3,blue,4
+1,disc,9,3,yellow,6
+1,disc,10,4,yellow,5
+1,disc,1,5,yellow,4
+1,disc,8,5,blue,6
+1,disc,2,6,blue,2
+1,disc,6,6,purple,
+1,disc,7,6,red,6
+1,disc,3,7,red,2
+1,disc,10,7,orange,
+1,disc,0,8,green,
+1,disc,1,8,green,
+1,disc,7,8,blue,4
+1,disc,8,9,green,
+1,disc,1,10,yellow,3
+1,disc,3,10,red,4
+1,disc,8,11,blue,1`,
+`position_id,element,x,y,color,number
+1,disc,1,0,green,
+1,disc,2,0,yellow,6
+1,disc,0,1,blue,4
+1,disc,2,1,orange,
+1,disc,5,1,orange,
+1,disc,8,1,red,3
+1,collector_white,10,1,,
+1,disc,5,2,blue,4
+1,disc,0,3,yellow,4
+1,disc,9,3,purple,
+1,disc,7,4,blue,6
+1,disc,8,4,yellow,1
+1,disc,3,5,blue,1
+1,disc,9,5,blue,3
+1,disc,11,5,blue,5
+1,disc,3,6,red,5
+1,disc,8,7,blue,3
+1,disc,11,7,red,3
+1,disc,5,8,blue,3
+1,disc,6,9,red,3
+1,disc,7,9,red,1
+1,disc,11,9,red,4
+1,collector_black,2,10,,
+1,disc,4,10,orange,
+1,disc,5,10,blue,4
+1,disc,5,11,red,4`,
+`position_id,element,x,y,color,number
+1,disc,5,0,purple,
+1,disc,8,0,red,5
+1,disc,2,1,green,
+1,disc,4,1,red,4
+1,collector_white,0,2,,
+1,disc,1,2,red,2
+1,disc,8,2,blue,4
+1,disc,2,3,yellow,5
+1,disc,2,4,blue,2
+1,disc,6,4,yellow,6
+1,disc,9,4,orange,
+1,disc,10,4,red,4
+1,disc,3,5,blue,5
+1,disc,5,5,orange,
+1,disc,7,5,purple,
+1,disc,2,6,orange,
+1,disc,9,6,yellow,1
+1,disc,0,8,blue,3
+1,disc,3,8,purple,
+1,disc,4,8,blue,3
+1,disc,11,8,purple,
+1,disc,3,9,red,4
+1,disc,5,9,yellow,3
+1,collector_black,3,10,,
+1,disc,2,11,orange,
+1,disc,4,11,red,3`
+    ];
+
+    function mlLoadCustomPositions() {
+        try { return JSON.parse(localStorage.getItem('ml_custom_positions') || '[]'); }
+        catch (e) { return []; }
+    }
+    function mlSaveCustomPositionsArr(arr) {
+        try { localStorage.setItem('ml_custom_positions', JSON.stringify(arr)); }
+        catch (e) { alert('Save failed: ' + e.message); }
+    }
+    function mlDeleteCustomPosition(customId) {
+        mlSaveCustomPositionsArr(mlLoadCustomPositions().filter(p => p.customId !== customId));
+        mlRefreshCustomList();
+    }
+
+    function mlOpenEditor(existingPos) {
+        mlEditorPaint = {};
+        if (existingPos) {
+            (existingPos.d || []).forEach(([x, y, color, num]) => {
+                const letter = Object.keys(ML_COLOR_FOR).find(k => ML_COLOR_FOR[k] === color);
+                if (!letter) return;
+                mlEditorPaint[y * 12 + x] = letter + (num === '' || num == null ? '' : num);
+            });
+            // Restore preset collectors so they can be moved/added in the
+            // editor (Walter, 2026-05-19). Only the explicit importer/editor
+            // `coll:{b,w}` drives this — legacy `b`/`w` fields stay ignored.
+            const c = existingPos.coll;
+            if (c && Number.isInteger(c.b) && Number.isInteger(c.w) && c.b !== c.w) {
+                mlEditorPaint[c.b] = 'CB';
+                mlEditorPaint[c.w] = 'CW';
+            }
+            mlEditingCustomId = existingPos.customId || null;
+        } else {
+            mlEditingCustomId = null;
+        }
+        mlEditorBrush = 'R1';
+        // MAKA LAINA positions are nameless (unlike DL, where the name
+        // describes a recognisable shape — Pyramid, E M 3 W, Frankenstein).
+        // ML layouts have no shape, so customs are just numbered.
+        document.getElementById('ml-editor-overlay').style.display = 'block';
+        mlRenderBrushBar();
+        mlRenderColorChooser();
+        mlRenderEditor();
+    }
+
+    function mlCloseEditor() {
+        document.getElementById('ml-editor-overlay').style.display = 'none';
+    }
+
+    function mlEditorClick(idx) {
+        if (mlEditorBrush === 'erase') {
+            delete mlEditorPaint[idx];
+        } else {
+            // Exactly one Black (P1) and one White (P2) collector — painting a
+            // collector clears any previous cell of the same colour.
+            if (mlEditorBrush === 'CB' || mlEditorBrush === 'CW') {
+                Object.keys(mlEditorPaint).forEach(k => {
+                    if (mlEditorPaint[k] === mlEditorBrush) delete mlEditorPaint[k];
+                });
+            }
+            mlEditorPaint[idx] = mlEditorBrush;
+        }
+        mlRenderEditor();
+    }
+
+    function mlBrushSwatch(tok, sel) {
+        const border = sel ? '#FFEB3B' : 'rgba(0,0,0,0.25)';
+        if (tok === 'CB' || tok === 'CW') {
+            const fill = tok === 'CB' ? '#000' : '#fff';
+            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:${fill}; border:3px solid gold; border-radius:6px; outline:3px solid ${border};"></span>`;
+        }
+        const letter = tok[0];
+        const num = tok.slice(1);
+        const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
+        return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:${bg}; color:#fff; border-radius:50%; font-weight:bold; font-size:0.85em; text-shadow:1px 1px 2px #000; outline:3px solid ${border};">${num}</span>`;
+    }
+
+    function mlRenderBrushBar() {
+        const bar = document.getElementById('ml-editor-brush-bar');
+        bar.innerHTML = '';
+        const mkRow = (label, tokens, extras) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:4px; flex-wrap:wrap;';
+            if (label) {
+                const lab = document.createElement('span');
+                lab.textContent = label;
+                lab.style.cssText = 'min-width:60px; font-size:0.85em; color:#555;';
+                row.appendChild(lab);
+            }
+            tokens.forEach(tok => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.style.cssText = 'padding:4px 6px; background:#fff; border:1px solid #ccc; border-radius:4px; cursor:pointer; line-height:0;';
+                btn.innerHTML = mlBrushSwatch(tok, mlEditorBrush === tok);
+                btn.onclick = () => { mlEditorBrush = tok; mlRenderBrushBar(); };
+                row.appendChild(btn);
+            });
+            (extras || []).forEach(el => row.appendChild(el));
+            bar.appendChild(row);
+        };
+
+        // One row per primary color (1-6)
+        ML_PRIMARY_LETTERS.forEach((L, i) => {
+            const toks = [1,2,3,4,5,6].map(n => L + n);
+            const extras = [];
+            // Hang the eraser off the first row so it's always visible.
+            if (i === 0) {
+                const eraser = document.createElement('button');
+                eraser.type = 'button';
+                eraser.textContent = '✕ Erase';
+                eraser.style.cssText = `margin-left:auto; padding:6px 10px; background:#fff; color:#000; border:3px solid ${mlEditorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.25)'}; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
+                eraser.onclick = () => { mlEditorBrush = 'erase'; mlRenderBrushBar(); };
+                extras.push(eraser);
+            }
+            mkRow(ML_COLOR_FOR[L].charAt(0).toUpperCase() + ML_COLOR_FOR[L].slice(1), toks, extras);
+        });
+        // Secondaries
+        mkRow('Secondary', ML_SECONDARY_LETTERS);
+        // Collectors (optional). Painting both turns the position into a
+        // preset opening: discs + collectors fixed, Player 2 still picks the
+        // colour (Walter, 2026-05-19). Leave them out for a disc-only layout.
+        const cap = document.createElement('span');
+        cap.textContent = 'Black = P1 · White = P2 (place both for a preset opening, or neither)';
+        cap.style.cssText = 'font-size:0.78em; color:#777; margin-left:6px;';
+        mkRow('Collectors', ['CB', 'CW'], [cap]);
+    }
+
+    // ---- Walter's disc-colour chooser (global, persisted) ----
+    function mlSaveColorPrefs() {
+        const p = {};
+        ML_COLOR_NAMES.forEach(c => { p[c] = COLOR_HEX[c]; });
+        try { localStorage.setItem('ml_colors', JSON.stringify(p)); }
+        catch (e) { alert('Could not save colours: ' + e.message); }
+    }
+    function mlSetColor(name, hex) {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+        COLOR_HEX[name] = hex;
+        mlSaveColorPrefs();
+        mlRenderColorChooser();
+        mlRenderBrushBar();
+        mlRenderEditor();
+        if (typeof render === 'function') { try { render(); } catch (e) {} }
+    }
+    function mlResetColors() {
+        ML_COLOR_NAMES.forEach(c => { COLOR_HEX[c] = COLOR_HEX_DEFAULT[c]; });
+        mlSaveColorPrefs();
+        mlRenderColorChooser();
+        mlRenderBrushBar();
+        mlRenderEditor();
+        if (typeof render === 'function') { try { render(); } catch (e) {} }
+    }
+    function mlRenderColorChooser() {
+        const box = document.getElementById('ml-editor-colors');
+        if (!box) return;
+        box.innerHTML = '';
+        ML_COLOR_NAMES.forEach(name => {
+            const wrap = document.createElement('label');
+            wrap.style.cssText = 'display:inline-flex; flex-direction:column; align-items:center; gap:3px; font-size:0.78em; color:#555; text-transform:capitalize;';
+            const inp = document.createElement('input');
+            inp.type = 'color';
+            inp.value = COLOR_HEX[name];
+            inp.style.cssText = 'width:42px; height:30px; padding:0; border:1px solid #ccc; border-radius:4px; cursor:pointer; background:none;';
+            inp.oninput = () => mlSetColor(name, inp.value);
+            wrap.appendChild(inp);
+            const lab = document.createElement('span');
+            lab.textContent = name;
+            wrap.appendChild(lab);
+            box.appendChild(wrap);
+        });
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.textContent = '↺ Reset to defaults';
+        reset.style.cssText = 'margin-left:auto; padding:6px 10px; background:#fff; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.8em;';
+        reset.onclick = mlResetColors;
+        box.appendChild(reset);
+    }
+
+    function mlRenderEditor() {
+        const g = document.getElementById('ml-editor-grid');
+        g.innerHTML = '';
+        const ecs = Math.max(20, Math.min(38, Math.floor((Math.min(window.innerWidth, 760) - 60) / 12)));
+        g.style.gridTemplateColumns = `repeat(12, ${ecs}px)`;
+        g.style.gridTemplateRows = `repeat(12, ${ecs}px)`;
+        const numFont = Math.max(9, Math.floor(ecs * 0.42));
+        for (let i = 0; i < 144; i++) {
+            const c = document.createElement('div');
+            c.style.cssText = `width:${ecs}px; height:${ecs}px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;`;
+            const tok = mlEditorPaint[i];
+            if (tok === 'CB' || tok === 'CW') {
+                const col = document.createElement('div');
+                const fill = tok === 'CB' ? '#000' : '#fff';
+                col.style.cssText = `width:${ecs - 6}px; height:${ecs - 6}px; background:${fill}; border:3px solid gold; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.3);`;
+                c.appendChild(col);
+            } else if (tok) {
+                const letter = tok[0];
+                const num = tok.slice(1);
+                const bg = COLOR_HEX[ML_COLOR_FOR[letter]];
+                const disc = document.createElement('div');
+                disc.style.cssText = `width:${ecs - 8}px; height:${ecs - 8}px; background:${bg}; border-radius:50%; color:#fff; font-weight:bold; font-size:${numFont}px; text-shadow:1px 1px 2px #000; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.1);`;
+                disc.textContent = num;
+                c.appendChild(disc);
+            }
+            c.onclick = () => mlEditorClick(i);
+            g.appendChild(c);
+        }
+        mlUpdateEditorSummary();
+    }
+
+    function mlUpdateEditorSummary() {
+        const sum = document.getElementById('ml-editor-summary');
+        let discs = 0, cb = false, cw = false;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const t = mlEditorPaint[k];
+            if (t === 'CB') cb = true; else if (t === 'CW') cw = true; else discs++;
+        });
+        const collMsg = (cb && cw)
+            ? 'Collectors set → preset opening (Player 2 still picks the colour).'
+            : (cb || cw)
+                ? '⚠ One collector placed — add the other, or remove it for a disc-only layout.'
+                : 'No collectors → disc-only (Player 1 places them live at game start).';
+        sum.textContent = `Discs placed: ${discs} (canonical 24). ${collMsg}`;
+    }
+
+    function mlPaintToPosition() {
+        const d = [];
+        let cb = null, cw = null;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const idx = parseInt(k);
+            const tok = mlEditorPaint[k];
+            if (tok === 'CB') { cb = idx; return; }
+            if (tok === 'CW') { cw = idx; return; }
+            const x = idx % 12, y = Math.floor(idx / 12);
+            const color = ML_COLOR_FOR[tok[0]];
+            const num = tok.length > 1 ? parseInt(tok.slice(1)) : '';
+            d.push([x, y, color, num]);
+        });
+        const pos = { d };
+        // Both collectors → preset opening; neither → disc-only (live
+        // placement). Exactly one is rejected by mlValidateEditor().
+        if (cb != null && cw != null) pos.coll = { b: cb, w: cw };
+        return pos;
+    }
+
+    function mlValidateEditor() {
+        let discs = 0, cb = false, cw = false;
+        Object.keys(mlEditorPaint).forEach(k => {
+            const t = mlEditorPaint[k];
+            if (t === 'CB') cb = true; else if (t === 'CW') cw = true; else discs++;
+        });
+        if (discs === 0) {
+            alert('Place at least one disc.');
+            return false;
+        }
+        if (cb !== cw) {
+            alert('Place BOTH collectors (one Black for Player 1, one White for Player 2) — or neither for a disc-only layout where Player 1 places them live.');
+            return false;
+        }
+        return true;
+    }
+
+    function mlSaveCustomPosition() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        pos.customId = mlEditingCustomId || ('c' + Date.now());
+        const customs = mlLoadCustomPositions();
+        const idx = customs.findIndex(p => p.customId === pos.customId);
+        if (idx >= 0) customs[idx] = pos; else customs.push(pos);
+        mlSaveCustomPositionsArr(customs);
+        mlEditingCustomId = pos.customId;
+        const n = (idx >= 0 ? idx : customs.length - 1) + 1;
+        alert(`Position ${n} saved.`);
+        mlRefreshCustomList();
+    }
+
+    function mlPlayFromEditor() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        mlCloseEditor();
+        currentPosition = 'custom';
+        applyPositionData(pos);
+    }
+
+    // Parse an "Export opening" / editor CSV (long format
+    // `position_id,element,x,y,color,number`). Returns { d, coll } where
+    // `d` is the disc layout and `coll` = {b,w} cell indices iff BOTH
+    // collector rows are present (else null → live placement on play).
+    function mlParseOpeningCSV(text) {
+        const d = [];
+        let cb = null, cw = null;
+        text.split(/\r?\n/).forEach(line => {
+            const t = line.trim();
+            if (!t || /^position_id\s*,/i.test(t)) return;
+            const f = t.split(',');
+            if (f.length < 4) return;
+            const element = (f[1] || '').trim();
+            const x = parseInt(f[2], 10), y = parseInt(f[3], 10);
+            if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+            if (x < 0 || x >= 12 || y < 0 || y >= 12) return;
+            if (element === 'disc') {
+                const color = (f[4] || '').trim();
+                const numRaw = (f[5] || '').trim();
+                if (!color) return;
+                d.push([x, y, color, numRaw === '' ? '' : parseInt(numRaw, 10)]);
+            } else if (element === 'collector_black') {
+                cb = y * 12 + x;
+            } else if (element === 'collector_white') {
+                cw = y * 12 + x;
+            }
+        });
+        const coll = (cb != null && cw != null && cb !== cw) ? { b: cb, w: cw } : null;
+        return { d, coll };
+    }
+
+    function mlImportOpeningFile(input) {
+        const file = input.files && input.files[0];
+        input.value = '';                       // allow re-importing the same file
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            let parsed;
+            try { parsed = mlParseOpeningCSV(String(reader.result || '')); }
+            catch (e) { alert('Could not read that CSV: ' + e.message); return; }
+            if (!parsed.d.length) { alert('No disc rows found in that CSV.'); return; }
+            const pos = { customId: 'c' + Date.now(), d: parsed.d };
+            if (parsed.coll) pos.coll = parsed.coll;
+            const customs = mlLoadCustomPositions();
+            customs.push(pos);
+            mlSaveCustomPositionsArr(customs);
+            mlRefreshCustomList();
+            alert(parsed.coll
+                ? `Imported as Position ${customs.length} — preset opening (collectors fixed, Player 2 picks the colour).`
+                : `Imported as Position ${customs.length} — disc layout only (Player 1 places collectors live).`);
+        };
+        reader.onerror = () => alert('Could not read the file.');
+        reader.readAsText(file);
+    }
+
+    // CSV in vertical / long format. ML positions are nameless, so the CSV
+    // carries no name (unlike DL's shaped positions). If pos.coll is present
+    // (both collectors painted) it emits collector_black (P1) / collector_white
+    // (P2) rows too — that makes it a reusable preset-opening CSV.
+    function mlBuildCSV(pos, positionId) {
+        const pid = positionId || 1;
+        const lines = ['position_id,element,x,y,color,number'];
+        pos.d.forEach(([x, y, color, num]) => {
+            lines.push(`${pid},disc,${x},${y},${color},${num === '' || num == null ? '' : num}`);
+        });
+        if (pos.coll && Number.isInteger(pos.coll.b) && Number.isInteger(pos.coll.w)) {
+            const b = pos.coll.b, w = pos.coll.w;
+            lines.push(`${pid},collector_black,${b % 12},${Math.floor(b / 12)},,`);
+            lines.push(`${pid},collector_white,${w % 12},${Math.floor(w / 12)},,`);
+        }
+        return { csv: lines.join('\n') + '\n' };
+    }
+
+    function mlExportEditorCSV() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        const { csv } = mlBuildCSV(pos, 1);
+        document.getElementById('ml-csv-output').value = csv;
+        document.getElementById('ml-csv-modal').style.display = 'flex';
+        document.getElementById('ml-csv-modal').dataset.filename =
+            pos.coll ? 'makalaina_opening.csv' : 'makalaina_position.csv';
+    }
+
+    function mlCopyCSVToClipboard() {
+        const ta = document.getElementById('ml-csv-output');
+        ta.select();
+        try { document.execCommand('copy'); alert('CSV copied to clipboard.'); }
+        catch (e) { alert('Copy failed; select + Ctrl/Cmd-C.'); }
+    }
+
+    function mlDownloadCSV() {
+        const csv = document.getElementById('ml-csv-output').value;
+        const filename = document.getElementById('ml-csv-modal').dataset.filename || 'makalaina_custom.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    async function mlShareEditorCSV() {
+        if (!mlValidateEditor()) return;
+        const pos = mlPaintToPosition();
+        const { csv } = mlBuildCSV(pos, 1);
+        const filename = pos.coll ? 'makalaina_opening.csv' : 'makalaina_position.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    // No `text:` alongside `files:` — Android WhatsApp drops the file
+                    // when both are present (same lesson as Divided Loyalties share).
+                    await navigator.share({ files: [file], title: pos.coll ? 'MAKA LAINA opening' : 'MAKA LAINA position' });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        // Fallback: download only — never wa.me on Android WebView (ERR_UNKNOWN_URL_SCHEME).
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(`Saved ${filename}. Attach it to your WhatsApp message manually.`);
+    }
+
+    function mlRefreshCustomList() {
+        const host = document.getElementById('ml-custom-list');
+        if (!host) return;
+        host.innerHTML = '';
+
+        // Built-in fair openings — always available, not stored in
+        // localStorage, not editable (the disc-only editor would strip the
+        // baked-in collectors). Each runs the preset flow via loadBuiltinOpening.
+        const bTitle = document.createElement('p');
+        bTitle.style.cssText = 'font-weight:bold; margin:6px 0; color:#2c3e50; font-size:0.95em;';
+        bTitle.textContent = 'Preset openings (collectors fixed — Player 2 picks the colour):';
+        host.appendChild(bTitle);
+        const bRow = document.createElement('div');
+        bRow.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
+        ML_BUILTIN_OPENING_CSVS.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
+            btn.textContent = '★ Opening ' + (i + 1);
+            btn.title = 'Preset opening — collectors fixed, Player 2 picks the colour';
+            btn.onclick = () => loadBuiltinOpening(i);
+            bRow.appendChild(btn);
+        });
+        host.appendChild(bRow);
+
+        const customs = mlLoadCustomPositions();
+        if (!customs.length) return;
+        const title = document.createElement('p');
+        title.style.cssText = 'font-weight:bold; margin:14px 0 6px; color:#2c3e50; font-size:0.95em;';
+        title.textContent = 'Your custom positions:';
+        host.appendChild(title);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap;';
+        customs.forEach((p, i) => {
+            const n = i + 1;
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex; gap:2px; align-items:stretch;';
+            const isPreset = !!(p.coll && p.coll.b != null && p.coll.w != null);
+            const playBtn = document.createElement('button');
+            playBtn.className = 'btn';
+            playBtn.style.cssText = 'width:auto; padding:8px 12px; background:#8e44ad; color:white; margin:0;';
+            playBtn.textContent = (isPreset ? '★ Opening ' : '★ Position ') + n;
+            playBtn.title = isPreset ? 'Preset opening — collectors fixed, Player 2 picks the colour' : '';
+            playBtn.onclick = () => loadCustomPosition(p.customId);
+            // The editor now has collector brushes (Walter, 2026-05-19), so it
+            // round-trips a preset's collectors — editing presets is allowed.
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn';
+            editBtn.style.cssText = 'width:auto; padding:8px 10px; background:#7f8c8d; color:white; margin:0;';
+            editBtn.title = 'Edit';
+            editBtn.textContent = '✏️';
+            editBtn.onclick = (e) => { e.stopPropagation(); mlOpenEditor(p); };
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn';
+            delBtn.style.cssText = 'width:auto; padding:8px 10px; background:#c0392b; color:white; margin:0;';
+            delBtn.title = 'Delete';
+            delBtn.textContent = '🗑';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Delete position ${n}?`)) mlDeleteCustomPosition(p.customId);
+            };
+            wrap.appendChild(playBtn);
+            wrap.appendChild(editBtn);
+            wrap.appendChild(delBtn);
+            row.appendChild(wrap);
+        });
+        host.appendChild(row);
+    }
+
+    mlRefreshCustomList();
+
+    // #editor — opened from the central startpositionen.html hub: go
+    // straight into a fresh disc-position editor. #loadopening — focus the
+    // setup so Walter can use the 📥 Load opening (CSV) button right away.
+    // #rules — open rules modal (shareable per game/language).
+    if (location.hash === '#editor') {
+        mlOpenEditor(null);
+    } else if (location.hash === '#rules') {
+        toggleRules(true);
+    }
+    window.addEventListener('hashchange', () => {
+        if (location.hash === '#rules') toggleRules(true);
+    });
 </script>
 </body>
 </html>

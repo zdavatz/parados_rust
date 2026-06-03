@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parados &mdash; Startpositionen</title>
+<style>
+:root {
+    --bg: #263238;
+    --card-bg: #37474f;
+    --card-hover: #455a64;
+    --accent: #ffd700;
+    --text: #eceff1;
+    --text-dim: #90a4ae;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+}
+header { text-align: center; padding: 30px 10px 10px; }
+header h1 {
+    font-size: 2.4em;
+    color: var(--accent);
+    text-shadow: 0 2px 12px rgba(255, 215, 0, 0.3);
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+}
+header p { color: var(--text-dim); font-size: 1.05em; }
+.wrap { max-width: 880px; margin: 24px auto; padding: 0 6px; }
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+}
+.card h2 { font-size: 1.35em; color: var(--accent); margin-bottom: 4px; }
+.card .sub { font-size: 0.85em; color: var(--text-dim); margin-bottom: 12px; }
+.card p, .card li { color: #cfd8dc; font-size: 0.95em; line-height: 1.55; }
+ol { margin: 6px 0 14px 22px; }
+ol li { margin-bottom: 4px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95em;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.15s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+    color: #fff;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+.btn-green  { background: #43a047; } .btn-green:hover  { background: #388e3c; }
+.btn-blue   { background: #1e88e5; } .btn-blue:hover   { background: #1565c0; }
+.btn-purple { background: #8e24aa; } .btn-purple:hover { background: #6a1b9a; }
+.btn-brown  { background: #6d4c41; } .btn-brown:hover  { background: #5d4037; }
+.btn-grey   { background: #607d8b; } .btn-grey:hover   { background: #546e7a; }
+textarea {
+    width: 100%; height: 180px; margin-top: 10px;
+    font-family: monospace; font-size: 0.82em;
+    padding: 10px; border-radius: 6px; border: 1px solid #546e7a;
+    background: #1f2a30; color: #eceff1; resize: vertical;
+}
+.tag {
+    display: inline-block; font-size: 0.75em; font-weight: 700;
+    padding: 2px 9px; border-radius: 999px; margin-left: 8px;
+    background: rgba(255,215,0,0.15); color: var(--accent);
+    vertical-align: middle;
+}
+details.help {
+    margin-top: 16px;
+    background: #2b373d;
+    border: 1px solid #546e7a;
+    border-radius: 8px;
+    padding: 0 14px;
+}
+details.help[open] { padding-bottom: 12px; }
+details.help > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 12px 0;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95em;
+}
+details.help > summary::-webkit-details-marker { display: none; }
+details.help > summary::before { content: "▸ "; }
+details.help[open] > summary::before { content: "▾ "; }
+details.help code, .card code {
+    background: #1f2a30;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #ffe082;
+}
+details.help .ex {
+    display: block;
+    background: #1f2a30;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #eceff1;
+}
+details.help .ex .hl { color: #ffe082; font-weight: 700; }
+footer {
+    text-align: center; color: var(--text-dim);
+    font-size: 0.85em; margin-top: 30px; padding: 20px 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 500px) { header h1 { font-size: 1.8em; } }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>STARTPOSITIONEN</h1>
+    <p>Stellungen erstellen und als CSV verschicken &mdash; alles an einem Ort</p>
+</header>
+
+<div class="wrap">
+
+    <div class="card">
+        <h2>Divided Loyalties</h2>
+        <div class="sub">Nicht-quadratisches Gitter &middot; Token / Punkte &middot; CSV-Format <code>position_id,position_name,row,c0&hellip;</code></div>
+        <p>Eigene Stellung im bestehenden, getesteten DL-Editor zeichnen, dann direkt aus dem Editor per WhatsApp verschicken.</p>
+        <ol>
+            <li><b>DL-Editor öffnen</b> &rarr; Breite/Höhe wählen, Felder bemalen, Punkte mit der <b>•</b>-Bürste setzen.</li>
+            <li>Im Editor: <b>📤 Per WhatsApp senden</b> (hängt die CSV als Datei an) <i>oder</i> <b>📋 Als CSV exportieren</b> zum Kopieren.</li>
+            <li>Alternativ unten die exportierte CSV laden und von hier erneut senden.</li>
+        </ol>
+        <div class="buttons">
+            <a class="btn btn-green" href="divided_loyalties.html#editor">✏️ DL-Editor öffnen</a>
+            <a class="btn btn-grey" href="divided_loyalties.html">▶ DL spielen / alle Stellungen</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>MAKA LAINA</h2>
+        <div class="sub">12&times;12 &middot; Discs (Farbe + Zahl) &middot; CSV-Format <code>position_id,element,x,y,color,number</code></div>
+        <p>Zwei Wege &mdash; eine reine <b>Disc-Stellung</b> im Editor, oder eine komplette <b>Eröffnung</b> (Discs <i>und</i> beide Collectors) aus einem laufenden Spiel.</p>
+        <ol>
+            <li><b>Disc-Editor:</b> Stellung malen &rarr; <b>📤 Share via WhatsApp</b> bzw. <b>📋 Export CSV</b>.</li>
+            <li><b>Eröffnung:</b> Spiel starten, beide Collectors setzen &rarr; <b>📋 Export opening</b> (Discs + Collectors, in die Zwischenablage kopiert &mdash; direkt in WhatsApp einfügbar).</li>
+            <li>So eine <b>Export-opening-CSV</b> lädt man im Spiel-Setup mit <b>📥 Load opening (CSV)</b> als <b>Preset</b> &mdash; keine Live-Platzierung, Spieler 2 wählt nur noch die Farbe.</li>
+        </ol>
+        <div class="buttons">
+            <a class="btn btn-purple" href="makalaina.html#editor">✏️ ML-Disc-Editor öffnen</a>
+            <a class="btn btn-brown" href="makalaina.html">▶ ML spielen (Export / Load opening)</a>
+            <a class="btn btn-blue" href="makalaina_remote.html">🌐 ML Remote</a>
+        </div>
+
+        <details class="help">
+            <summary>Wie verschiebe ich 1 Disc (oder einen Collector)?</summary>
+            <p>Einfach die <b>CSV ändern</b>. Jede Zeile hat das Format
+               <code>position_id,element,x,y,color,number</code> mit</p>
+            <ul style="margin:6px 0 10px 20px;">
+                <li><code>x</code> = Spalte <b>0–11</b> (links → rechts)</li>
+                <li><code>y</code> = Zeile <b>0–11</b> (oben → unten)</li>
+            </ul>
+            <p>Beispiel — eine rote 2 auf Spalte 3 / Zeile 4:</p>
+            <span class="ex">1,disc,<span class="hl">3,4</span>,red,2</span>
+            <p>Soll sie nach Spalte 7 / Zeile 9, nur x und y ändern:</p>
+            <span class="ex">1,disc,<span class="hl">7,9</span>,red,2</span>
+            <p>Einen Collector verschiebst du genauso
+               (<code>1,collector_black,2,2,,</code> → x/y ändern).
+               Danach im Spiel-Setup mit <b>📥 Load opening (CSV)</b> laden
+               (oder unten in <b>„CSV laden &amp; erneut senden"</b> einfügen
+               und neu verschicken).</p>
+            <p style="margin-top:8px;"><b>Drei Regeln</b>, damit es sauber lädt:</p>
+            <ol style="margin:6px 0 4px 20px;">
+                <li>x und y immer <b>0–11</b> — alles außerhalb wird
+                    stillschweigend ignoriert (die Disc verschwindet).</li>
+                <li><b>Kein Feld doppelt belegen</b> — nicht zwei Discs, oder
+                    Disc + Collector, auf dasselbe x/y.</li>
+                <li>Bei einer <b>Eröffnung</b> (mit Collectors) die CSV
+                    <b>direkt</b> bearbeiten — <b>nicht</b> den ML-Editor
+                    benutzen, der kennt nur Discs und verliert die Collectors.</li>
+            </ol>
+            <p style="margin-top:8px; color:var(--text-dim); font-size:0.9em;">
+                Reine Disc-Stellung <i>ohne</i> Collectors? Dann geht auch der
+                visuelle ML-Editor: alte Disc mit dem Radiergummi weg, neue an
+                die gewünschte Stelle malen.</p>
+        </details>
+    </div>
+
+    <div class="card">
+        <h2>CSV laden &amp; erneut senden <span class="tag">jedes Spiel</span></h2>
+        <p>Eine bereits exportierte CSV (DL- oder ML-Stellung, oder ML-Eröffnung) hier laden, prüfen und mit einem Klick erneut verschicken &mdash; ohne das Spiel neu zu öffnen.</p>
+        <div class="buttons" style="margin-top:12px;">
+            <button class="btn btn-grey" onclick="document.getElementById('csv-file').click()">📂 CSV-Datei laden</button>
+            <input type="file" id="csv-file" accept=".csv,text/csv" style="display:none;" onchange="loadCSVFile(this)">
+        </div>
+        <p id="csv-info" style="margin-top:12px; color:var(--accent); display:none;"></p>
+        <textarea id="csv-text" placeholder="… oder CSV-Inhalt hier einfügen" oninput="onCSVEdited()"></textarea>
+        <div class="buttons" style="margin-top:12px;">
+            <button class="btn btn-green" onclick="shareCSV()">📤 Per WhatsApp senden</button>
+            <button class="btn btn-blue" onclick="copyCSV()">📋 Kopieren</button>
+            <button class="btn btn-grey" onclick="downloadCSV()">💾 Herunterladen</button>
+        </div>
+        <p style="margin-top:10px; font-size:0.82em; color:var(--text-dim);">
+            Senden hängt die CSV als <b>Datei</b> an (kein Text dabei &mdash; sonst lässt Android-WhatsApp die Datei fallen).
+            Klappt das Datei-Teilen nicht, wird sie heruntergeladen <i>und</i> der CSV-Text in die Zwischenablage kopiert,
+            damit er sich direkt in WhatsApp einfügen lässt.
+        </p>
+    </div>
+
+</div>
+
+<footer>
+    <a href="index.html">&larr; Zurück zu Parados</a> &middot;
+    <a href="https://github.com/zdavatz/parados">GitHub</a>
+</footer>
+
+<script>
+    // Detect game + a sensible filename/title from the CSV header & content.
+    function detectCSV(csv) {
+        const head = (csv.split(/\r?\n/).find(l => l.trim()) || '').toLowerCase().replace(/\s/g, '');
+        if (head.startsWith('position_id,position_name,row,c0')) {
+            return { game: 'Divided Loyalties', filename: 'divided_loyalties_position.csv' };
+        }
+        if (head.startsWith('position_id,element,x,y,color,number')) {
+            const hasColl = /(^|\n)\s*[^,\n]*,\s*collector_(black|white)\s*,/i.test(csv);
+            return hasColl
+                ? { game: 'MAKA LAINA — Eröffnung', filename: 'makalaina_opening.csv' }
+                : { game: 'MAKA LAINA — Stellung', filename: 'makalaina_position.csv' };
+        }
+        return { game: 'Stellung', filename: 'parados_position.csv' };
+    }
+
+    function currentCSV() { return document.getElementById('csv-text').value; }
+
+    function refreshInfo() {
+        const csv = currentCSV().trim();
+        const info = document.getElementById('csv-info');
+        if (!csv) { info.style.display = 'none'; return; }
+        const d = detectCSV(csv);
+        info.textContent = 'Erkannt: ' + d.game + '  →  ' + d.filename;
+        info.style.display = '';
+    }
+
+    function loadCSVFile(input) {
+        const file = input.files && input.files[0];
+        input.value = '';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { document.getElementById('csv-text').value = String(reader.result || ''); refreshInfo(); };
+        reader.onerror = () => alert('Datei konnte nicht gelesen werden.');
+        reader.readAsText(file);
+    }
+
+    function onCSVEdited() { refreshInfo(); }
+
+    // Clipboard: navigator.clipboard, then a temp-textarea execCommand
+    // fallback (works inside the app WebView). Returns a Promise<boolean>.
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).then(() => true, () => legacyCopy(text));
+        }
+        return Promise.resolve(legacyCopy(text));
+    }
+    function legacyCopy(text) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+        } catch (e) { return false; }
+    }
+
+    function copyCSV() {
+        const csv = currentCSV();
+        if (!csv.trim()) { alert('Keine CSV-Daten.'); return; }
+        copyTextToClipboard(csv).then(ok => alert(ok
+            ? 'CSV in die Zwischenablage kopiert — in WhatsApp einfügen.'
+            : 'Kopieren fehlgeschlagen; Text markieren + Strg/Cmd-C.'));
+    }
+
+    function downloadCSV() {
+        const csv = currentCSV();
+        if (!csv.trim()) { alert('Keine CSV-Daten.'); return; }
+        const { filename } = detectCSV(csv);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    // Same guardrails as the games: navigator.share with files only — no
+    // `text:` alongside `files:` (Android WhatsApp drops the file), and
+    // never a wa.me fallback (ERR_UNKNOWN_URL_SCHEME in the WebView).
+    // Fallback = download + clipboard copy so it can still be pasted.
+    async function shareCSV() {
+        const csv = currentCSV();
+        if (!csv.trim()) { alert('Keine CSV-Daten.'); return; }
+        const { game, filename } = detectCSV(csv);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const copied = await copyTextToClipboard(csv);
+        try {
+            if (navigator.canShare) {
+                const file = new File([blob], filename, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Parados — ' + game });
+                    return;
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.warn('navigator.share failed, falling back:', e);
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        alert(copied
+            ? `CSV in die Zwischenablage kopiert — in WhatsApp einfügen. (Auch als ${filename} gespeichert.)`
+            : `Als ${filename} gespeichert. CSV manuell an die WhatsApp-Nachricht anhängen.`);
+    }
+</script>
+</body>
+</html>

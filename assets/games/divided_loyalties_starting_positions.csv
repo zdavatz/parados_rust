@@ -1,0 +1,177 @@
+position_id,position_name,row,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16
+1,Up the Stairs,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+1,Up the Stairs,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+1,Up the Stairs,2,.,.,.,.,.,.,.,.,.,.,.,.,.,o,.
+1,Up the Stairs,3,.,.,.,.,.,.,.,.,.,.,.,.,o,W4,o
+1,Up the Stairs,4,.,.,.,.,.,.,.,.,.,.,.,o,W4,W4,o
+1,Up the Stairs,5,.,.,.,.,.,.,.,.,.,.,o,W4,W4,W4,o
+1,Up the Stairs,6,.,.,.,.,.,.,.,.,.,o,W3,o,o,S3,o
+1,Up the Stairs,7,.,.,.,.,.,.,.,.,o,W3,W3,S3,S3,S3,o
+1,Up the Stairs,8,.,.,.,.,.,.,.,o,W3,W3,W3,o,o,S3,o
+1,Up the Stairs,9,.,.,.,.,.,.,o,W2,o,o,S2,G1,G1,G1,o
+1,Up the Stairs,10,.,.,.,.,.,o,W2,W2,S2,S2,S2,o,o,G1,o
+1,Up the Stairs,11,.,.,.,.,o,W2,W2,W2,o,o,S2,G1,G1,G1,o
+1,Up the Stairs,12,.,.,.,o,W1,o,o,S1,G2,G2,G2,o,o,W5,o
+1,Up the Stairs,13,.,.,o,W1,W1,S1,S1,S1,o,o,G2,o,W5,W5,o
+1,Up the Stairs,14,.,o,W1,W1,W1,o,o,S1,G2,G2,G2,W5,W5,W5,o
+1,Up the Stairs,15,.,.,o,o,o,.,.,o,o,o,o,.,o,o,.
+2,Octopus,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,3,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+2,Octopus,4,.,.,.,o,o,o,.,.,o,o,o,o,.,o,o,.
+2,Octopus,5,.,.,o,S1,S1,S1,o,o,S1,S1,S1,S1,o,S1,S1,o
+2,Octopus,6,.,.,o,S1,o,S1,o,o,S1,o,o,o,o,o,S1,o
+2,Octopus,7,.,.,o,S1,o,G1,G1,G1,S1,G1,G1,G1,S1,S1,S1,o
+2,Octopus,8,.,.,o,o,o,G1,G1,G1,.,G1,G1,G1,o,o,o,.
+2,Octopus,9,.,o,S1,S1,S1,G1,G1,G1,S1,G1,G1,G1,o,S1,o,.
+2,Octopus,10,.,o,S1,o,o,o,o,o,S1,o,o,S1,o,S1,o,.
+2,Octopus,11,.,o,S1,S1,o,S1,S1,S1,S1,o,o,S1,S1,S1,o,.
+2,Octopus,12,.,.,o,o,.,o,o,o,o,.,.,o,o,o,.,.
+3,Wind wheel,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+3,Wind wheel,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+3,Wind wheel,2,.,.,.,.,.,o,o,o,.,.,.,.,.,.,.
+3,Wind wheel,3,.,.,.,.,o,S1,S1,S1,o,o,o,o,.,.,.
+3,Wind wheel,4,.,.,.,.,o,o,S1,S1,o,G2,G2,G2,o,o,.
+3,Wind wheel,5,.,.,.,o,G1,G3,G1,S1,o,G2,G2,G2,o,S2,o
+3,Wind wheel,6,.,.,.,o,G1,G1,G1,o,o,G2,G2,G2,S2,S2,o
+3,Wind wheel,7,.,.,.,o,G1,G1,G1,W1,W1,W1,o,S2,S2,S2,o
+3,Wind wheel,8,.,.,.,o,o,o,o,W1,W1,W1,o,o,o,o,.
+3,Wind wheel,9,.,.,o,S4,S4,S4,o,W1,W1,W1,G3,G3,G3,o,.
+3,Wind wheel,10,.,.,o,S4,S4,G4,G4,G4,o,o,G3,G3,G3,o,.
+3,Wind wheel,11,.,.,o,S4,o,G4,G4,G4,o,S3,G3,G3,G3,o,.
+3,Wind wheel,12,.,.,.,o,o,G4,G4,G4,o,S3,S3,o,o,.,.
+3,Wind wheel,13,.,.,.,.,.,o,o,o,o,S3,S3,S3,o,.,.
+3,Wind wheel,14,.,.,.,.,.,.,.,.,.,o,o,o,.,.,.
+4,Gentle kiss,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,3,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+4,Gentle kiss,4,.,.,.,o,o,o,.,.,.,o,o,o,.,.,.,.
+4,Gentle kiss,5,.,.,o,S2,S2,S2,o,o,o,W2,W2,W2,o,.,.,.
+4,Gentle kiss,6,.,.,o,S2,S2,S2,G1,G1,G1,W2,W2,W2,G4,o,.,.
+4,Gentle kiss,7,.,.,o,S2,S2,S2,G1,G1,o,W2,W2,W2,G4,G4,o,.
+4,Gentle kiss,8,.,.,.,o,o,o,G1,o,o,W2,W2,W2,G4,G4,G4,o
+4,Gentle kiss,9,.,.,o,G3,G3,G3,W1,W1,W1,o,o,G2,o,o,o,.
+4,Gentle kiss,10,.,.,.,o,G3,G3,W1,W1,W1,o,G2,G2,S1,S1,S1,o
+4,Gentle kiss,11,.,.,.,.,o,G3,W1,W1,W1,G2,G2,G2,S1,S1,S1,o
+4,Gentle kiss,12,.,.,.,.,.,o,W1,W1,W1,o,o,o,S1,S1,S1,o
+4,Gentle kiss,13,.,.,.,.,.,.,o,o,o,.,.,.,o,o,o,.
+5,Utopia,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+5,Utopia,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+5,Utopia,2,.,.,.,.,.,o,o,o,.,.,o,.,.,.,.
+5,Utopia,3,.,.,.,.,o,S1,S1,S1,o,o,S2,o,o,.,.
+5,Utopia,4,.,.,.,.,o,S1,S1,o,o,S2,S2,G2,G2,o,.
+5,Utopia,5,.,.,.,o,o,S1,o,o,S2,S2,S2,G2,G2,o,.
+5,Utopia,6,.,.,o,W1,W1,W1,W1,o,o,o,o,G2,G2,o,.
+5,Utopia,7,.,.,o,W1,W1,W1,W1,G1,G1,G1,o,G2,G2,o,.
+5,Utopia,8,.,.,o,W1,W1,W1,W1,G1,G1,G1,W2,W2,W2,W2,o
+5,Utopia,9,.,.,.,o,G2,G2,o,G1,G1,G1,W2,W2,W2,W2,o
+5,Utopia,10,.,.,.,o,G2,G2,o,o,o,o,W2,W2,W2,W2,o
+5,Utopia,11,.,.,.,o,G2,G2,S3,S3,S3,o,o,S4,o,o,.
+5,Utopia,12,.,.,.,o,G2,G2,S3,S3,o,o,S4,S4,o,.,.
+5,Utopia,13,.,.,.,.,o,o,S3,o,o,S4,S4,S4,o,.,.
+5,Utopia,14,.,.,.,.,.,.,o,.,.,o,o,o,.,.,.
+6,E M 3 W,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+6,E M 3 W,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+6,E M 3 W,2,.,.,.,o,o,.,o,o,o,o,o,.,o,o,.
+6,E M 3 W,3,.,.,o,S1,S1,o,G1,G1,G1,G1,G1,o,S2,S2,o
+6,E M 3 W,4,.,.,o,S1,S1,o,G1,o,G1,o,G1,o,S2,S2,o
+6,E M 3 W,5,.,.,.,o,o,o,G1,o,G1,o,G1,o,o,o,.
+6,E M 3 W,6,.,.,o,G2,G2,G2,o,o,o,o,o,G3,G3,G3,o
+6,E M 3 W,7,.,.,o,G2,o,o,o,W1,W1,W1,o,o,o,G3,o
+6,E M 3 W,8,.,.,o,G2,G2,G2,o,W1,W1,W1,o,G3,G3,G3,o
+6,E M 3 W,9,.,.,o,G2,o,o,o,W1,W1,W1,o,o,o,G3,o
+6,E M 3 W,10,.,.,o,G2,G2,G2,o,o,o,o,o,G3,G3,G3,o
+6,E M 3 W,11,.,.,.,o,o,o,G4,o,G4,o,G4,o,o,o,.
+6,E M 3 W,12,.,.,o,S3,S3,o,G4,o,G4,o,G4,o,S4,S4,o
+6,E M 3 W,13,.,.,o,S3,S3,o,G4,G4,G4,G4,G4,o,S4,S4,o
+6,E M 3 W,14,.,.,.,o,o,.,o,o,o,o,o,.,o,o,.
+7,Pyramid,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+7,Pyramid,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+7,Pyramid,2,.,.,.,.,.,.,.,.,o,.,.,.,.,.,.,.,.
+7,Pyramid,3,.,.,.,.,.,.,.,o,S5,o,.,.,.,.,.,.,.
+7,Pyramid,4,.,.,.,.,.,.,o,S5,o,S5,o,.,.,.,.,.,.
+7,Pyramid,5,.,.,.,.,.,o,S5,S5,o,S5,S5,o,.,.,.,.,.
+7,Pyramid,6,.,.,.,.,o,W1,W1,W1,o,W1,W1,W1,o,.,.,.,.
+7,Pyramid,7,.,.,.,o,o,W1,W1,W1,o,W2,W2,W2,o,o,.,.,.
+7,Pyramid,8,.,.,o,G2,G2,G2,o,G2,G2,G2,o,G2,G2,G2,o,.,.
+7,Pyramid,9,.,o,o,G1,G1,G1,o,G2,G2,G2,o,G3,G3,G3,o,o,.
+7,Pyramid,10,o,S1,S1,S1,o,S1,S1,S1,o,S1,S1,S1,o,S1,S1,S1,o
+7,Pyramid,11,o,S1,S1,S1,o,S2,S2,S2,o,S3,S3,S3,o,S4,S4,S4,o
+7,Pyramid,12,.,o,o,o,.,o,o,o,.,o,o,o,.,o,o,o,.
+8,Horseshoes,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+8,Horseshoes,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+8,Horseshoes,2,.,.,.,.,.,.,.,o,.,o,.,.,.,.,.
+8,Horseshoes,3,.,.,.,.,.,.,o,S1,o,S1,o,.,.,.,.
+8,Horseshoes,4,.,.,.,.,.,o,G4,S1,o,S1,G1,o,.,.,.
+8,Horseshoes,5,.,.,.,.,o,G4,G4,S1,S1,S1,G1,G1,o,.,.
+8,Horseshoes,6,.,.,.,o,G4,G4,o,o,o,o,o,G1,G1,o,.
+8,Horseshoes,7,.,.,o,S4,S4,S4,o,W5,W5,W5,o,S2,S2,S2,o
+8,Horseshoes,8,.,.,.,o,o,S4,o,W5,W5,W5,o,S2,o,o,.
+8,Horseshoes,9,.,.,o,S4,S4,S4,o,W5,W5,W5,o,S2,S2,S2,o
+8,Horseshoes,10,.,.,.,o,G3,G3,o,o,o,o,o,G2,G2,o,.
+8,Horseshoes,11,.,.,.,.,o,G3,G3,S3,S3,S3,G2,G2,o,.,.
+8,Horseshoes,12,.,.,.,.,.,o,G3,S3,o,S3,G2,o,.,.,.
+8,Horseshoes,13,.,.,.,.,.,.,o,S3,o,S3,o,.,.,.,.
+8,Horseshoes,14,.,.,.,.,.,.,.,o,.,o,.,.,.,.,.
+9,SwissCross,0,.,.,.,.,.,.,.,.,.,.,.,.,.
+9,SwissCross,1,.,.,.,.,.,.,.,.,.,.,.,.,.
+9,SwissCross,2,.,.,.,.,o,.,o,.,.,.,.,.,.
+9,SwissCross,3,.,.,.,o,G1,o,G2,o,o,.,.,.,.
+9,SwissCross,4,.,.,o,G1,G1,o,G2,G2,W1,o,.,.,.
+9,SwissCross,5,.,.,.,o,G1,W4,G2,W1,W1,W1,o,.,.
+9,SwissCross,6,.,.,.,o,W4,W4,W4,o,W1,o,S3,o,.
+9,SwissCross,7,.,.,.,.,o,W4,o,S1,o,S3,S3,S3,o
+9,SwissCross,8,.,.,.,o,S2,o,S1,S1,S1,o,S3,o,.
+9,SwissCross,9,.,.,o,S2,S2,S2,o,S1,o,W3,o,.,.
+9,SwissCross,10,.,.,.,o,S2,o,W1,o,W3,W3,W3,o,.
+9,SwissCross,11,.,.,.,.,o,W1,W1,W1,G3,W3,G4,o,.
+9,SwissCross,12,.,.,.,.,.,o,W1,G3,G3,o,G4,G4,o
+9,SwissCross,13,.,.,.,.,.,.,o,o,G3,o,G4,o,.
+9,SwissCross,14,.,.,.,.,.,.,.,.,o,.,o,.,.
+10,Picasso,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+10,Picasso,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+10,Picasso,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+10,Picasso,3,.,.,.,.,.,.,o,.,o,.,.,.,.,.
+10,Picasso,4,.,.,.,.,.,o,G3,o,W5,o,o,.,.,.
+10,Picasso,5,.,.,.,.,o,G3,G3,G3,W5,W5,W5,o,.,.
+10,Picasso,6,.,.,.,o,G3,G3,G3,o,o,o,W5,W5,o,.
+10,Picasso,7,.,.,.,.,o,G3,o,S2,S2,S2,W5,S2,o,.
+10,Picasso,8,.,.,.,o,W4,o,o,o,o,S2,S2,S2,o,.
+10,Picasso,9,.,.,o,W4,W4,W4,W4,o,G1,S2,o,o,G2,o
+10,Picasso,10,.,.,.,o,o,o,W4,G1,G1,o,G2,G2,G2,o
+10,Picasso,11,.,.,.,o,S1,G1,G1,G1,W1,W1,o,o,G2,o
+10,Picasso,12,.,.,o,S1,S1,o,o,o,o,W1,W1,o,G2,o
+10,Picasso,13,.,.,o,S1,S1,S1,o,.,.,o,W1,W1,o,.
+10,Picasso,14,.,.,o,S1,S1,o,.,.,.,.,o,W1,o,.
+10,Picasso,15,.,.,.,o,o,.,.,.,.,.,.,o,.,.
+11,AlmostADiamond,0,.,.,.,.,.,.,.,.,.,.,.,.,.
+11,AlmostADiamond,1,.,.,.,.,.,.,.,o,.,.,.,.,.
+11,AlmostADiamond,2,.,.,.,.,.,.,o,S2,o,.,.,.,.
+11,AlmostADiamond,3,.,.,.,.,.,o,S2,G2,S2,o,.,.,.
+11,AlmostADiamond,4,.,.,.,.,o,S2,G2,W1,G2,S2,o,.,.
+11,AlmostADiamond,5,.,.,.,o,S2,o,W1,S1,W1,o,S2,o,.
+11,AlmostADiamond,6,.,.,o,S2,G1,W1,S1,o,S1,W1,G3,S2,o
+11,AlmostADiamond,7,.,.,o,G1,W1,S1,o,.,o,S1,W1,G3,o
+11,AlmostADiamond,8,.,.,o,S3,G1,W1,S1,o,S1,W1,G3,S3,o
+11,AlmostADiamond,9,.,.,.,o,S3,o,W1,S1,W1,o,S3,o,.
+11,AlmostADiamond,10,.,.,.,.,o,S3,G4,W1,G4,S3,o,.,.
+11,AlmostADiamond,11,.,.,.,.,.,o,S3,G4,S3,o,.,.,.
+11,AlmostADiamond,12,.,.,.,.,.,.,o,S3,o,.,.,.,.
+11,AlmostADiamond,13,.,.,.,.,.,.,.,o,.,.,.,.,.
+12,Frankenstein,0,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Frankenstein,1,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Frankenstein,2,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.
+12,Frankenstein,3,.,.,.,.,.,.,o,o,o,o,o,.,.,.,.
+12,Frankenstein,4,.,.,.,.,.,o,W3,W3,W3,W3,W3,o,.,.,.
+12,Frankenstein,5,.,.,.,.,o,W3,W3,o,o,o,W3,W3,o,.,.
+12,Frankenstein,6,.,.,.,o,o,o,W3,o,.,o,W3,o,o,o,.
+12,Frankenstein,7,.,.,o,G2,G2,G2,W3,o,.,o,W3,G1,G1,G1,o
+12,Frankenstein,8,.,.,o,G2,o,S1,S1,S1,o,S2,S2,S2,o,G1,o
+12,Frankenstein,9,.,.,o,G2,o,S1,S1,S1,o,S2,S2,S2,o,G1,o
+12,Frankenstein,10,.,.,o,G2,o,S1,S1,S1,o,S2,S2,S2,o,G1,o
+12,Frankenstein,11,.,.,.,o,.,o,o,W1,o,W2,o,o,.,o,.
+12,Frankenstein,12,.,.,.,.,.,o,W1,W1,o,W2,W2,o,.,.,.
+12,Frankenstein,13,.,.,.,.,o,W1,W1,W1,o,W2,W2,W2,o,.,.
+12,Frankenstein,14,.,.,.,.,.,o,o,o,.,o,o,o,.,.,.

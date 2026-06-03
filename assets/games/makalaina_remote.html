@@ -591,28 +591,47 @@
 <!-- GAME -->
 <header>
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">MAKA LAINA</h1>
+        <h1 style="margin:5px 0;">MAKA LAINA<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="action-btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div class="subtitle">The Strategic Endspurt</div>
 </header>
 
 <div id="setup-panel" style="max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
-    <p style="font-weight:bold; margin:0 0 10px; color:var(--accent);">Choose starting setup:</p>
+    <p style="font-weight:bold; margin:0 0 10px; color:var(--accent);">Start a new game:</p>
     <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="startRandom()">Random</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(1)">1</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(2)">2</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(3)">3</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(4)">4</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(5)">5</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(6)">6</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(7)">7</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(8)">8</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(9)">9</button>
-        <button class="action-btn" style="width:auto; padding:8px 16px;" onclick="loadCuratedPosition(10)">10</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em;" onclick="startRandom()">▶ Start</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; font-size:1em; background:#6d4c41; color:white;" onclick="document.getElementById('ml-opening-file').click()">📥 Load opening (CSV)</button>
+        <input type="file" id="ml-opening-file" accept=".csv,text/csv" style="display:none;" onchange="mlImportOpeningFile(this)">
     </div>
-    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Host selects the starting position for both players.</p>
+    <p style="font-weight:bold; margin:12px 0 6px; color:var(--accent); font-size:0.9rem;">Preset openings (host only — collectors fixed, P2 picks the colour):</p>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(0)">★ Opening 1</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(1)">★ Opening 2</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(2)">★ Opening 3</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(3)">★ Opening 4</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(4)">★ Opening 5</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(5)">★ Opening 6</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(6)">★ Opening 7</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(7)">★ Opening 8</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(8)">★ Opening 9</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(9)">★ Opening 10</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(10)">★ Opening 11</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(11)">★ Opening 12</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(12)">★ Opening 13</button>
+        <button class="action-btn" style="width:auto; padding:8px 12px; background:#8e44ad; color:white;" onclick="loadBuiltinOpening(13)">★ Opening 14</button>
+    </div>
+    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">Host (P1) places both collectors. Joiner (P2) then picks a colour — host plays the other and goes first.<br><b>Load opening</b> / <b>Preset openings</b> (host only): discs <i>and</i> both collectors fixed — no live placement, P2 still picks the colour.</p>
+</div>
+
+<div id="p2-choose-panel" style="display:none; max-width:600px; margin:0 auto 16px; text-align:center; background:var(--surface); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
+    <p style="font-weight:bold; margin:0 0 4px; color:var(--accent);">Player 2: pick your colour</p>
+    <p style="margin:0 0 10px; font-size:0.85em; color:var(--text-dim);">Player 1 will start the game with the other one.</p>
+    <div style="display:flex; gap:12px; justify-content:center;">
+        <button class="action-btn" style="width:auto; padding:10px 24px; background:#222; color:white; font-size:1em;" onclick="p2PicksColor(1)">I'll play &#9632; Black</button>
+        <button class="action-btn" style="width:auto; padding:10px 24px; background:#f5f5f5; color:#222; border:2px solid #999; font-size:1em;" onclick="p2PicksColor(2)">I'll play &#9633; White</button>
+    </div>
+    <p id="p2-choose-hint" style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;"></p>
 </div>
 
 <div id="game-wrap">
@@ -641,6 +660,7 @@
                 <button class="action-btn" onclick="toggleRules(true)">📖 View Rules</button>
                 <button class="action-btn" id="los-toggle" onclick="toggleLOS()" style="opacity:0.6;">Show Line of Sight</button>
                 <button class="action-btn" id="csv-export-btn" onclick="downloadCSV()" style="display:none; background:#27ae60; color:white;">Export CSV</button>
+                <button class="action-btn" id="opening-export-btn" onclick="exportOpeningCSV()" style="background:#6d4c41; color:white;">📋 Export opening</button>
                 <button class="action-btn" id="sacrifice-btn" onclick="doSacrifice()" style="display:none;">⚡ Sacrifice & Move</button>
                 <button class="action-btn" id="relinquish-btn" onclick="doRelinquish()" style="display:none;">Relinquish Turn (2/2)</button>
                 <p id="stuck-hint" style="display:none; font-size: 0.75em; color: #7f8c8d; text-align: center;">No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.</p>
@@ -703,9 +723,9 @@
         <ul>
             <li><b>Number 1:</b> Immediate extra turn.</li>
             <li><b>Number 6:</b> Future discs of that color are worthless for you.</li>
-            <li><b>Stuck?</b> Your opponent picks one of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely.</li>
+            <li><b>Stuck?</b> Your opponent picks one of your collected primary discs to sacrifice: your score for that color decreases, but your collector can move up to that many squares freely. <b>Nothing to sacrifice?</b> You still get a free escape move of up to 2 squares — so being trapped early is never an instant loss.</li>
         </ul>
-        <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Verstanden!</button>
+        <button class="close-btn" onclick="toggleRules(false)" style="display:block; margin:18px auto 0; padding:12px 36px; font-size:1.1em; cursor:pointer; border:none; border-radius:8px; background:#27ae60; color:white; font-weight:bold;">Got it!</button>
     </div>
 </div>
 
@@ -821,6 +841,9 @@ function handleNetMessage(data) {
             break;
         case 'relinquish':
             performRelinquish(true);
+            break;
+        case 'p2_pick_color':
+            applyP2Choice(data.color, true);
             break;
         case 'state_sync':
             applySyncState(data);
@@ -962,65 +985,533 @@ function renderScoreTable(sc, flags) {
     });
 }
 
-const CURATED_POSITIONS = [null,
-    {b:[2,7],w:[9,7],d:[[0,0,'blue',1],[3,0,'blue',4],[10,0,'green',''],[11,0,'purple',''],[4,2,'red',5],[5,2,'blue',4],[2,3,'purple',''],[4,3,'red',6],[6,3,'yellow',4],[9,3,'green',''],[1,4,'red',5],[4,6,'blue',6],[7,6,'blue',3],[11,5,'red',3],[0,7,'red',3],[10,6,'red',3],[2,8,'green',''],[6,8,'red',4],[7,8,'yellow',2],[2,9,'yellow',3],[11,9,'purple',''],[8,10,'yellow',4],[5,11,'blue',5],[1,9,'orange','']]},
-    {b:[7,7],w:[0,4],d:[[2,0,'red',4],[11,1,'yellow',5],[5,1,'orange',''],[7,2,'blue',4],[10,2,'green',''],[5,3,'orange',''],[7,3,'purple',''],[4,3,'red',3],[2,4,'blue',3],[3,4,'yellow',2],[1,5,'green',''],[4,5,'blue',5],[6,5,'red',4],[11,5,'yellow',4],[10,5,'green',''],[11,7,'purple',''],[2,7,'purple',''],[5,7,'yellow',3],[8,7,'orange',''],[0,9,'yellow',4],[2,8,'purple',''],[8,9,'blue',4],[3,10,'red',5],[11,10,'yellow',4]]},
-    {b:[2,3],w:[10,6],d:[[3,0,'yellow',4],[5,0,'green',''],[6,0,'blue',4],[7,0,'blue',5],[1,1,'red',3],[9,1,'yellow',2],[11,1,'red',3],[7,3,'purple',''],[3,4,'yellow',2],[4,5,'yellow',4],[6,6,'orange',''],[11,5,'green',''],[2,7,'blue',3],[4,7,'red',5],[7,7,'purple',''],[0,8,'orange',''],[2,8,'red',4],[11,8,'blue',4],[3,9,'yellow',5],[7,9,'red',3],[0,10,'green',''],[1,11,'blue',1],[6,10,'purple',''],[8,10,'orange','']]},
-    {b:[3,4],w:[8,2],d:[[0,1,'orange',''],[1,0,'yellow',2],[3,0,'yellow',4],[8,0,'green',''],[5,1,'red',5],[10,2,'orange',''],[5,2,'purple',''],[7,2,'yellow',2],[10,3,'purple',''],[2,3,'blue',5],[4,4,'red',2],[6,5,'blue',3],[8,4,'blue',4],[8,5,'orange',''],[11,5,'yellow',3],[0,7,'blue',6],[2,7,'yellow',4],[10,7,'orange',''],[5,8,'green',''],[7,8,'yellow',6],[8,8,'yellow',4],[3,9,'yellow',1],[7,9,'yellow',3],[10,10,'purple','']]},
-    {b:[4,7],w:[8,2],d:[[1,0,'green',''],[4,0,'orange',''],[7,0,'blue',1],[10,0,'blue',4],[9,1,'green',''],[2,3,'blue',5],[5,2,'red',5],[7,2,'yellow',2],[11,3,'purple',''],[5,4,'red',2],[0,6,'orange',''],[7,5,'purple',''],[9,6,'orange',''],[7,7,'blue',3],[10,7,'orange',''],[11,7,'yellow',5],[0,8,'green',''],[2,8,'yellow',4],[0,9,'red',2],[5,9,'green',''],[8,9,'blue',4],[9,9,'purple',''],[2,10,'blue',6],[11,11,'purple','']]},
-    {b:[4,9],w:[7,1],d:[[2,0,'blue',5],[7,0,'blue',4],[1,1,'red',4],[8,1,'green',''],[3,2,'yellow',2],[5,2,'yellow',4],[10,2,'red',6],[2,3,'green',''],[4,3,'red',2],[6,3,'purple',''],[8,3,'yellow',6],[3,5,'orange',''],[4,5,'red',1],[6,5,'orange',''],[0,6,'blue',3],[3,7,'yellow',4],[5,7,'blue',3],[9,7,'blue',5],[0,8,'blue',4],[6,8,'yellow',2],[8,8,'orange',''],[11,8,'green',''],[0,10,'blue',2],[2,10,'red',5]]},
-    {b:[4,11],w:[9,6],d:[[7,0,'yellow',4],[1,1,'yellow',4],[5,1,'yellow',4],[10,1,'yellow',5],[2,2,'green',''],[3,2,'orange',''],[1,3,'blue',1],[5,3,'red',2],[10,3,'green',''],[7,4,'orange',''],[0,5,'red',4],[11,5,'yellow',5],[0,6,'purple',''],[3,6,'purple',''],[4,6,'orange',''],[6,6,'blue',4],[8,6,'orange',''],[10,6,'yellow',1],[5,7,'orange',''],[3,8,'yellow',6],[5,8,'blue',3],[7,8,'yellow',2],[11,8,'orange',''],[2,9,'red',3]]},
-    {b:[1,7],w:[7,3],d:[[8,0,'red',3],[3,1,'orange',''],[5,1,'red',6],[9,1,'green',''],[0,2,'red',3],[1,3,'red',4],[4,3,'blue',6],[5,3,'yellow',2],[8,3,'orange',''],[11,3,'blue',5],[1,5,'orange',''],[3,5,'red',4],[5,5,'red',3],[7,5,'red',5],[2,6,'orange',''],[5,6,'yellow',6],[7,6,'orange',''],[0,8,'green',''],[3,8,'red',4],[4,8,'purple',''],[8,9,'orange',''],[11,9,'purple',''],[5,11,'blue',4],[10,11,'green','']]},
-    {b:[7,5],w:[5,6],d:[[5,0,'red',5],[8,0,'green',''],[3,1,'orange',''],[6,1,'yellow',4],[10,1,'blue',2],[1,2,'blue',5],[4,2,'green',''],[9,2,'blue',3],[2,3,'purple',''],[6,3,'red',3],[11,3,'yellow',1],[0,4,'purple',''],[4,4,'blue',4],[10,5,'orange',''],[11,5,'blue',6],[1,7,'red',2],[6,7,'red',1],[8,7,'yellow',3],[10,7,'orange',''],[3,9,'yellow',5],[6,9,'red',4],[8,9,'green',''],[5,10,'yellow',6],[10,10,'orange','']]},
-    {b:[3,7],w:[5,7],d:[[5,0,'blue',2],[10,0,'green',''],[1,1,'blue',3],[3,1,'blue',1],[8,1,'red',5],[11,1,'green',''],[8,2,'red',3],[1,3,'orange',''],[2,3,'blue',3],[7,4,'green',''],[11,4,'red',2],[1,5,'yellow',5],[3,5,'blue',4],[7,5,'red',1],[9,5,'yellow',4],[6,7,'yellow',4],[2,8,'blue',4],[4,8,'orange',''],[7,8,'yellow',5],[11,8,'blue',5],[0,9,'orange',''],[5,10,'blue',4],[8,10,'yellow',4],[0,11,'yellow',5]]}
-];
+let currentPosition = null;
 
+function setPositionTitle(label) {
+    const pt = document.getElementById('position-title');
+    if (pt) pt.textContent = label ? ' — ' + label : '';
+    document.title = label ? 'MAKA LAINA — ' + label : 'MAKA LAINA';
+}
+
+// Host-only entry point. Drops 24 random discs onto the empty board, then
+// hands off to PLACEMENT so Player 1 can place both collectors with the
+// disc layout visible (Walter's rule).
 function startRandom() {
+    if (myRole !== 'host') return;
+    currentPosition = 'random';
+    setPositionTitle('');
     document.getElementById('setup-panel').style.display = 'none';
     initBag();
+    for (let i = 0; i < 24; i++) {
+        let r; do { r = Math.floor(Math.random() * 144); } while (cells[r]);
+        cells[r] = bag.pop();
+    }
     gameState = 'PLACEMENT';
-    if (myRole === 'host') syncState();
+    currentPlayer = 1;  // Only P1 (host) clicks during PLACEMENT
+    syncState();
     updateUI(); render();
 }
 
-function loadCuratedPosition(posId) {
-    const pos = CURATED_POSITIONS[posId];
-    if (!pos) return;
-    document.getElementById('setup-panel').style.display = 'none';
+// Parse an "Export opening" CSV (long format
+// `position_id,element,x,y,color,number`). Returns { d, coll } — coll = {b,w}
+// cell indices iff BOTH collector rows are present.
+// Built-in fair openings (Walter, 2026-05-19) — see makalaina.html for the
+// rationale. Same CSV strings, host-only loader. Keep the two lists in sync.
+const ML_BUILTIN_OPENING_CSVS = [
+`position_id,element,x,y,color,number
+1,disc,0,0,blue,6
+1,disc,1,0,yellow,1
+1,disc,9,0,red,2
+1,disc,5,1,yellow,3
+1,disc,3,2,green,
+1,disc,7,2,blue,4
+1,disc,1,3,purple,
+1,disc,4,3,green,
+1,collector_black,5,3,,
+1,disc,8,3,yellow,3
+1,disc,3,4,red,4
+1,disc,9,4,yellow,4
+1,disc,4,5,red,3
+1,disc,8,5,purple,
+1,disc,11,5,red,4
+1,disc,2,6,purple,
+1,disc,6,6,blue,3
+1,disc,11,6,yellow,2
+1,collector_white,1,7,,
+1,disc,5,7,purple,
+1,disc,3,8,blue,4
+1,disc,6,9,blue,3
+1,disc,3,10,red,1
+1,disc,7,10,green,
+1,disc,5,11,blue,4
+1,disc,11,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,red,2
+1,disc,2,1,purple,
+1,collector_black,8,1,,
+1,disc,11,1,blue,3
+1,disc,5,2,yellow,2
+1,disc,11,4,orange,
+1,disc,0,5,yellow,1
+1,disc,5,5,blue,5
+1,disc,8,5,red,3
+1,disc,11,5,yellow,3
+1,disc,2,6,purple,
+1,disc,3,7,orange,
+1,disc,5,7,orange,
+1,disc,6,7,purple,
+1,disc,0,8,blue,4
+1,disc,5,8,green,
+1,disc,6,8,yellow,4
+1,disc,11,8,red,4
+1,disc,6,9,blue,1
+1,disc,10,9,purple,
+1,disc,2,10,blue,2
+1,collector_white,4,10,,
+1,disc,3,11,green,
+1,disc,4,11,blue,6
+1,disc,5,11,yellow,2
+1,disc,9,11,green,`,
+`position_id,element,x,y,color,number
+1,disc,4,0,blue,2
+1,disc,10,0,red,4
+1,disc,11,1,purple,
+1,disc,4,2,blue,6
+1,disc,5,2,yellow,4
+1,disc,7,2,blue,5
+1,disc,9,2,purple,
+1,disc,0,3,orange,
+1,disc,2,3,yellow,2
+1,disc,7,3,blue,2
+1,disc,4,4,purple,
+1,disc,3,5,yellow,6
+1,disc,5,5,red,5
+1,collector_white,7,5,,
+1,disc,9,5,purple,
+1,disc,9,6,blue,3
+1,collector_black,2,7,,
+1,disc,7,7,orange,
+1,disc,3,8,orange,
+1,disc,3,9,orange,
+1,disc,5,9,yellow,2
+1,disc,8,9,red,4
+1,disc,11,9,red,6
+1,disc,11,10,blue,3
+1,disc,4,11,green,
+1,disc,5,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,3,0,purple,
+1,disc,7,0,red,3
+1,disc,0,1,green,
+1,collector_white,2,1,,
+1,disc,0,2,green,
+1,disc,4,2,blue,4
+1,disc,5,2,green,
+1,disc,10,2,orange,
+1,disc,11,2,yellow,2
+1,disc,6,3,red,2
+1,disc,5,4,yellow,5
+1,disc,3,5,blue,2
+1,collector_black,9,5,,
+1,disc,5,6,blue,1
+1,disc,9,6,blue,6
+1,disc,0,7,yellow,3
+1,disc,9,7,yellow,3
+1,disc,10,7,blue,3
+1,disc,10,8,yellow,4
+1,disc,7,9,blue,2
+1,disc,0,10,red,2
+1,disc,5,10,purple,
+1,disc,7,10,yellow,4
+1,disc,11,10,green,
+1,disc,1,11,blue,5
+1,disc,2,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,green,
+1,disc,8,0,orange,
+1,collector_black,0,1,,
+1,collector_white,5,1,,
+1,disc,7,1,purple,
+1,disc,7,2,yellow,3
+1,disc,5,3,yellow,1
+1,disc,3,4,yellow,4
+1,disc,5,4,green,
+1,disc,6,4,purple,
+1,disc,8,4,yellow,3
+1,disc,2,5,blue,3
+1,disc,3,5,red,4
+1,disc,4,5,orange,
+1,disc,1,6,blue,3
+1,disc,7,6,blue,5
+1,disc,1,7,orange,
+1,disc,11,7,yellow,4
+1,disc,1,8,green,
+1,disc,4,8,yellow,5
+1,disc,7,8,blue,1
+1,disc,0,9,red,6
+1,disc,6,9,yellow,4
+1,disc,0,11,yellow,5
+1,disc,8,11,red,2
+1,disc,11,11,orange,`,
+`position_id,element,x,y,color,number
+1,disc,2,0,red,3
+1,disc,3,1,green,
+1,disc,8,1,red,1
+1,disc,9,1,blue,2
+1,disc,10,1,yellow,4
+1,disc,11,1,blue,2
+1,disc,0,2,blue,3
+1,disc,6,3,orange,
+1,disc,10,3,red,6
+1,disc,4,4,red,4
+1,disc,8,4,purple,
+1,disc,2,5,yellow,2
+1,disc,1,6,yellow,4
+1,disc,9,6,orange,
+1,disc,7,7,green,
+1,disc,10,7,blue,4
+1,disc,0,8,red,5
+1,disc,3,8,purple,
+1,disc,0,9,yellow,2
+1,collector_white,6,9,,
+1,collector_black,9,9,,
+1,disc,11,9,yellow,3
+1,disc,2,10,yellow,5
+1,disc,6,10,blue,3
+1,disc,7,10,green,
+1,disc,5,11,red,2`,
+`position_id,element,x,y,color,number
+1,disc,5,0,yellow,2
+1,disc,9,0,orange,
+1,disc,1,1,red,2
+1,disc,9,1,blue,5
+1,disc,4,2,yellow,5
+1,disc,6,2,purple,
+1,disc,7,2,orange,
+1,disc,10,2,blue,3
+1,disc,6,3,blue,4
+1,disc,1,4,blue,4
+1,disc,0,5,green,
+1,disc,4,5,purple,
+1,disc,10,5,green,
+1,disc,1,7,blue,5
+1,disc,4,7,purple,
+1,disc,5,7,yellow,3
+1,disc,8,7,orange,
+1,collector_white,9,7,,
+1,disc,11,7,blue,3
+1,disc,6,8,green,
+1,disc,8,9,yellow,3
+1,collector_black,3,10,,
+1,disc,10,10,red,5
+1,disc,0,11,yellow,5
+1,disc,1,11,yellow,3
+1,disc,9,11,yellow,4`,
+`position_id,element,x,y,color,number
+1,disc,0,1,purple,
+1,disc,1,1,red,3
+1,disc,3,1,red,3
+1,disc,6,1,green,
+1,collector_white,8,1,,
+1,disc,0,2,yellow,4
+1,disc,5,2,blue,2
+1,disc,6,2,purple,
+1,disc,11,2,yellow,3
+1,disc,1,3,yellow,2
+1,disc,7,3,orange,
+1,disc,4,4,yellow,4
+1,disc,6,5,red,4
+1,disc,2,6,blue,5
+1,disc,3,6,red,1
+1,disc,6,7,blue,4
+1,disc,5,8,yellow,1
+1,disc,8,8,red,6
+1,collector_black,11,8,,
+1,disc,3,9,yellow,5
+1,disc,8,9,blue,5
+1,disc,2,10,purple,
+1,disc,6,10,yellow,3
+1,disc,4,11,orange,
+1,disc,7,11,red,2
+1,disc,10,11,red,3`,
+`position_id,element,x,y,color,number
+1,disc,3,0,blue,3
+1,disc,4,0,red,5
+1,disc,5,0,yellow,3
+1,disc,8,0,yellow,3
+1,disc,10,0,blue,3
+1,disc,4,1,red,6
+1,disc,4,2,yellow,2
+1,disc,7,2,blue,4
+1,disc,10,2,yellow,4
+1,disc,3,3,purple,
+1,disc,4,3,blue,5
+1,disc,8,3,orange,
+1,disc,9,3,orange,
+1,disc,6,4,green,
+1,collector_white,0,5,,
+1,collector_black,9,5,,
+1,disc,9,6,yellow,4
+1,disc,4,7,red,4
+1,disc,1,9,yellow,1
+1,disc,3,9,purple,
+1,disc,8,9,red,3
+1,disc,1,10,red,3
+1,disc,2,10,yellow,3
+1,disc,6,10,blue,1
+1,disc,10,10,purple,
+1,disc,8,11,blue,5`,
+`position_id,element,x,y,color,number
+1,disc,8,0,orange,
+1,disc,9,0,green,
+1,disc,3,1,red,4
+1,disc,4,1,red,6
+1,disc,11,1,yellow,2
+1,collector_white,5,2,,
+1,collector_black,9,2,,
+1,disc,10,2,green,
+1,disc,2,3,purple,
+1,disc,7,3,yellow,4
+1,disc,0,4,orange,
+1,disc,2,4,blue,3
+1,disc,10,4,purple,
+1,disc,6,5,red,3
+1,disc,0,6,red,5
+1,disc,8,6,yellow,4
+1,disc,9,7,purple,
+1,disc,10,7,blue,5
+1,disc,2,9,yellow,6
+1,disc,5,9,blue,6
+1,disc,7,9,yellow,5
+1,disc,11,9,blue,2
+1,disc,1,10,red,1
+1,disc,5,10,orange,
+1,disc,10,10,blue,4
+1,disc,3,11,yellow,3`,
+`position_id,element,x,y,color,number
+1,disc,7,0,purple,
+1,disc,8,0,blue,1
+1,disc,9,0,green,
+1,disc,2,1,yellow,2
+1,disc,7,4,yellow,5
+1,collector_black,10,4,,
+1,disc,6,5,yellow,3
+1,disc,7,5,purple,
+1,disc,0,6,blue,3
+1,disc,3,6,orange,
+1,disc,4,6,yellow,1
+1,disc,9,7,yellow,2
+1,disc,1,8,blue,4
+1,disc,2,8,yellow,3
+1,disc,3,8,orange,
+1,disc,5,8,orange,
+1,collector_white,7,8,,
+1,disc,8,8,blue,5
+1,disc,10,8,red,6
+1,disc,11,8,yellow,5
+1,disc,3,10,blue,5
+1,disc,4,10,blue,6
+1,disc,7,10,yellow,3
+1,disc,8,10,yellow,4
+1,disc,9,10,orange,
+1,disc,0,11,blue,2`,
+`position_id,element,x,y,color,number
+1,disc,1,0,purple,
+1,disc,3,0,yellow,2
+1,disc,9,1,blue,4
+1,collector_white,0,2,,
+1,disc,4,2,red,4
+1,disc,5,2,red,5
+1,collector_black,7,2,,
+1,disc,11,2,orange,
+1,disc,0,3,green,
+1,disc,5,3,blue,4
+1,disc,9,3,yellow,6
+1,disc,10,4,yellow,5
+1,disc,1,5,yellow,4
+1,disc,8,5,blue,6
+1,disc,2,6,blue,2
+1,disc,6,6,purple,
+1,disc,7,6,red,6
+1,disc,3,7,red,2
+1,disc,10,7,orange,
+1,disc,0,8,green,
+1,disc,1,8,green,
+1,disc,7,8,blue,4
+1,disc,8,9,green,
+1,disc,1,10,yellow,3
+1,disc,3,10,red,4
+1,disc,8,11,blue,1`,
+`position_id,element,x,y,color,number
+1,disc,1,0,green,
+1,disc,2,0,yellow,6
+1,disc,0,1,blue,4
+1,disc,2,1,orange,
+1,disc,5,1,orange,
+1,disc,8,1,red,3
+1,collector_white,10,1,,
+1,disc,5,2,blue,4
+1,disc,0,3,yellow,4
+1,disc,9,3,purple,
+1,disc,7,4,blue,6
+1,disc,8,4,yellow,1
+1,disc,3,5,blue,1
+1,disc,9,5,blue,3
+1,disc,11,5,blue,5
+1,disc,3,6,red,5
+1,disc,8,7,blue,3
+1,disc,11,7,red,3
+1,disc,5,8,blue,3
+1,disc,6,9,red,3
+1,disc,7,9,red,1
+1,disc,11,9,red,4
+1,collector_black,2,10,,
+1,disc,4,10,orange,
+1,disc,5,10,blue,4
+1,disc,5,11,red,4`,
+`position_id,element,x,y,color,number
+1,disc,5,0,purple,
+1,disc,8,0,red,5
+1,disc,2,1,green,
+1,disc,4,1,red,4
+1,collector_white,0,2,,
+1,disc,1,2,red,2
+1,disc,8,2,blue,4
+1,disc,2,3,yellow,5
+1,disc,2,4,blue,2
+1,disc,6,4,yellow,6
+1,disc,9,4,orange,
+1,disc,10,4,red,4
+1,disc,3,5,blue,5
+1,disc,5,5,orange,
+1,disc,7,5,purple,
+1,disc,2,6,orange,
+1,disc,9,6,yellow,1
+1,disc,0,8,blue,3
+1,disc,3,8,purple,
+1,disc,4,8,blue,3
+1,disc,11,8,purple,
+1,disc,3,9,red,4
+1,disc,5,9,yellow,3
+1,collector_black,3,10,,
+1,disc,2,11,orange,
+1,disc,4,11,red,3`
+];
 
-    const allDiscs = [];
-    ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => allDiscs.push({color:c, num:n, type:'primary'})));
-    ['green','orange','purple'].forEach(c => { for(let i=0;i<6;i++) allDiscs.push({color:c, num:'', type:'secondary'}); });
-
-    const blackIdx = pos.b[1] * 12 + pos.b[0];
-    const whiteIdx = pos.w[1] * 12 + pos.w[0];
-    collectors[1] = blackIdx;
-    collectors[2] = whiteIdx;
-    cells[blackIdx] = {type:'collector', player:1};
-    cells[whiteIdx] = {type:'collector', player:2};
-
-    pos.d.forEach(([x, y, color, num]) => {
-        const idx = y * 12 + x;
-        const poolIdx = allDiscs.findIndex(p => p.color === color && p.num === num);
-        if (poolIdx >= 0) {
-            cells[idx] = allDiscs.splice(poolIdx, 1)[0];
-        } else {
-            cells[idx] = {color, num, type: num !== '' ? 'primary' : 'secondary'};
+function mlParseOpeningCSV(text) {
+    const d = [];
+    let cb = null, cw = null;
+    text.split(/\r?\n/).forEach(line => {
+        const t = line.trim();
+        if (!t || /^position_id\s*,/i.test(t)) return;
+        const f = t.split(',');
+        if (f.length < 4) return;
+        const element = (f[1] || '').trim();
+        const x = parseInt(f[2], 10), y = parseInt(f[3], 10);
+        if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+        if (x < 0 || x >= 12 || y < 0 || y >= 12) return;
+        if (element === 'disc') {
+            const color = (f[4] || '').trim();
+            const numRaw = (f[5] || '').trim();
+            if (!color) return;
+            d.push([x, y, color, numRaw === '' ? '' : parseInt(numRaw, 10)]);
+        } else if (element === 'collector_black') {
+            cb = y * 12 + x;
+        } else if (element === 'collector_white') {
+            cw = y * 12 + x;
         }
     });
+    const coll = (cb != null && cw != null && cb !== cw) ? { b: cb, w: cw } : null;
+    return { d, coll };
+}
 
-    allDiscs.sort(() => Math.random() - 0.5);
-    allDiscs.splice(0, 6);
-    bag = allDiscs;
+// Host-only. Loads a preset opening from an "Export opening" CSV: discs AND
+// both collectors fixed, skipping live PLACEMENT and going straight to
+// P2_CHOOSE (Walter, 2026-05-18 — live placement is too slow for a "light"
+// game; fairness still comes from Player 2's colour pick). Remote has no
+// disc-only custom path, so the CSV must carry both collectors.
+function mlImportOpeningFile(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (myRole !== 'host') { alert('Only the host (Player 1) can load an opening.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+        let parsed;
+        try { parsed = mlParseOpeningCSV(String(reader.result || '')); }
+        catch (e) { alert('Could not read that CSV: ' + e.message); return; }
+        if (!parsed.d.length) { alert('No disc rows found in that CSV.'); return; }
+        mlApplyOpening(parsed);
+    };
+    reader.onerror = () => alert('Could not read the file.');
+    reader.readAsText(file);
+}
 
-    allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+// Built-in preset opening (host-only): parse its CSV, then apply.
+function loadBuiltinOpening(i) {
+    const csv = ML_BUILTIN_OPENING_CSVS[i];
+    if (csv == null) return;
+    if (myRole !== 'host') { alert('Only the host (Player 1) can load an opening.'); return; }
+    mlApplyOpening(mlParseOpeningCSV(csv));
+}
 
-    gameState = 'PLAY';
-    currentPlayer = 1;
-    document.getElementById('csv-export-btn').style.display = '';
-    saveSnapshot('Game start — Player 1 goes first');
-    if (myRole === 'host') setTimeout(() => syncState(), 100);
-    updateUI(); render();
+// Host-only. Validates the collectors, rebuilds the board + bag from the
+// 54-disc pool, places both collectors, goes to P2's colour pick and syncs
+// to the joiner. Shared by the CSV loader and the built-in preset buttons.
+function mlApplyOpening(parsed) {
+    if (myRole !== 'host') { alert('Only the host (Player 1) can load an opening.'); return; }
+    if (!parsed.coll) { alert('That CSV has no collectors. Use an "Export opening" CSV (with both collectors) for a remote preset.'); return; }
+    if (parsed.coll.b < 0 || parsed.coll.b >= 144 || parsed.coll.w < 0 || parsed.coll.w >= 144) {
+        alert('Collector positions in that CSV are invalid.'); return;
+    }
+
+    {
+        // Fresh state (allow loading after a prior game on the same page).
+        cells = Array(144).fill(null);
+        collectors = { 1: null, 2: null };
+        scores = { 1: {}, 2: {} };
+        playerFlags = { 1: {}, 2: {} };
+        relinquished = { 1: false, 2: false };
+        relinquishCount = { 1: 0, 2: 0 };
+        collectedDiscs = { 1: [], 2: [] };
+        draftChosen = null;
+        pendingExtraTurn = false;
+        selectedIdx = null;
+        sacrificeRange = 0;
+        sacrificingPlayer = 0;
+        moveHistory = [];
+        historyIndex = -1;
+        isReviewing = false;
+        allColors.forEach(c => { scores[1][c] = 0; scores[2][c] = 0; });
+
+        // Build the 54-disc pool; placed discs come off it, the rest (minus
+        // 6 hidden) becomes the bag — same accounting as the local variant.
+        const pool = [];
+        ['red','blue','yellow'].forEach(c => [1,2,2,3,3,3,4,4,4,5,5,6].forEach(n => pool.push({ color:c, num:n, type:'primary' })));
+        ['green','orange','purple'].forEach(c => { for (let i=0;i<6;i++) pool.push({ color:c, num:'', type:'secondary' }); });
+        parsed.d.forEach(([x, y, color, num]) => {
+            const idx = y * 12 + x;
+            const pi = pool.findIndex(p => p.color === color && p.num === num);
+            cells[idx] = pi >= 0 ? pool.splice(pi, 1)[0] : { color, num, type: num !== '' ? 'primary' : 'secondary' };
+        });
+        pool.sort(() => Math.random() - 0.5);
+        pool.splice(0, 6);
+        bag = pool;
+
+        if (cells[parsed.coll.b] || cells[parsed.coll.w]) {
+            alert('A disc sits on a collector cell in that CSV — cannot use it as a preset.');
+            return;
+        }
+        collectors[1] = parsed.coll.b; cells[parsed.coll.b] = { type: 'collector', player: 1 };
+        collectors[2] = parsed.coll.w; cells[parsed.coll.w] = { type: 'collector', player: 2 };
+
+        currentPosition = 'opening';
+        setPositionTitle('');
+        document.getElementById('setup-panel').style.display = 'none';
+        goToP2Choose();          // → P2_CHOOSE (host buttons disabled)
+        syncState();             // push discs + collectors + state to joiner
+        updateUI(); render();
+    }
 }
 
 function toggleRules(show) {
@@ -1028,13 +1519,15 @@ function toggleRules(show) {
 }
 
 function shareOnWhatsApp() {
-    const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
+    let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
     const msg = `Play MAKA LAINA: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
-    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
-    if (inIOSApp) { window.location.href = url; return; }
-    const w = window.open(url, '_blank');
-    if (!w) { window.location.href = url; }
+    if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+    // No share API (Android WebView, in-app browsers): copy to clipboard.
+    // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+    const note = 'Message copied — paste it into WhatsApp.';
+    const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+    else fallback();
 }
 
 function toggleLOS() {
@@ -1072,17 +1565,20 @@ function createBoard() {
 }
 
 function handleClick(i, isRemote) {
-    if (gameState === 'SETUP') return;
+    if (gameState === 'SETUP' || gameState === 'P2_CHOOSE') return;
     if (gameState === 'PLACEMENT') {
         if (cells[i]) return;
+        // Only the host (Player 1) is allowed to place collectors. Joiner
+        // clicks are guarded earlier by the board onclick; remote echoes still
+        // arrive from the host so we accept them in either direction.
+        if (!isRemote && myPlayer !== 1) return;
         if (!collectors[1]) {
             collectors[1] = i;
             cells[i] = { type: 'collector', player: 1 };
-            currentPlayer = 2;
         } else if (!collectors[2]) {
             collectors[2] = i;
             cells[i] = { type: 'collector', player: 2 };
-            startPlay();
+            goToP2Choose();
         }
         if (!isRemote) sendNet({ type: 'click', idx: i });
         render(); updateUI();
@@ -1126,20 +1622,40 @@ function handleClick(i, isRemote) {
     }
 }
 
-function startPlay() {
-    gameState = 'PLAY';
-    currentPlayer = 1;
-    // Only host places discs, then syncs
-    if (myRole === 'host') {
-        for (let i = 0; i < 24; i++) {
-            let r;
-            do { r = Math.floor(Math.random() * 144); } while (cells[r]);
-            cells[r] = bag.pop();
-        }
-        saveSnapshot('Game start — Player 1 goes first');
-        // Send full state to joiner
-        setTimeout(() => syncState(), 100);
+// Called locally on both sides once Player 1 has placed both collectors.
+// We just transition into P2_CHOOSE — the joiner picks their colour and
+// emits the actual game-start sync via p2PicksColor → applyP2Choice.
+function goToP2Choose() {
+    gameState = 'P2_CHOOSE';
+    document.getElementById('p2-choose-panel').style.display = 'block';
+    const hint = document.getElementById('p2-choose-hint');
+    if (hint) hint.textContent = (myPlayer === 2) ? 'Your call.' : 'Waiting for Player 2 to pick…';
+    // Disable buttons for the host so only the joiner can act
+    if (myPlayer !== 2) {
+        document.querySelectorAll('#p2-choose-panel button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; b.style.cursor = 'default'; });
     }
+}
+
+// Joiner clicks "I'll play Black/White". color = 1 (Black) or 2 (White).
+// We tell the host, then both sides apply the choice the same way.
+function p2PicksColor(color) {
+    if (gameState !== 'P2_CHOOSE') return;
+    if (myPlayer !== 2) return;  // host has no business clicking here
+    sendNet({ type: 'p2_pick_color', color });
+    applyP2Choice(color, false);
+}
+
+// P2 chose `color` (1 = Black, 2 = White). The other player (P1) plays the
+// opposite colour and goes first.
+function applyP2Choice(color, isRemote) {
+    if (gameState !== 'P2_CHOOSE') return;
+    document.getElementById('p2-choose-panel').style.display = 'none';
+    currentPlayer = (color === 1) ? 2 : 1;
+    gameState = 'PLAY';
+    document.getElementById('csv-export-btn').style.display = '';
+    saveSnapshot('Game start — ' + (currentPlayer === 1 ? 'Black' : 'White') + ' goes first (P2 took ' + (color === 1 ? 'Black' : 'White') + ')');
+    if (myRole === 'host') setTimeout(() => syncState(), 50);
+    updateUI(); render();
 }
 
 function syncState() {
@@ -1158,7 +1674,8 @@ function syncState() {
         draftChosen: draftChosen ? JSON.parse(JSON.stringify(draftChosen)) : null,
         pendingExtraTurn,
         sacrificeRange,
-        sacrificingPlayer
+        sacrificingPlayer,
+        currentPosition
     });
 }
 
@@ -1177,6 +1694,10 @@ function applySyncState(data) {
     if (data.pendingExtraTurn !== undefined) pendingExtraTurn = data.pendingExtraTurn;
     if (data.sacrificeRange !== undefined) sacrificeRange = data.sacrificeRange;
     if (data.sacrificingPlayer !== undefined) sacrificingPlayer = data.sacrificingPlayer;
+    if (data.currentPosition !== undefined) {
+        currentPosition = data.currentPosition;
+        setPositionTitle('');
+    }
     // Re-show draft panel if syncing into a draft state
     if (gameState === 'DRAFT_PLACE' && draftChosen) {
         showDraftPlacePanel(draftChosen);
@@ -1184,6 +1705,22 @@ function applySyncState(data) {
     // Re-show sacrifice panel if syncing into opponent-select state
     if (gameState === 'SACRIFICE_OPPONENT_SELECT') {
         showSacrificePanel();
+    }
+    // First time the joiner sees a non-SETUP state — hide the setup panel
+    if (gameState !== 'SETUP') {
+        document.getElementById('setup-panel').style.display = 'none';
+    }
+    // Show / hide the P2-pick-colour panel as appropriate
+    const p2Panel = document.getElementById('p2-choose-panel');
+    if (gameState === 'P2_CHOOSE') {
+        p2Panel.style.display = 'block';
+        const hint = document.getElementById('p2-choose-hint');
+        if (hint) hint.textContent = (myPlayer === 2) ? 'Your call.' : 'Waiting for Player 2 to pick…';
+        if (myPlayer !== 2) {
+            p2Panel.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; b.style.cursor = 'default'; });
+        }
+    } else {
+        p2Panel.style.display = 'none';
     }
     render(); updateUI();
 }
@@ -1268,31 +1805,36 @@ function processCollection(disc, newIdx) {
     cells[newIdx] = { type: 'collector', player: currentPlayer };
     selectedIdx = null;
     relinquished[1] = relinquished[2] = false;
-    saveSnapshot(`${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`);
+    const collectDesc = `${pName} collects ${disc.color} ${disc.num || ''}${disc.num === 6 ? ' (worthless!)' : ''}${disc.num === 1 ? ' (extra turn!)' : ''}`;
 
     // Check if all discs collected and bag empty
     const remaining = cells.filter(c => c && c.type !== 'collector').length;
     if (remaining === 0 && bag.length === 0) {
         gameState = 'END';
+        saveSnapshot(collectDesc);
         addSystemMsg('Game Over! All discs collected.');
         updateUI(); render();
         return;
     }
 
-    // Draft: draw 1 disc from bag, player must place it
+    // Draft: draw 1 disc from bag, player must place it. Snapshot the
+    // DRAFT_PLACE state (disc in hand) so the review history records it.
     if (bag.length > 0) {
         pendingExtraTurn = (disc.num === 1);
         draftChosen = bag.pop();
         gameState = 'DRAFT_PLACE';
+        saveSnapshot(collectDesc);
         showDraftPlacePanel(draftChosen);
         updateUI(); render();
         return;
     }
 
-    // No draft: normal turn switch
+    // No draft (bag empty): switch the turn FIRST, then snapshot — so the
+    // saved state records whose turn it now is (parity with the local variant).
     if (disc.num !== 1) {
         currentPlayer = currentPlayer === 1 ? 2 : 1;
     }
+    saveSnapshot(collectDesc);
     updateUI(); render();
 }
 
@@ -1314,21 +1856,40 @@ function showDraftPlacePanel(disc) {
 }
 
 // ─── SACRIFICE SYSTEM ────────────────────────────────────────
+// Walter's escape rule (2026-05-29): a trapped player with nothing to
+// sacrifice gets a free move of up to 2 squares instead of being stuck
+// (a near-certain loss). Discourages trapping the opponent too early — an
+// early trap no longer wins on the spot. Returns true if a free move was
+// set up; false if even a 2-square move is impossible (truly boxed in).
+function freeEscapeMove(player) {
+    if (getReachableCells(collectors[player], 2).length === 0) return false;
+    sacrificingPlayer = player;
+    sacrificeRange = 2;
+    currentPlayer = player;
+    gameState = 'SACRIFICE_MOVE';
+    return true;
+}
+
 function doSacrifice() {
     if (gameState !== 'PLAY' || currentPlayer !== myPlayer) return;
     sacrificingPlayer = currentPlayer;
     const primaryDiscs = collectedDiscs[sacrificingPlayer].filter(d => d.type === 'primary');
     if (primaryDiscs.length === 0) {
-        // No primary discs: forced relinquish (doesn't count against limit)
+        // Nothing to sacrifice → free escape move (Walter's rule).
         const rName = 'Player ' + currentPlayer;
-        relinquished[currentPlayer] = true;
-        saveSnapshot(`${rName} forced relinquish (no discs to sacrifice)`);
-        if (relinquished[1] && relinquished[2]) {
-            gameState = 'END';
-            addSystemMsg('Game Over — no moves possible.');
+        if (freeEscapeMove(currentPlayer)) {
+            addSystemMsg(`${rName} has nothing to sacrifice — free move (up to 2).`);
+            saveSnapshot(`${rName} has nothing to sacrifice — free move (up to 2)`);
         } else {
-            addSystemMsg(`Player ${currentPlayer} cannot sacrifice (no primary discs).`);
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            relinquished[currentPlayer] = true;
+            if (relinquished[1] && relinquished[2]) {
+                gameState = 'END';
+                addSystemMsg('Game Over — no moves possible.');
+            } else {
+                addSystemMsg(`Player ${currentPlayer} cannot move or sacrifice.`);
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+            saveSnapshot(`${rName} forced relinquish (no escape)`);
         }
         syncState();
         updateUI(); render();
@@ -1417,7 +1978,6 @@ function performRelinquish(isRemote) {
     relinquishCount[currentPlayer]++;
     relinquished[currentPlayer] = true;
     const remaining = RELINQUISH_LIMIT - relinquishCount[currentPlayer];
-    saveSnapshot(`${rName} relinquishes turn (${remaining} left)`);
     if (relinquished[1] && relinquished[2]) {
         gameState = 'END';
         addSystemMsg('Both players relinquished. Game Over.');
@@ -1425,6 +1985,8 @@ function performRelinquish(isRemote) {
         addSystemMsg(`Player ${currentPlayer} relinquished their turn. (${remaining} left)`);
         currentPlayer = currentPlayer === 1 ? 2 : 1;
     }
+    // Snapshot after the switch (parity with local; correct review history).
+    saveSnapshot(`${rName} relinquishes turn (${remaining} left)`);
     updateUI(); render();
 }
 
@@ -1470,11 +2032,20 @@ function updateUI() {
             }
             break;
         case 'PLACEMENT':
-            statusEl.innerHTML = `<span class="player-indicator p${currentPlayer}"></span> ${who}: Place collector`;
-            statusEl.classList.toggle('your-turn', isMe);
+            const which = collectors[1] ? 'White' : 'Black';
+            statusEl.innerHTML = (myPlayer === 1)
+                ? `<span class="player-indicator p1"></span> Place the ${which} collector.`
+                : `<span class="player-indicator p1"></span> Waiting for Player 1 to place collectors…`;
+            statusEl.classList.toggle('your-turn', myPlayer === 1);
+            break;
+        case 'P2_CHOOSE':
+            statusEl.innerHTML = (myPlayer === 2)
+                ? '<span class="player-indicator p2"></span> Pick your colour above.'
+                : '<span class="player-indicator p2"></span> Waiting for Player 2 to pick a colour…';
+            statusEl.classList.toggle('your-turn', myPlayer === 2);
             break;
         case 'SETUP':
-            statusEl.textContent = 'Choose a starting position above.';
+            statusEl.textContent = (myRole === 'host') ? 'Click ▶ Start above.' : 'Waiting for host to start…';
             statusEl.classList.remove('your-turn');
             break;
         case 'PLAY':
@@ -1527,25 +2098,35 @@ function updateUI() {
         relBtn.innerText = `Relinquish Turn (${remaining}/${RELINQUISH_LIMIT})`;
     }
     if (stuckHint) {
-        if (stuck && !canRelinquish) {
+        const noDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary').length === 0;
+        if (stuck && noDiscs) {
+            stuckHint.innerText = 'No valid move & nothing to sacrifice — press “Sacrifice & Move” to escape up to 2 squares.';
+        } else if (stuck && !canRelinquish) {
             stuckHint.innerText = 'No valid move! No relinquishes left — you must sacrifice a disc!';
         } else if (stuck) {
             stuckHint.innerText = 'No valid move! Sacrifice a disc (opponent picks) or relinquish your turn.';
         }
         stuckHint.style.display = (stuck && isMyTurn) ? 'block' : 'none';
     }
-    // Force end when stuck, no relinquishes left, and no primary discs
+    // Stuck, no relinquishes left, nothing to sacrifice: grant a free escape
+    // move (Walter's rule) instead of ending; only end if truly boxed in.
     if (stuck && isMyTurn && !canRelinquish) {
         const primaryDiscs = collectedDiscs[currentPlayer].filter(d => d.type === 'primary');
         if (primaryDiscs.length === 0) {
-            relinquished[currentPlayer] = true;
-            saveSnapshot(`Player ${currentPlayer} forced end (no relinquishes, no discs to sacrifice)`);
-            if (relinquished[1] && relinquished[2]) {
-                gameState = 'END';
-                addSystemMsg('Game Over — no moves possible.');
+            const fName = 'Player ' + currentPlayer;
+            if (freeEscapeMove(currentPlayer)) {
+                addSystemMsg(`${fName} has nothing to sacrifice — free move (up to 2).`);
+                saveSnapshot(`${fName} has nothing to sacrifice — free move (up to 2)`);
             } else {
-                addSystemMsg('Player ' + currentPlayer + ' cannot move or sacrifice.');
-                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                relinquished[currentPlayer] = true;
+                if (relinquished[1] && relinquished[2]) {
+                    gameState = 'END';
+                    addSystemMsg('Game Over — no moves possible.');
+                } else {
+                    addSystemMsg('Player ' + currentPlayer + ' cannot move or sacrifice.');
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                }
+                saveSnapshot(`${fName} forced end (no escape)`);
             }
             syncState();
             updateUI(); render();
@@ -1616,6 +2197,92 @@ function downloadCSV() {
     URL.revokeObjectURL(url);
 }
 
+// Serialise the current board (discs AND both collectors) as a position
+// CSV. Unlike the editor export (disc-only — collectors are normally
+// live), the in-game "Export opening" keeps the collectors so a whole
+// opening can be captured (Walter, 2026-05-17). collector_black = P1,
+// collector_white = P2. Both peers have a synced `collectors` + `cells`.
+function buildOpeningCSV() {
+    const lines = ['position_id,element,x,y,color,number'];
+    for (let i = 0; i < 144; i++) {
+        const c = cells[i];
+        if (!c) continue;
+        const x = i % 12, y = Math.floor(i / 12);
+        if (c.type === 'collector') {
+            lines.push(`1,${c.player === 1 ? 'collector_black' : 'collector_white'},${x},${y},,`);
+        } else {
+            lines.push(`1,disc,${x},${y},${c.color},${c.num === '' || c.num == null ? '' : c.num}`);
+        }
+    }
+    return lines.join('\n') + '\n';
+}
+
+// Put text on the clipboard so it can be pasted directly into a WhatsApp
+// message box. navigator.clipboard first, then a temp-textarea +
+// execCommand fallback (works inside the app WebView).
+function mlCopyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(() => true, () => mlLegacyCopy(text));
+    }
+    return Promise.resolve(mlLegacyCopy(text));
+}
+function mlLegacyCopy(text) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    } catch (e) { return false; }
+}
+
+async function exportOpeningCSV() {
+    if (collectors[1] == null || collectors[2] == null) {
+        alert('Place both collectors first — then the opening can be exported.');
+        return;
+    }
+    const csv = buildOpeningCSV();
+    const filename = 'makalaina_opening.csv';
+    // Copy the opening to the clipboard up front, so it can be pasted as
+    // text into WhatsApp even if the file share is dropped/unavailable.
+    const copied = await mlCopyTextToClipboard(csv);
+    // Fire-and-forget server copy (same endpoint as the move-log export).
+    fetch('cgi-bin/save_csv.py', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: 'makalaina_remote_opening', csv })
+    }).then(r => r.json()).then(d => {
+        if (!d.ok) console.warn('Server CSV save failed: ' + (d.error || 'unknown'));
+    }).catch(e => console.warn('Server CSV save failed: ' + e));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    try {
+        if (navigator.canShare) {
+            const file = new File([blob], filename, { type: 'text/csv' });
+            if (navigator.canShare({ files: [file] })) {
+                // No `text:` alongside `files:` — Android WhatsApp drops the
+                // file when both are present (Divided Loyalties lesson).
+                await navigator.share({ files: [file], title: 'MAKA LAINA opening' });
+                return;
+            }
+        }
+    } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn('navigator.share failed, falling back:', e);
+    }
+    // Fallback: download + clipboard — never wa.me on Android WebView.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    alert(copied
+        ? `Opening copied to clipboard — long-press the WhatsApp message box and Paste it. (Also saved as ${filename}.)`
+        : `Saved ${filename}. Attach it to your WhatsApp message manually.`);
+}
+
 function render() {
     const los = showLOS && (gameState === 'PLAY' || gameState === 'DRAFT_PLACE') ? getLOS(collectors[currentPlayer]) : [];
     const reachable = (gameState === 'SACRIFICE_MOVE') ? getReachableCells(collectors[currentPlayer], sacrificeRange) : [];
@@ -1648,6 +2315,11 @@ function render() {
 // ─── INIT ────────────────────────────────────────────────────
 createBoard();
 render();
+
+// #rules deep-link — share rules per game/language
+function applyRulesHash() { if (location.hash === '#rules') toggleRules(true); }
+window.addEventListener('hashchange', applyRulesHash);
+applyRulesHash();
 </script>
 </body>
 </html>

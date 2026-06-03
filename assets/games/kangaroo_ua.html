@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DUK: Нетерпляче Кенгуру 🦘</title>
+    <title>Нетерпляче Кенгуру 🦘</title>
     <style>
         :root {
             --bg-color: #e3c4a8;
@@ -125,6 +125,7 @@
         .cell {
             width: var(--cell-size); height: var(--cell-size); background-color: rgba(255,255,255,0.15);
             border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; user-select: none;
+            touch-action: manipulation;
         }
         .cell:hover { background-color: rgba(255,255,255,0.3); }
 
@@ -184,7 +185,7 @@
     </div>
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
-        <h1 style="margin:5px 0;">DUK 🦘</h1>
+        <h1 style="margin:5px 0;">Нетерпляче Кенгуру 🦘<span id="position-title" style="color:#7f8c8d; font-weight:normal;"></span></h1>
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div class="subtitle">Нетерпляче Кенгуру</div>
@@ -238,7 +239,7 @@
         </div>
 
         <div class="status-panel">
-            <div id="gameStatus" class="status-text">Завантаження DUK...</div>
+            <div id="gameStatus" class="status-text">Завантаження...</div>
             <div id="turnInfo" class="sub-status"></div>
             <div id="dishCount" class="sub-status"></div>
         </div>
@@ -274,6 +275,8 @@
 
             <h3>Важливо!</h3>
             <p>Перед КОЖНИМ стрибком ти можеш (і повинен!) пересунути рівно одну будь-яку миску на одне поле в будь-якому напрямку (також по діагоналі).</p>
+            <p>💡 <b>Підказка:</b> Подвійний клік (або подвійний тап) по мисці, яку хочеш пересунути — після цього достатньо одного кліку по цільовій клітинці. Кнопка "🖐️ Пересунути миску" також працює як альтернатива.</p>
+            <p>💡 Якщо на одному боці дошки (ліворуч/праворуч або зверху/знизу) одного кольору на 3 або більше миски більше — натисни <b>«Нова гра»</b> для збалансованішої дошки.</p>
             <p>Перемога без цих ходів неможлива... Досвідчені гравці часто пересувають миски задовго до того, як Кенгі дістанеться до тієї частини Аутбеку.</p>
 
             <h3>Тактичні поради</h3>
@@ -292,7 +295,7 @@
      */
     const LEVEL_DATABASE = [
         {
-            id: 'tut1',
+            id: 'first-steps',
             group: 'Початківець',
             name: 'Рівень 1: Перші кроки',
             cols: 10, rows: 10,
@@ -312,7 +315,7 @@
             startHintB: {x: 6, y: 6}
         },
         {
-            id: 'tut2',
+            id: 'the-block',
             group: 'Початківець',
             name: 'Рівень 2: Блок',
             cols: 10, rows: 10,
@@ -332,7 +335,7 @@
             startHintB: {x: 6, y: 5}
         },
         {
-            id: 'tut3',
+            id: 'shifting',
             group: 'Початківець',
             name: 'Рівень 3: Практика пересування',
             cols: 10, rows: 10,
@@ -352,7 +355,7 @@
             startHintB: {x: 2, y: 5}
         },
         {
-            id: 'mid1',
+            id: 'staircase',
             group: 'Середній',
             name: 'Рівень 1: Сходинки',
             cols: 10, rows: 10,
@@ -371,7 +374,7 @@
             startHint: {x: 5, y: 8}
         },
         {
-            id: 'mid2',
+            id: 'scattered',
             group: 'Середній',
             name: 'Рівень 2: Розкидані',
             cols: 10, rows: 10,
@@ -390,7 +393,7 @@
             startHint: {x: 1, y: 1}
         },
         {
-            id: 'mid3',
+            id: 'slant',
             group: 'Середній',
             name: 'Рівень 3: Діагональ',
             cols: 10, rows: 10,
@@ -409,7 +412,7 @@
             startHint: {x: 8, y: 8}
         },
         {
-            id: 'adv1',
+            id: 'the-cross',
             group: 'Просунутий',
             name: 'Рівень 1: Хрест',
             cols: 10, rows: 10,
@@ -553,6 +556,7 @@
         }
 
         currentMode = mode;
+        setPositionTitle('');
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
 
@@ -596,6 +600,7 @@
             const lvlIndex = document.getElementById('levelSelect').value;
             const lvl = LEVEL_DATABASE[lvlIndex];
             currentLevelData = lvl;
+            setPositionTitle(lvl.name);
             // Show/hide A/B toggle based on whether level has two start positions
             const hasVariants = !!lvl.startHintB;
             document.querySelector('.variant-toggle').style.display = hasVariants ? 'inline-flex' : 'none';
@@ -615,6 +620,7 @@
             if (gameState === 'PLAYING') logAction("START", -1, -1, kangyPos.x, kangyPos.y, "Auto Kangy placed");
 
         } else if (currentMode === 'RANDOM') {
+            setPositionTitle('');
             const sizeVal = document.getElementById('boardSize').value.split('x');
             COLS = parseInt(sizeVal[0]); ROWS = parseInt(sizeVal[1]);
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
@@ -781,6 +787,7 @@
                 }
 
                 cell.onclick = () => handleCellClick(x, y);
+                cell.ondblclick = () => handleCellDblClick(x, y);
 
                 if (gameState === 'PLAYING') {
                     if (isMovingDish && selectedDishPos && selectedDishPos.x === x && selectedDishPos.y === y) {
@@ -878,6 +885,17 @@
                 }
             }
         }
+    }
+
+    function handleCellDblClick(x, y) {
+        if (gameState !== 'PLAYING') return;
+        if (!dishMoveAvailable) return;
+        const c = board[y][x];
+        if (c !== 'G' && c !== 'B') return;
+        isMovingDish = true;
+        selectedDishPos = { x, y };
+        renderBoard();
+        updateUI();
     }
 
     // --- ЛОГІКА ХОДІВ ТА СТРИБКІВ ---
@@ -1075,14 +1093,51 @@
         localStorage.setItem('kangy_master_ua_v2', 'true');
     }
 
+    function setPositionTitle(label) {
+        const pt = document.getElementById('position-title');
+        if (pt) pt.textContent = label ? ' — ' + label : '';
+        document.title = label ? 'Нетерпляче Кенгуру — ' + label : 'Нетерпляче Кенгуру';
+    }
+
+    // Hash format:
+    //   #tut1 / #mid2 / #adv1   → level by id
+    //   #1..#7                   → level by 1-based index in LEVEL_DATABASE
+    //   trailing 'b'             → start variant B (e.g. #adv1b, #1b)
+    function findLevelByHash(hash) {
+        const raw = decodeURIComponent(hash || '').replace(/^#/, '').trim().toLowerCase();
+        if (!raw) return null;
+        const m = raw.match(/^([a-z0-9-]+?)([ab])?$/);
+        if (!m) return null;
+        const key = m[1];
+        const variant = (m[2] || 'a').toUpperCase();
+        if (/^\d+$/.test(key)) {
+            const i = parseInt(key, 10) - 1;
+            if (i >= 0 && i < LEVEL_DATABASE.length) return { index: i, variant };
+        }
+        const idx = LEVEL_DATABASE.findIndex(l => l.id === key);
+        if (idx >= 0) return { index: idx, variant };
+        return null;
+    }
+
+    function currentLevelHash() {
+        if (currentMode !== 'LEVEL' || !currentLevelData) return '';
+        const v = (selectedVariant === 'B' && currentLevelData.startHintB) ? 'b' : '';
+        return currentLevelData.id + v;
+    }
+
     function shareOnWhatsApp() {
-        const shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href;
-        const msg = `Play DUK — The Impatient Kangaroo: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
-        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        const inIOSApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.csvExport);
-        if (inIOSApp) { window.location.href = url; return; }
-        const w = window.open(url, '_blank');
-        if (!w) { window.location.href = url; }
+        let shareUrl = /^(file|parados):$/.test(window.location.protocol) ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "index.html") : window.location.href.split('#')[0];
+        const slug = currentLevelHash();
+        if (slug) shareUrl += '#' + slug;
+        const posLabel = currentMode === 'LEVEL' && currentLevelData ? ` — ${currentLevelData.name}` : '';
+        const msg = `Грати Нетерплячий кенгуру${posLabel}: ${shareUrl}\n\nЗавантажте додаток Parados:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+        if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
+        // No share API (Android WebView, in-app browsers): copy to clipboard.
+        // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
+        const note = 'Повідомлення скопійовано — вставте його у WhatsApp.';
+        const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
+        else fallback();
     }
 
     window.onclick = (e) => {
@@ -1093,7 +1148,30 @@
 
     // СТАРТ
     populateLevelSelect();
-    initGame();
+
+    function applyHashLevel() {
+        const m = findLevelByHash(location.hash);
+        if (!m) return false;
+        const sel = document.getElementById('levelSelect');
+        sel.value = m.index;
+        selectedVariant = m.variant;
+        const lvl = LEVEL_DATABASE[m.index];
+        if (lvl.startHintB) {
+            document.getElementById('btnVariantA').classList.toggle('active', selectedVariant === 'A');
+            document.getElementById('btnVariantB').classList.toggle('active', selectedVariant === 'B');
+        }
+        if (currentMode !== 'LEVEL') switchMode('LEVEL');
+        else initGame();
+        return true;
+    }
+
+    if (location.hash === '#rules') { initGame(); openRules(); }
+    else if (!applyHashLevel()) initGame();
+
+    window.addEventListener('hashchange', () => {
+        if (location.hash === '#rules') { openRules(); return; }
+        applyHashLevel();
+    });
 
 </script>
 </body>

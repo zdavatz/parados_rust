@@ -672,10 +672,21 @@ jobs:
             -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions" `
             -Headers $headers -Body $createBody `
             -ContentType "application/json; charset=utf-8"
-          $subId     = $subResp.id
-          $uploadUrl = $subResp.fileUploadUrl
+          $subId = $subResp.id
 
-          $submission = $subResp
+          # Re-GET the freshly-created submission. The POST create response does
+          # NOT include the applicationPackages cloned from the last *published*
+          # submission, so the PendingDelete loop below had nothing to mark and
+          # the update omitted the existing package — Microsoft then rejects the
+          # PUT with "Please keep all file entries for existing packages ... The
+          # following packages are missing in your update: <id>". The GET returns
+          # the full cloned state, including those packages. (1.0.8 was the first
+          # submission, so it had no prior package and slipped past this bug.)
+          $submission = Invoke-RestMethod -Method Get `
+            -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$subId" `
+            -Headers $headers
+          $uploadUrl = $submission.fileUploadUrl
+
           $submission.targetPublishMode = "Immediate"
           $submission.targetPublishDate = ""
           $submission.visibility = "Public"

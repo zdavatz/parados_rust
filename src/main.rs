@@ -411,16 +411,15 @@ fn main() -> wry::Result<()> {
 /// a `UserEvent::UpdateDone` describing the outcome.
 fn update_games_blocking() -> UserEvent {
     const BASE: &str = "https://raw.githubusercontent.com/zdavatz/parados/main/";
-    let total = games::ALL_FILENAMES.len();
     let dir = match games_cache_dir() {
         Some(d) => d,
         None => return UserEvent::UpdateDone {
-            updated: 0, total, error: Some("no data directory".into())
+            updated: 0, total: 0, error: Some("no data directory".into())
         },
     };
     if let Err(e) = std::fs::create_dir_all(&dir) {
         return UserEvent::UpdateDone {
-            updated: 0, total, error: Some(format!("mkdir failed: {e}"))
+            updated: 0, total: 0, error: Some(format!("mkdir failed: {e}"))
         };
     }
 
@@ -428,36 +427,76 @@ fn update_games_blocking() -> UserEvent {
         .timeout(std::time::Duration::from_secs(30))
         .build();
 
-    let mut updated = 0;
-    let mut last_error = None;
-    for name in games::ALL_FILENAMES {
-        let url = format!("{BASE}{name}");
-        match agent.get(&url).call() {
+    // Download one file into the overlay + disk; return its bytes on success.
+    let fetch = |name: &str| -> Result<Vec<u8>, String> {
+        match agent.get(&format!("{BASE}{name}")).call() {
             Ok(resp) if resp.status() == 200 => {
                 let mut bytes = Vec::new();
-                if let Err(e) = resp.into_reader().read_to_end(&mut bytes) {
-                    last_error = Some(format!("{name}: read body failed: {e}"));
-                    continue;
-                }
-                let target = dir.join(name);
-                if let Err(e) = std::fs::write(&target, &bytes) {
-                    last_error = Some(format!("{name}: write failed: {e}"));
-                    continue;
-                }
+                resp.into_reader().read_to_end(&mut bytes)
+                    .map_err(|e| format!("{name}: read body failed: {e}"))?;
+                std::fs::write(dir.join(name), &bytes)
+                    .map_err(|e| format!("{name}: write failed: {e}"))?;
                 if let Ok(mut guard) = overlay().lock() {
-                    guard.insert((*name).to_string(), bytes);
-                    updated += 1;
+                    guard.insert(name.to_string(), bytes.clone());
                 }
+                Ok(bytes)
             }
-            Ok(resp) => {
-                last_error = Some(format!("{name}: HTTP {}", resp.status()));
+            Ok(resp) => Err(format!("{name}: HTTP {}", resp.status())),
+            Err(e) => Err(format!("{name}: {e}")),
+        }
+    };
+
+    // The file set is the known list PLUS everything the freshly-downloaded
+    // index.html links to, so a brand-new game added on the website is fully
+    // OTA (Walter, 2026-06-03): drop the file in the web repo + link it in
+    // index.html and the next "Spiele aktualisieren" pulls it.  index.html is
+    // fetched first and used both as a saved file and as the link source.
+    let mut names: std::collections::BTreeSet<String> =
+        games::ALL_FILENAMES.iter().map(|s| s.to_string()).collect();
+    let mut updated = 0usize;
+    let mut last_error = None;
+    let mut index_done = false;
+
+    match fetch("index.html") {
+        Ok(bytes) => {
+            updated += 1;
+            index_done = true;
+            names.remove("index.html");
+            if let Ok(html) = std::str::from_utf8(&bytes) {
+                for f in linked_files(html) { names.insert(f); }
             }
-            Err(e) => {
-                last_error = Some(format!("{name}: {e}"));
+        }
+        Err(e) => last_error = Some(e),
+    }
+
+    let total = names.len() + if index_done { 1 } else { 0 };
+    for name in &names {
+        match fetch(name) {
+            Ok(_) => updated += 1,
+            Err(e) => last_error = Some(e),
+        }
+    }
+
+    UserEvent::UpdateDone { updated, total, error: last_error }
+}
+
+/// Local game/tool files an `index.html` links to: `href="X.html"` / `"X.csv"`
+/// with no scheme and not absolute — lets a new game linked on the website be
+/// fetched by the update button without a new app build.
+fn linked_files(html: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for (i, _) in html.match_indices("href=\"") {
+        let start = i + 6;
+        if let Some(rel) = html[start..].find('"') {
+            let s = &html[start..start + rel];
+            if (s.ends_with(".html") || s.ends_with(".csv"))
+                && !s.contains("://") && !s.starts_with('/') && !s.starts_with('#')
+            {
+                out.push(s.to_string());
             }
         }
     }
-    UserEvent::UpdateDone { updated, total, error: last_error }
+    out
 }
 
 /// Resolve a `parados://` URL against the embedded resources and

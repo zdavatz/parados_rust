@@ -690,28 +690,43 @@ jobs:
           $submission.targetPublishMode = "Immediate"
           $submission.targetPublishDate = ""
           $submission.visibility = "Public"
-          if ($submission.applicationPackages) {
-            foreach ($pkg in $submission.applicationPackages) {
-              $pkg.fileStatus = "PendingDelete"
-            }
-          } else {
-            $submission.applicationPackages = @()
+          # Microsoft requires the update to account for EVERY package the app
+          # already has — keep it, or mark it PendingDelete. The create body
+          # sends `applicationPackages = @()`, so the created submission comes
+          # back with no packages, and the published package (e.g. the prior
+          # 1.0.x MSIX) would be missing from the update → commit fails with
+          # "Please keep all file entries for existing packages ... missing in
+          # your update: <id>".  Gather packages from BOTH the created
+          # submission AND the last published submission, mark them all
+          # PendingDelete, then append the new MSIX. (Verified against the
+          # devcenter API by hand for the 1.0.11 release.)
+          $existing = @{}
+          $pubId = $appResp.lastPublishedApplicationSubmission.id
+          if ($pubId) {
+            $pubSub = Invoke-RestMethod -Method Get `
+              -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$pubId" `
+              -Headers $headers
+            foreach ($p in $pubSub.applicationPackages) { $existing[$p.fileName] = $p }
           }
-          $submission.applicationPackages += @{
+          foreach ($p in $submission.applicationPackages) { $existing[$p.fileName] = $p }
+          $pkgList = @()
+          foreach ($p in $existing.Values) {
+            $p.fileStatus = "PendingDelete"
+            $pkgList += $p
+          }
+          # New MSIX. Explicit targetDeviceFamilies — Microsoft normally
+          # auto-derives this from the AppxManifest's `<TargetDeviceFamily>`
+          # after upload, but if their parser doesn't run in time the package is
+          # rejected as "supports no families"; stating it (matching the
+          # manifest's MinVersion=10.0.17763.0) makes the metadata PUT validate.
+          $pkgList += @{
             fileName = $msix.Name
             fileStatus = "PendingUpload"
             minimumDirectXVersion = "None"
             minimumSystemRam = "None"
-            # Explicit targetDeviceFamilies — Microsoft normally
-            # auto-derives this from the AppxManifest's
-            # `<TargetDeviceFamily>` element after upload, but if
-            # their manifest parser doesn't run in time we end up with
-            # an empty list and the package is rejected as "supports
-            # no families".  Stating it explicitly here matches the
-            # manifest's MinVersion=10.0.17763.0 so the listing
-            # validates as soon as the metadata PUT completes.
             targetDeviceFamilies = @("Windows.Desktop min version 10.0.17763.0")
           }
+          $submission.applicationPackages = $pkgList
           $updateBody = $submission | ConvertTo-Json -Depth 20 -Compress
           Invoke-RestMethod -Method Put `
             -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$subId" `

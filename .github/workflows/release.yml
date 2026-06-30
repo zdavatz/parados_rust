@@ -668,10 +668,22 @@ jobs:
             notesForCertification = "Desktop port of the Parados Think Ahead board games (iOS / Android already approved). Plays bundled HTML game files inside an embedded WebView2 webview. Three optional remote-multiplayer variants open the user's default browser to game.ywesee.com/parados/. No login, no ads. Contact: zdavatz@ywesee.com"
           } | ConvertTo-Json -Depth 10 -Compress
 
+          # Create the submission with NO body (Walter, 2026-06-30 — THE fix that
+          # finally got the Store release through). Microsoft's "Create an app
+          # submission" endpoint takes no request body: it CLONES the last
+          # published submission (its listings AND its packages). The previous
+          # code POSTed $createBody with `applicationPackages = @()`, and the API
+          # validated that empty package set against the published submission and
+          # rejected the CREATE itself with "...packages are missing in your
+          # update: <id>" — which is why the package-handling code below never
+          # even ran. Cloning keeps the published package; the PUT below then
+          # marks it PendingDelete and adds the new MSIX. (The $createBody above
+          # is intentionally left unused — the cloned listings already published
+          # successfully, so they are valid; refresh listings via a separate PUT
+          # if they ever need updating.)
           $subResp = Invoke-RestMethod -Method Post `
             -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions" `
-            -Headers $headers -Body $createBody `
-            -ContentType "application/json; charset=utf-8"
+            -Headers $headers
           $subId = $subResp.id
 
           # Re-GET the freshly-created submission. The POST create response does

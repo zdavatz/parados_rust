@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Divided Loyalties: Epic Master Edition</title>
+    <title>Divided Loyalties：史诗大师版</title>
     <style>
         :root {
             --bg: #3d5245; --panel: #4d6758;
@@ -104,31 +104,31 @@
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
-        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">Auf WhatsApp teilen</button>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">分享到 WhatsApp</button>
     </div>
 
     <div id="share-modal" onclick="closeShareDialog()">
         <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;">
-            <h2>📤 Auf WhatsApp teilen</h2>
-            <p style="margin:10px 0 0;">Sendet einen Link zur aktuellen Stellung.</p>
+            <h2>📤 分享到 WhatsApp</h2>
+            <p style="margin:10px 0 0;">发送当前棋局的链接。</p>
             <label id="share-include-row" style="display:flex; align-items:flex-start; gap:10px; padding:12px; background:#f5f3e8; border-radius:6px; cursor:pointer; margin:14px 0;">
                 <input type="checkbox" id="share-include-state" style="width:18px; height:18px; margin-top:3px;">
                 <div>
-                    <strong>Stellung als CSV mitsenden</strong>
-                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">Hängt die Startstellung als CSV-Datei an die WhatsApp-Nachricht an, damit der Empfänger dieselbe Stellung laden kann.</div>
+                    <strong>以 CSV 形式附带棋局</strong>
+                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">将起始棋局作为 CSV 文件附加到 WhatsApp 消息中，以便接收方可以加载相同的棋局。</div>
                 </div>
             </label>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">Abbrechen</button>
-                <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">Senden</button>
+                <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">取消</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">发送</button>
             </div>
         </div>
     </div>
 
     <div id="setup-overlay">
         <div class="setup-box">
-            <h2>Startstellung wählen</h2>
-            <p style="margin:8px 0 0;">Wähle eine der 6 Startstellungen — die Board‑Teile werden entsprechend auf dem Raster platziert.</p>
+            <h2>选择起始棋局</h2>
+            <p style="margin:8px 0 0;">选择其中一个起始棋局——棋盘块将相应地放置在格子上。</p>
             <div id="position-grid"></div>
         </div>
     </div>
@@ -140,21 +140,21 @@
         </div>
 
         <div id="ui-panel">
-            <button class="btn" onclick="toggleRules(true)">📜 AUSFÜHRLICHE REGELN</button>
-            <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">BLAU AM ZUG</div>
+            <button class="btn" onclick="toggleRules(true)">📜 详细规则</button>
+            <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">蓝方回合</div>
             <div id="bridge-hint" style="display:none; margin-top:8px; padding:8px 10px; border-radius:8px; background:#5d4037; color:#fff; font-size:0.85em; line-height:1.35; text-align:center;"></div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-weight:bold; font-size:0.9em;">
-                <div style="text-align:center;">BLAU<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="blue-score">0</span> · Regionen <span id="blue-region-score">0</span></div></div>
-                <div style="text-align:center;">GELB<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="yellow-score">0</span> · Regionen <span id="yellow-region-score">0</span></div></div>
+                <div style="text-align:center;">蓝方<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">桥 <span id="blue-score">0</span> · 区域 <span id="blue-region-score">0</span></div></div>
+                <div style="text-align:center;">黄方<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">桥 <span id="yellow-score">0</span> · 区域 <span id="yellow-region-score">0</span></div></div>
             </div>
             <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
-            <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
-            <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ ZUG ZURÜCK</button>
+            <button class="btn" style="background: #455a64;" onclick="endTurn()">结束回合</button>
+            <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ 撤销</button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
-                <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="Spielstand als Datei speichern">💾 Sichern</button>
-                <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="Spielstand aus Datei laden">📂 Laden</button>
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="将游戏进度保存到文件">💾 保存</button>
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="从文件加载游戏进度">📂 加载</button>
             </div>
-            <button class="btn" style="background: #3d5245;" onclick="showSetup()">NEUES SPIEL</button>
+            <button class="btn" style="background: #3d5245;" onclick="showSetup()">新游戏</button>
             <input type="file" id="import-game-input" accept=".json,application/json" style="display:none;" onchange="handleImportGameFile(event)">
         </div>
     </div>
@@ -162,119 +162,119 @@
     <div id="editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
         <div style="max-width:880px; margin:0 auto; background:#fdfcf0; color:#222; padding:18px; border-radius:10px;">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                <h2 style="margin:0; font-size:1.2em;">Editor — Eigene Startstellung</h2>
-                <input id="editor-name" type="text" placeholder="Name der Stellung" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
+                <h2 style="margin:0; font-size:1.2em;">编辑器 — 自定义起始棋局</h2>
+                <input id="editor-name" type="text" placeholder="棋局名称" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
                 <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
-                    Breite:
+                    宽度：
                     <select id="editor-size-w" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('w', this.value)"></select>
                 </label>
                 <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
-                    Höhe:
+                    高度：
                     <select id="editor-size-h" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('h', this.value)"></select>
                 </label>
             </div>
-            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">Wähle ein Board (S = 3×3 dunkel, W = Pyramide mittel, G = 3×4 hell), dann tippe Felder an. Mehrere Boards desselben Typs (z.B. S1, S2, …) bleiben getrennt. Breite und Höhe können unterschiedlich sein (z.B. 15×9). Mit dem <strong>• Punkt</strong>-Pinsel markierst du Felder, auf denen Steine gesetzt werden dürfen, wenn sie eine Brücke vervollständigen — sonst bleibt das Feld leer.</div>
+            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">选择一个棋盘块（S = 3×3 深色，W = 金字塔形中等灰，G = 3×4 浅色），然后点击格子。同类型的多个棋盘块（如 S1、S2、…）彼此独立。宽度和高度可以不同（如 15×9）。使用 <strong>• 点</strong> 画笔来标记那些只有在完成一座桥时才能放置棋子的格子——否则该格子保持空白。</div>
             <div id="editor-brush-bar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
             <div style="background:#fff; padding:10px; border-radius:6px; display:flex; justify-content:center; overflow:auto; border:1px solid #ccc;">
                 <div id="editor-grid" style="display:grid; gap:2px; background:transparent; padding:4px; border-radius:4px;"></div>
             </div>
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:center;">
-                <button class="btn" style="width:auto; background:#3d5245;" onclick="saveCustomPosition()">💾 Speichern (im Browser)</button>
-                <button class="btn" style="width:auto; background:#25D366;" onclick="shareEditorViaWhatsApp()">📤 Per WhatsApp senden</button>
-                <button class="btn" style="width:auto; background:#6d4c41;" onclick="exportEditorCSV()">📋 Als CSV exportieren</button>
-                <button class="btn" style="width:auto; background:#455a64;" onclick="closeEditor()">✕ Schliessen</button>
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="saveCustomPosition()">💾 保存（在浏览器中）</button>
+                <button class="btn" style="width:auto; background:#25D366;" onclick="shareEditorViaWhatsApp()">📤 通过 WhatsApp 分享</button>
+                <button class="btn" style="width:auto; background:#6d4c41;" onclick="exportEditorCSV()">📋 导出为 CSV</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="closeEditor()">✕ 关闭</button>
             </div>
             <p style="font-size:0.82em; color:#666; margin-top:12px; line-height:1.5;">
-                <strong>Speichern</strong> legt die Stellung lokal in deinem Browser ab — sie erscheint dann in der Auswahl mit ★. <strong>Als CSV</strong> erzeugt einen Block, den man an <code>divided_loyalties_starting_positions.csv</code> anfügen kann (für alle Spieler).
+                <strong>保存</strong> 会将棋局保存在你浏览器本地——之后它会带着 ★ 出现在选择列表中。<strong>导出为 CSV</strong> 会生成一段可以附加到 <code>divided_loyalties_starting_positions.csv</code>（供所有玩家使用）的文本块。
             </p>
         </div>
     </div>
 
     <div id="csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:3500; justify-content:center; align-items:center; padding:15px;">
         <div style="background:#fdfcf0; color:#222; padding:20px; border-radius:10px; max-width:720px; width:100%;">
-            <h3 style="margin-top:0;">CSV-Block</h3>
-            <p style="font-size:0.9em; margin:6px 0 10px;">Kopiere diesen Block und füge ihn an <code>divided_loyalties_starting_positions.csv</code> an. Passe ggf. <code>position_id</code> auf die nächste freie Nummer an.</p>
+            <h3 style="margin-top:0;">CSV 文本块</h3>
+            <p style="font-size:0.9em; margin:6px 0 10px;">复制这段文本块并附加到 <code>divided_loyalties_starting_positions.csv</code> 中。如有需要，请将 <code>position_id</code> 调整为下一个空闲的编号。</p>
             <textarea id="csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
             <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
-                <button class="btn" style="width:auto; background:#3d5245;" onclick="copyCSVToClipboard()">In Zwischenablage kopieren</button>
-                <button class="btn" style="width:auto; background:#455a64;" onclick="document.getElementById('csv-modal').style.display='none'">Schliessen</button>
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="copyCSVToClipboard()">复制到剪贴板</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="document.getElementById('csv-modal').style.display='none'">关闭</button>
             </div>
         </div>
     </div>
 
     <div id="rules-modal" onclick="toggleRules(false)">
         <div class="modal-box" onclick="event.stopPropagation()">
-            <h2>📜 Die Regeln (Epic Version)</h2>
-            
-            <h3>1. Farbgruppen (Colour +)</h3>
-            [cite_start]<p>Jeder Spieler nutzt eine "Farbe +", die aus benachbarten Farben des Farbkreises besteht[cite: 8]:</p>
+            <h2>📜 游戏规则（史诗版）</h2>
+
+            <h3>1. 颜色组（颜色 +）</h3>
+            <p>每位玩家使用一个由色环上相邻色调组成的“颜色 +”：</p>
             <ul>
-                [cite_start]<li><strong>Blau +</strong>: <span class="badge" style="background:var(--blue)">Blau</span>, <span class="badge" style="background:var(--purple)">Violett</span>, <span class="badge" style="background:var(--green)">Grün</span>[cite: 9, 24].</li>
-                [cite_start]<li><strong>Gelb +</strong>: <span class="badge" style="background:var(--yellow); color:black">Gelb</span>, <span class="badge" style="background:var(--orange)">Orange</span>, <span class="badge" style="background:var(--green)">Grün</span>[cite: 9, 24].</li>
-                [cite_start]<li><strong>Red + (Zerstörung)</strong>: <span class="badge" style="background:var(--red)">Rot</span>, <span class="badge" style="background:var(--purple)">Violett</span>, <span class="badge" style="background:var(--orange)">Orange</span>[cite: 9].</li>
+                <li><strong>蓝 +</strong>：<span class="badge" style="background:var(--blue)">蓝色</span>、<span class="badge" style="background:var(--purple)">紫色</span>、<span class="badge" style="background:var(--green)">绿色</span>。</li>
+                <li><strong>黄 +</strong>：<span class="badge" style="background:var(--yellow); color:black">黄色</span>、<span class="badge" style="background:var(--orange)">橙色</span>、<span class="badge" style="background:var(--green)">绿色</span>。</li>
+                <li><strong>红 +（破坏）</strong>：<span class="badge" style="background:var(--red)">红色</span>、<span class="badge" style="background:var(--purple)">紫色</span>、<span class="badge" style="background:var(--orange)">橙色</span>。</li>
             </ul>
 
-            <h3>2. Brückenbau & Wertung</h3>
+            <h3>2. 建桥与计分</h3>
             <ul>
-                [cite_start]<li><strong>Brückenpunkte:</strong> Reihen aus 3 Steinen ergeben 1 Punkt (3er-Brücke)[cite: 37], Reihen aus 4 Steinen 2 Punkte (4er-Brücke)[cite: 38].</li>
-                <li><strong>Region-Bonus:</strong> Jede Brücke, die für dich die <em>erste</em> in einer Region (Board wie S1, G4 …) ist, gibt 1 zusätzlichen Punkt — aber nur wenn die Brücke ein <em>inneres</em> Feld dieses Boards komplett überdeckt (Endfelder zählen nicht, da sie nur halb unter der Linie liegen).</li>
-                <li><strong>Getrennte Anzeige:</strong> Brücken- und Regionen-Punkte werden separat dargestellt — am Ende addierst du sie selbst.</li>
-                [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
-                [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
-                <li><strong>Brücken können nicht später verlängert werden!</strong> — Walter. Eine neue Brücke darf mit keiner bereits liegenden (nicht geschnittenen) Brücke <em>zwei oder mehr Steine</em> teilen. Das verhindert nicht nur das nachträgliche Ausbauen einer 3er zur 4er, sondern auch überlappende 3er-Brücken in derselben Linie (z.B. bestehende <em>[A,B,C]</em> + neue <em>[B,C,D]</em> — sähe optisch aus wie eine 4er und ist deshalb verboten). Einzelne gemeinsame Steine sind nur als <em>Knotenpunkt</em> erlaubt — der geteilte Stein muss das <em>Ende</em> mindestens einer der beiden Brücken sein (Auffächern, L- oder T-Form, oder zwei 3er Ende-an-Ende in einer Linie, die nur den mittleren Stein teilen). Eine Brücke, die <em>quer durch</em> eine andere läuft (ein +/× mit dem geteilten Stein in der Mitte beider), ist <em>nicht</em> erlaubt — siehe Regel 3: niemand überdeckt oder kreuzt eine andere Brücke. Setzt du dagegen erstmal nur den vierten Stein an die Reihe (ohne 3er-Brücke), bleibt dir die Option auf eine direkte 4er-Brücke offen — du musst dann aber riskieren, dass der Gegner zwischendurch schneidet.</li>
-                <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
-                <li><strong>Setzt du auf einen Punkt (Außenfeld), wird der Stein nur platziert — keine Brücke wird automatisch gezogen.</strong> Du ziehst die gewünschte Brücke selbst per Doppelklick, genau wie jede andere Brücke. So behältst du die volle Kontrolle, <em>welche</em> Brücke entsteht (z.B. eine kürzere 3er statt einer 4er, die eine bestehende Brücke kreuzen würde). Ein Punkt leuchtet nur dort auf — und nimmt nur dort einen Stein an — wo mindestens eine gültige Brücke möglich ist. <strong>Außenfeld-Regel:</strong> ein Stein auf einem Punkt ist nur erlaubt, wenn in diesem Zug tatsächlich eine Brücke durch ihn verläuft; beendest du den Zug ohne ihn zu verbrücken, wird der Stein zurückgenommen und der Spielstein zurückgelegt.</li>
+                <li><strong>桥分：</strong>一排 3 颗棋子得 1 分（3 桥），一排 4 颗棋子得 2 分（4 桥）。</li>
+                <li><strong>区域奖励：</strong>每一座桥若是你在某个区域（如 S1、G4 …这样的棋盘块）里建的<em>第一座</em>桥，便额外得 1 分——但前提是这座桥完全覆盖了该棋盘块的某个<em>内部</em>格子（端点不算，因为桥线只覆盖了它们一半）。</li>
+                <li><strong>分开显示：</strong>桥分和区域分是分开显示的——最后请自行相加。</li>
+                <li><strong>重要：</strong>两颗相同颜色的棋子不可直接相邻。</li>
+                <li>桥必须在放下完成该排的那颗棋子的同一回合内建成。</li>
+                <li><strong>桥之后不能延长！</strong>——Walter。一座新桥不能与任何已有（未被切断的）桥共用<em>两颗或更多棋子</em>。这不仅阻止了之后把 3 延长成 4，也阻止了沿同一条直线重叠的 3 桥（例如：已有 <em>[A,B,C]</em> + 新建 <em>[B,C,D]</em>——看起来会像一座 4 桥，因此被禁止）。只有作为<em>交汇点</em>时才允许共用单颗棋子——共用的那颗棋子必须是两座桥中至少一座的<em>端点</em>（如扇形展开、L 形或 T 形，或两座 3 桥沿一条直线首尾相接、仅共用中间那颗棋子）。一座桥笔直地<em>穿过</em>另一座（即共用棋子位于两者中间的 +/× 形）是<em>不</em>允许的——见规则 3：任何人都不得覆盖或穿越另一座桥。如果你只是给一排添加第四颗棋子（之前没有建过 3 桥），那么直接建一座 4 桥的可能性仍然保留——但这样你就要冒着对手从中间切断的风险。</li>
+                <li><strong>如何建桥：</strong>在该排的第一颗棋子上<em>双击</em>（或双触），然后在最后一颗棋子上<em>双击</em>。如果该排有效（3 或 4 颗棋子，全部属于你的颜色组或全部是红色，且一排中没有两颗相同颜色相邻），桥便会被画出。在同一颗棋子上再次双击会重新清除选择。</li>
+                <li><strong>如果你把棋子放在一个点（盘外格子）上，则只会放下棋子——不会自动画出桥。</strong>你要像建任何其他桥一样，自己通过双击来构建你想要的桥。这样你就能完全掌控<em>建哪一座</em>桥（例如建一座较短的 3 桥，而不是一座会穿越已有桥的 4 桥）。只有在至少能建成一座有效桥的地方，点才会亮起——也才会接受棋子。<strong>盘外规则：</strong>放在点上的棋子，只有当该回合确实有一座桥穿过它时才合法；如果你在没有为它建桥的情况下结束回合，该棋子会被收回，棋子也会退回你的库存。</li>
             </ul>
 
-            <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
+            <h3>3. 红桥与切断（“Cut”）</h3>
             <ul>
-                [cite_start]<li>Rote Brücken werden zur Verteidigung genutzt[cite: 43].</li>
-                [cite_start]<li>Wenn eine rote Brücke blaue/gelbe Brücken kreuzt, verlieren <em>alle</em> gekreuzten ihren Wert — Rot schneidet jede, die es im selben Zug kreuzt, nicht nur die erste[cite: 41].</li>
-                <li><strong>Niemand kreuzt eine bestehende Brücke:</strong> Blaue oder gelbe Brücken können <em>keine</em> rote (oder andere) Brücke nachträglich überqueren — sie müssen darum herum gebaut werden. Eine rote Brücke kann eine wertende nur <em>im Moment ihres Setzens</em> schneiden; einmal liegend, sperrt sie ihre Linie für alle (Walter, 2026-05-27).</li>
-                <li><strong>Rot kann Rot nicht schneiden:</strong> Eine neue rote Brücke wird abgewiesen, wenn sie eine bereits liegende rote Brücke kreuzen würde — sonst wären keine Verteidigungs­strukturen möglich (Walter).</li>
-                [cite_start]<li><strong>Geometrie:</strong> Brücken können nur an den <em>inneren</em> Feldern geschnitten werden; die Endfelder sind immun[cite: 42].</li>
-                <li>Eine Kreuzung entsteht nur an einem <em>inneren</em> Feld oder zwischen zwei Feldern — nie an einem Endfeld (dort berühren sich Brücken bloß: ein erlaubter Knotenpunkt). Nur Rot darf so kreuzen und schneidet dabei; eine rote Brücke wird zudem abgewiesen, wenn ihr Weg eine andere rote <em>oder</em> eine bereits geschnittene Brücke kreuzen würde.</li>
-                <li><strong>Geschnittene Brücken bleiben liegen:</strong> Eine durchgeschnittene Brücke wird grau und gestrichelt dargestellt — sie verliert sowohl die Brücken- als auch die Regionen-Punkte, bleibt aber physisch im Spiel und blockiert weiterhin alles, was über sie hinweg gebaut werden soll (egal ob wertende oder rote Brücke).</li>
+                <li>红桥用于防守。</li>
+                <li>当一座红桥穿过蓝桥/黄桥时，它穿过的<em>每一座</em>桥都会失去其分值——红桥在那一次放置中会切断所有这些桥，而不仅仅是第一座。</li>
+                <li><strong>任何人都不得穿越已有的桥：</strong>蓝桥或黄桥<em>不能</em>事后穿越一座红桥（或任何其他桥）——它们必须绕过去。红桥只能<em>在红桥被放下的那一刻</em>切断一座计分桥；一旦上盘，红桥便为所有人锁住它所在的那条线（Walter，2026-05-27）。</li>
+                <li><strong>红不能切红：</strong>如果一座新红桥会穿越一座已有的红桥，它会被拒绝——否则就无法建立任何防御结构（Walter）。</li>
+                <li><strong>几何规则：</strong>桥只能在其<em>内部</em>格子处被切断；端点是免疫的。</li>
+                <li>穿越只发生在<em>内部</em>格子处或格子之间——绝不会发生在端点处（在端点处桥只是相遇：这是一种被允许的交汇点）。只有红桥可以这样穿越，并将其切断；如果一座红桥的路径会穿越另一座红桥<em>或</em>一座已被切断的桥，它也会被拒绝。</li>
+                <li><strong>被切断的桥仍留在盘上：</strong>被切断的桥会以灰色虚线画出——它会同时失去桥分和区域分，但仍实际留在棋局中，并继续阻挡任何你想要横跨它建造的东西（无论是计分桥还是红桥）。</li>
             </ul>
 
-            <h3>4. Außenfelder & Boards</h3>
+            <h3>4. 盘外格子与棋盘块</h3>
             <ul>
-                <li><strong>Punkte (•):</strong> Die kleinen Punkte zeigen Felder außerhalb der Boards. Steine dürfen <em>nur</em> auf solche Punktfelder gesetzt werden, wenn sie damit <em>im selben Zug</em> eine Brücke vervollständigen.</li>
-                <li><strong>Mehrere Steine einer Reihe dürfen außerhalb liegen</strong> — sofern jeder Stein bei seinem Platzieren eine eigene Brücke vervollständigt hat. Eine spätere Reihe darf also ruhig durch zwei oder drei „dotted" Steine laufen.</li>
-                <li>Andres Kuusk (Weltmeister im abstrakten Spiel) nennt diese Regel „an excellent rule":-)</li>
+                <li><strong>点（•）：</strong>这些小点标记着棋盘块之外的格子。棋子<em>只有</em>在<em>同一回合内完成一座桥</em>时，才可以放在这样的点格子上。</li>
+                <li><strong>一排中的多颗棋子可以位于盘外</strong>——只要每一颗在放下时都完成了它自己的一座桥。因此，之后的一排可能会穿过两三颗“带点”的棋子。</li>
+                <li>Andres Kuusk（抽象游戏世界冠军）称这条规则为“一条出色的规则”:-)</li>
             </ul>
 
-            <h3>5. Drei Sätze (Vorrat)</h3>
+            <h3>5. 三组（库存）</h3>
             <ul>
-                <li>Jeder Spieler bekommt seine 36 Steine nicht auf einmal, sondern in <strong>drei Sätzen zu je 12</strong>.</li>
-                <li><strong>Blau:</strong> 4 Blau, 3 Lila, 2 Grün, 2 Rot, 1 Orange — pro Satz.</li>
-                <li><strong>Gelb:</strong> 4 Gelb, 3 Orange, 2 Grün, 2 Rot, 1 Lila — pro Satz.</li>
-                <li>Sobald ein Spieler seine 12 Steine alle gesetzt hat, erhält er automatisch den nächsten Satz. Die Anzahl Sätze hängt von der Stellung ab: Die „4-Runden-Spiele" gehen über 4 Sätze (Anzeige „Satz 1/4 … 4/4"), die „3-Runden-Spiele" über 3. Die aktuelle Anzeige steht beim Spielerzug.</li>
-                <li>Endspiel-Tipp: Jeder Satzübergang (nach Zug 12, 24, …) verändert die Taktik deutlich — was nach dem letzten Satz noch im Vorrat ist, entscheidet oft die Partie.</li>
+                <li>每位玩家不会一次拿到全部 36 颗棋子，而是分成<strong>三组，每组 12 颗</strong>。</li>
+                <li><strong>蓝方：</strong>每组 4 蓝、3 紫、2 绿、2 红、1 橙。</li>
+                <li><strong>黄方：</strong>每组 4 黄、3 橙、2 绿、2 红、1 紫。</li>
+                <li>一旦某位玩家放完了全部 12 颗棋子，便自动获得下一组。组数取决于棋局：“4 轮游戏”进行 4 组（显示为“组 1/4 … 4/4”），“3 轮游戏”进行 3 组。当前组数显示在该玩家的回合上。</li>
+                <li>终局提示：每一次换组（在第 12、24、…手之后）都会明显改变战术——最后一组结束后库存里还剩什么，往往决定胜负。</li>
             </ul>
 
-            <h3>6. Zug zurücknehmen & Spiel speichern</h3>
+            <h3>6. 撤销与保存</h3>
             <ul>
-                <li><strong>↶ Zug zurück:</strong> Jeder Klick auf diesen Knopf macht eine Aktion rückgängig — Stein zurück ins Inventar, Brücke entfernt, Spieler wieder dran. Beliebig oft hintereinander bis zum Spielbeginn.</li>
-                <li><strong>Auto-Save:</strong> Das laufende Spiel wird automatisch im Browser gespeichert. Wenn du die Seite schließt und später wieder öffnest, erscheint „▶ Letztes Spiel fortsetzen" oben im Startmenü.</li>
-                <li><strong>💾 Sichern / 📂 Laden:</strong> Spielstand als JSON-Datei herunterladen oder eine zuvor gesicherte Datei wieder einspielen.</li>
-                <li><strong>Auf WhatsApp teilen (oben):</strong> Schickt einen Link zur aktuellen Stellung. Mit der Option „Stellung als CSV mitsenden" wird zusätzlich die Startstellung als CSV-Datei angehängt, damit der Empfänger dieselbe Stellung laden kann.</li>
+                <li><strong>↶ 撤销：</strong>每次点击这个按钮都会撤销一步操作——棋子退回库存、桥被移除、玩家回合恢复。你想按多少次就按多少次，一路撤销回游戏开始。</li>
+                <li><strong>自动保存：</strong>当前游戏会自动保存在浏览器中。当你关闭页面并稍后重新打开时，开始菜单顶部会出现“▶ 继续上一局游戏”。</li>
+                <li><strong>💾 保存 / 📂 加载：</strong>将游戏进度下载为 JSON 文件，或加载之前保存的文件。</li>
+                <li><strong>分享到 WhatsApp（顶部）：</strong>发送当前棋局的链接。勾选“以 CSV 形式附带棋局”选项后，起始棋局也会作为 CSV 文件附上，以便接收方加载相同的棋局。</li>
             </ul>
 
-            <button class="btn" onclick="toggleRules(false)">SCHLIESSEN</button>
+            <button class="btn" onclick="toggleRules(false)">关闭</button>
         </div>
     </div>
 
     <script>
         let GRID_W = 11, GRID_H = 11;  // recomputed per position from CSV (max(x)+2, max(y)+2)
-        const COLOR_NAMES_DE = { blue:'Blau', yellow:'Gelb', purple:'Lila', orange:'Orange', green:'Grün', red:'Rot' };
+        const COLOR_NAMES_DE = { blue:'蓝色', yellow:'黄色', purple:'紫色', orange:'橙色', green:'绿色', red:'红色' };
         // Walter's "Sätze" rule: each player gets 12 stones at a time. Empties trigger an
         // auto-refill in endTurn until batch === TOTAL_BATCHES — creating inflection points
         // (around moves 12, 24, …) that change the late-game tactics.
-        // TOTAL_BATCHES varies by position group: the 4-round set (ids 1–6) plays FOUR Sätze
+        // TOTAL_BATCHES varies by position group: the 4-round set (ids 1–6) plays FOUR rounds
         // (4×12=48 stones), the 3-round set (ids 7–12) + customs play THREE (3×12=36). It is set
         // per game in startWithPosition() via roundsForPosition(). Walter, 2026-06-01: Wind wheel
-        // (a 4-round position) was wrongly stopping after 3 Sätze because this was hardcoded to 3.
+        // (a 4-round position) was wrongly stopping after 3 rounds because this was hardcoded to 3.
         const BLUE_BATCH = {blue:4, purple:3, green:2, red:2, orange:1};
         const YELLOW_BATCH = {yellow:4, orange:3, green:2, red:2, purple:1};
         // Built-ins split into a 4-round set (ids 1–6, index 0–5) and a 3-round set (ids 7–12);
@@ -580,26 +580,26 @@
                 cont.className = 'position-btn';
                 cont.style.flex = '1';
                 cont.style.background = '#00695c';
-                cont.innerHTML = '▶ Letztes Spiel fortsetzen<span class="sub">Aus deinem letzten Stand weiterspielen</span>';
+                cont.innerHTML = '▶ 继续上一局游戏<span class="sub">从你上次的存档继续</span>';
                 cont.onclick = () => { if (loadGameFromStorage()) document.getElementById('setup-overlay').style.display = 'none'; };
                 const drop = document.createElement('button');
                 drop.textContent = '🗑';
-                drop.title = 'Gespeicherten Stand verwerfen';
+                drop.title = '丢弃存档';
                 drop.style.cssText = 'background:#8d6e63; color:white; border:none; padding:0 14px; border-radius:8px; cursor:pointer; font-size:1.1em;';
-                drop.onclick = () => { if (confirm('Gespeicherten Stand wirklich verwerfen?')) { clearSavedGame(); showSetup(); } };
+                drop.onclick = () => { if (confirm('确定要丢弃这局存档吗？')) { clearSavedGame(); showSetup(); } };
                 wrap.appendChild(cont); wrap.appendChild(drop);
                 g.appendChild(wrap);
             }
             const customs = loadCustomPositions();
             const all = STARTING_POSITIONS.concat(customs);
             // FOUR_ROUND_COUNT (module-level) splits the built-ins into the 4-round set
-            // (section header "4-Runden-Spiel") and the 3-round set ("3-Runden-Spiel").
+            // (section header "4-Round Game") and the 3-round set ("3-Round Game").
             all.forEach((p, i) => {
                 const isCustom = !!p.customId;
                 let hdrText = null;
-                if (i === 0) hdrText = '4-Runden-Spiel';
-                else if (i === FOUR_ROUND_COUNT && STARTING_POSITIONS.length > FOUR_ROUND_COUNT) hdrText = '3-Runden-Spiel';
-                else if (i === STARTING_POSITIONS.length && customs.length) hdrText = 'Eigene Stellungen';
+                if (i === 0) hdrText = '4 轮游戏';
+                else if (i === FOUR_ROUND_COUNT && STARTING_POSITIONS.length > FOUR_ROUND_COUNT) hdrText = '3 轮游戏';
+                else if (i === STARTING_POSITIONS.length && customs.length) hdrText = '自定义棋局';
                 if (hdrText) {
                     const hdr = document.createElement('div');
                     hdr.textContent = hdrText;
@@ -617,18 +617,18 @@
                 wrapper.appendChild(b);
                 const editBtn = document.createElement('button');
                 editBtn.textContent = '✏';
-                editBtn.title = isCustom ? 'Bearbeiten' : 'Als Vorlage öffnen';
+                editBtn.title = isCustom ? '编辑' : '作为模板打开';
                 editBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
                     if (isCustom) { openEditor(p); }
-                    else { openEditor({ name: p.name + ' (Kopie)', sub: 'Eigene Stellung', boards: p.boards, customId: null }); }
+                    else { openEditor({ name: p.name + '（副本）', sub: '自定义棋局', boards: p.boards, customId: null }); }
                 };
                 wrapper.appendChild(editBtn);
                 if (!isCustom) {
                     const linkBtn = document.createElement('button');
                     linkBtn.textContent = '🔗';
-                    linkBtn.title = 'Direktlink kopieren';
+                    linkBtn.title = '复制直达链接';
                     linkBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
                     linkBtn.onclick = (e) => { e.stopPropagation(); copyPositionLink(p); };
                     wrapper.appendChild(linkBtn);
@@ -638,17 +638,17 @@
                     editBtn.style.right = '62px';
                     const shareBtn = document.createElement('button');
                     shareBtn.textContent = '📤';
-                    shareBtn.title = 'Per WhatsApp senden';
+                    shareBtn.title = '通过 WhatsApp 分享';
                     shareBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:#25D366; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
                     shareBtn.onclick = (e) => { e.stopPropagation(); shareCustomPositionViaWhatsApp(p); };
                     wrapper.appendChild(shareBtn);
                     const delBtn = document.createElement('button');
                     delBtn.textContent = '✕';
-                    delBtn.title = 'Löschen';
+                    delBtn.title = '删除';
                     delBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(244,67,54,0.65); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
-                        if (confirm(`Stellung „${p.name}" löschen?`)) {
+                        if (confirm(`删除棋局“${p.name}”？`)) {
                             deleteCustomPosition(p.customId);
                             showSetup();
                         }
@@ -660,7 +660,7 @@
             const newBtn = document.createElement('button');
             newBtn.className = 'position-btn';
             newBtn.style.cssText = 'background:#6d4c41; grid-column:1 / -1;';
-            newBtn.innerHTML = `➕ Neue Stellung erstellen<span class="sub">Editor öffnen</span>`;
+            newBtn.innerHTML = `➕ 新建棋局<span class="sub">打开编辑器</span>`;
             newBtn.onclick = () => openEditor(null);
             g.appendChild(newBtn);
             document.getElementById('setup-overlay').style.display = 'flex';
@@ -670,7 +670,7 @@
             startWithPosition(STARTING_POSITIONS[idx]);
         }
 
-        // How many Sätze (batches of 12 stones) this position plays. Built-in positions
+        // How many rounds (batches of 12 stones) this position plays. Built-in positions
         // 1–6 are the 4-round set; the 3-round set (7–12) and all custom positions play 3.
         // Matched by name so it survives JSON round-trips — resume/import pass a *copy* of
         // the position object, not the STARTING_POSITIONS reference. Walter, 2026-06-01.
@@ -771,11 +771,11 @@
                 shareUrl += '#' + slugifyName(currentPosition.name);
             }
             const posLabel = currentPosition && !currentPosition.customId ? ` — ${currentPosition.name}` : '';
-            const msg = `Play Divided Loyalties${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+            const msg = `来玩 Divided Loyalties${posLabel}：${shareUrl}\n\n获取 Parados 应用：\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
             if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
             // No share API (Android WebView, in-app browsers): copy to clipboard.
             // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
-            const note = 'Nachricht in die Zwischenablage kopiert — bitte in WhatsApp einfügen.';
+            const note = '消息已复制 — 请粘贴到 WhatsApp。';
             const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
             if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
             else fallback();
@@ -897,7 +897,7 @@
         }
 
         function exportGameJSON() {
-            if (!currentPosition) { alert('Kein laufendes Spiel zum Exportieren.'); return; }
+            if (!currentPosition) { alert('当前没有可导出的进行中游戏。'); return; }
             const state = {
                 version: 1,
                 position: currentPosition,
@@ -920,7 +920,7 @@
         }
 
         async function shareGameJSONViaWhatsApp() {
-            if (!currentPosition) { alert('Kein laufendes Spiel zum Teilen.'); return; }
+            if (!currentPosition) { alert('当前没有可分享的进行中游戏。'); return; }
             const state = {
                 version: 1, position: currentPosition,
                 grid, blueInv, yellowInv,
@@ -955,7 +955,7 @@
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 5000);
-            alert(`Spielstand „${filename}" wurde heruntergeladen.\n\nÖffne WhatsApp manuell und füge die Datei als Anhang hinzu — das Spiel bleibt hier erhalten.`);
+            alert(`游戏进度“${filename}”已下载。\n\n请手动打开 WhatsApp 并附上该文件——游戏会一直留在这里。`);
         }
 
         function triggerImportGame() {
@@ -969,13 +969,13 @@
             reader.onload = e => {
                 try {
                     const state = JSON.parse(e.target.result);
-                    if (!state || !state.position) throw new Error('Ungültiges Format');
+                    if (!state || !state.position) throw new Error('格式无效');
                     startWithPosition(state.position);
                     applySavedState(state);
                     undoStack = [];
                     saveGame();
                 } catch (err) {
-                    alert('Konnte Spielstand nicht laden: ' + err.message);
+                    alert('无法加载游戏进度：' + err.message);
                 }
                 ev.target.value = '';
             };
@@ -1223,7 +1223,7 @@
             // 3rd-click guard: with 2 already ringed, refuse a new one + flash hint.
             if (bridgeSelection.length >= 2) {
                 flashStoneInvalid(idx);
-                showBridgeHint('Schon zwei Steine gewählt — hebe zuerst einen auf (nochmals anklicken).');
+                showBridgeHint('已经选了两颗棋子——请先取消选择其中一颗（再次点击它）。');
                 return;
             }
             // Add this stone to the selection.
@@ -1338,24 +1338,25 @@
 
         function tryFormBridge(s, e) {
             const row = getRow(s, e);
-            if (!row) { bridgeRefuseReason = 'Die beiden Steine liegen nicht in einer geraden Linie (waagrecht, senkrecht oder diagonal).'; return; }
-            if (row.length !== 3 && row.length !== 4) { bridgeRefuseReason = 'Eine Brücke verbindet genau 3 oder 4 Steine in einer Reihe.'; return; }
+            if (!row) { bridgeRefuseReason = '这两颗棋子不在一条直线上（水平、垂直或对角）。'; return; }
+            if (row.length !== 3 && row.length !== 4) { bridgeRefuseReason = '一座桥恰好连接成一排的 3 或 4 颗棋子。'; return; }
             const cls = classifyRow(row, currentPlayer);
-            if (!cls) { bridgeRefuseReason = 'Keine gültige Reihe: die Farben passen nicht zusammen oder zwei gleiche Farben liegen nebeneinander.'; return; }
+            if (!cls) { bridgeRefuseReason = '这不是有效的一排：颜色不搭配，或者有两颗相同颜色相邻。'; return; }
             // Walter, 2026-05-27: a new bridge cannot share 2+ stones with any
-            // active (non-cut) bridge. „Brücken können nicht später verlängert
-            // werden!" — Walter. This covers three cases at once: re-forming the
-            // same row, extending a 3 to a 4 (existing 3 ⊂ new 4), and overlapping
-            // 3-bridges along the same line (e.g., existing [A,B,C] + new [B,C,D]
-            // visually look like a 4). Single-stone overlap is still allowed,
-            // which is how perpendicular crosses and the multi-bridge case work.
+            // active (non-cut) bridge. "Bridges cannot be extended later!" —
+            // Walter. This covers three cases at once: re-forming the same row,
+            // extending a 3 to a 4 (existing 3 ⊂ new 4), and overlapping
+            // 3-bridges along the same line (e.g., existing [A,B,C] + new
+            // [B,C,D] visually look like a 4). Single-stone overlap is still
+            // allowed, which is how perpendicular crosses and the multi-bridge
+            // case work.
             const sharesTwoPlus = activeBridges.some(b => {
                 if (b.cut) return false;
                 let shared = 0;
                 for (const c of row) if (b.row.includes(c)) shared++;
                 return shared >= 2;
             });
-            if (sharesTwoPlus) { bridgeRefuseReason = 'Brücken können nicht verlängert oder über eine bestehende Brücke doppelt gebaut werden.'; return; }
+            if (sharesTwoPlus) { bridgeRefuseReason = '桥不能被延长，也不能在已有的桥之上再建第二次。'; return; }
             const step = cellSize + gapSize;
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
@@ -1376,7 +1377,7 @@
                 // by any other bridge"); if any crossing is such, the whole red placement is
                 // illegal and nothing is cut.
                 const hits = bridgesCrossedBy(row);
-                if (hits.some(h => h.cut || h.player === 'red')) { bridgeRefuseReason = 'Eine rote Brücke kann keine andere rote oder bereits geschnittene Brücke kreuzen.'; return; }
+                if (hits.some(h => h.cut || h.player === 'red')) { bridgeRefuseReason = '红桥不能穿越另一座红桥，也不能穿越一座已被切断的桥。'; return; }
                 hits.forEach(h => destroyBridge(h.id));
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: 'red', coords: c, s, e, cut: false});
@@ -1389,7 +1390,7 @@
                 // red AT CONSTRUCTION TIME of the red bridge — once red is on
                 // the board, scoring lines must route around it.
                 const collision = checkCollision(row, false);
-                if (collision) { bridgeRefuseReason = 'Diese Brücke würde eine bestehende Brücke kreuzen — niemand darf eine andere Brücke überqueren.'; return; }  // can't cross any existing line (scoring, red, or cut)
+                if (collision) { bridgeRefuseReason = '这座桥会穿越一座已有的桥——任何人都不得穿越另一座桥。'; return; }  // can't cross any existing line (scoring, red, or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
                 drawBridge(c, currentPlayer, bId);
@@ -1571,8 +1572,8 @@
         function updateUI() {
             const turn = document.getElementById('turn-indicator');
             const batch = currentPlayer === 'blue' ? blueBatch : yellowBatch;
-            const batchLabel = `Satz ${batch}/${TOTAL_BATCHES}` + (batch === TOTAL_BATCHES ? ' (letzter)' : '');
-            turn.innerHTML = (currentPlayer === 'blue' ? "BLAU" : "GELB") + " AM ZUG"
+            const batchLabel = `组 ${batch}/${TOTAL_BATCHES}` + (batch === TOTAL_BATCHES ? '（最后一组）' : '');
+            turn.innerHTML = (currentPlayer === 'blue' ? "蓝方" : "黄方") + "回合"
                 + `<div style="font-size:0.7em;font-weight:normal;opacity:0.85;margin-top:2px;">${batchLabel}</div>`;
             turn.className = `current-player ${currentPlayer}-turn`;
             const inv = document.getElementById('inventory-container');
@@ -1673,7 +1674,7 @@
 
         function saveCustomPositionsArr(arr) {
             try { localStorage.setItem('dl_custom_positions', JSON.stringify(arr)); }
-            catch (e) { alert('Speichern fehlgeschlagen: ' + e.message); }
+            catch (e) { alert('保存失败：' + e.message); }
         }
 
         function deleteCustomPosition(customId) {
@@ -1756,7 +1757,7 @@
                 const x = i % oldW, y = Math.floor(i / oldW);
                 return x >= newW || y >= newH;
             });
-            if (wouldDrop && !confirm('Beim Verkleinern würden bemalte Felder verloren gehen. Trotzdem verkleinern?')) {
+            if (wouldDrop && !confirm('缩小尺寸会丢失已绘制的格子。仍要缩小吗？')) {
                 rebuildSizeSelectors();
                 return;
             }
@@ -1800,12 +1801,12 @@
             // completing a bridge (Walter's manual placement, replaces auto-dots).
             const dotBtn = document.createElement('button');
             dotBtn.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='DOT'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; display:inline-flex; align-items:center; gap:5px;`;
-            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> Punkt';
+            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> 点';
             dotBtn.onclick = () => { editorBrush = 'DOT'; renderBrushBar(); };
             bar.appendChild(dotBtn);
             const eraser = document.createElement('button');
             eraser.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
-            eraser.textContent = '✕ Radieren';
+            eraser.textContent = '✕ 擦除';
             eraser.onclick = () => { editorBrush = 'erase'; renderBrushBar(); };
             bar.appendChild(eraser);
         }
@@ -1875,17 +1876,17 @@
 
         function saveCustomPosition() {
             if (Object.keys(editorPaint).length === 0) {
-                alert('Bitte mindestens ein Board platzieren!');
+                alert('请至少放置一个棋盘块！');
                 return;
             }
             const nameInput = document.getElementById('editor-name');
             let name = (nameInput.value || '').trim();
-            if (!name) name = (prompt('Name der Stellung:', 'Meine Stellung') || '').trim();
+            if (!name) name = (prompt('棋局名称：', '我的棋局') || '').trim();
             if (!name) return;
             const newPos = {
                 customId: editingCustomId || ('c' + Date.now()),
                 name: name,
-                sub: 'Eigene Stellung',
+                sub: '自定义棋局',
                 boards: paintToBoards(),
                 dots: paintToDots()
             };
@@ -1896,7 +1897,7 @@
             editingCustomId = newPos.customId;
             editorPositionName = name;
             nameInput.value = name;
-            alert(`„${name}" gespeichert!`);
+            alert(`“${name}”已保存！`);
         }
 
         // gridW = grid stride (column count). The CSV format is row-keyed,
@@ -1956,7 +1957,7 @@
 
         function exportEditorCSV() {
             if (Object.keys(editorPaint).length === 0) {
-                alert('Bitte mindestens ein Board platzieren!');
+                alert('请至少放置一个棋盘块！');
                 return;
             }
             const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
@@ -2003,12 +2004,12 @@
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 5000);
-            alert(`CSV-Datei „${filename}" wurde heruntergeladen.\n\nBitte in WhatsApp auf die Büroklammer (📎) tippen → „Dokument" → die CSV-Datei aus dem Download-Ordner auswählen und versenden.`);
+            alert(`CSV 文件“${filename}”已下载。\n\n在 WhatsApp 中，点击回形针（📎）→“文档”→ 从下载文件夹中选择该 CSV 并发送。`);
         }
 
         async function shareEditorViaWhatsApp() {
             if (Object.keys(editorPaint).length === 0) {
-                alert('Bitte mindestens ein Board platzieren!');
+                alert('请至少放置一个棋盘块！');
                 return;
             }
             const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
@@ -2027,8 +2028,8 @@
             const text = ta.value;
             const fallback = () => { ta.select(); document.execCommand('copy'); };
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => alert('Kopiert!'), () => { fallback(); alert('Kopiert!'); });
-            } else { fallback(); alert('Kopiert!'); }
+                navigator.clipboard.writeText(text).then(() => alert('已复制！'), () => { fallback(); alert('已复制！'); });
+            } else { fallback(); alert('已复制！'); }
         }
 
         async function loadPositions() {
@@ -2053,7 +2054,7 @@
 
         function getPositionLink(pos) {
             const base = /^(file|parados):$/.test(window.location.protocol)
-                ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "divided_loyalties.html")
+                ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "divided_loyalties_en.html")
                 : window.location.href.split('#')[0];
             return base + '#' + slugifyName(pos.name);
         }
@@ -2079,21 +2080,14 @@
             };
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(link).then(
-                    () => alert('Direktlink kopiert:\n' + link),
-                    () => { fallback(); alert('Direktlink kopiert:\n' + link); }
+                    () => alert('直达链接已复制：\n' + link),
+                    () => { fallback(); alert('直达链接已复制：\n' + link); }
                 );
-            } else { fallback(); alert('Direktlink kopiert:\n' + link); }
+            } else { fallback(); alert('直达链接已复制：\n' + link); }
         }
 
         async function startup() {
             STARTING_POSITIONS = await loadPositions();
-            // #editor — opened from the central startpositionen.html hub:
-            // go straight into a fresh position editor.
-            if (location.hash === '#editor') {
-                showSetup();
-                openEditor(null);
-                return;
-            }
             if (location.hash === '#rules') {
                 showSetup();
                 toggleRules(true);

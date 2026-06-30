@@ -84,6 +84,7 @@
         <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
     <div id="setup-panel" style="margin-bottom:15px; text-align:center; background:white; padding:15px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+        <div id="ml-resume-slot"></div>
         <p style="font-weight:bold; margin:0 0 10px; color:#2c3e50;">Start a new game:</p>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="btn" style="width:auto; padding:10px 24px; background:#27ae60; color:white; font-size:1em;" onclick="startRandom()">▶ Start</button>
@@ -300,6 +301,7 @@
             isFirstMove,
             desc: desc
         });
+        mlSaveGame();
     }
 
     function undoMove() {
@@ -349,6 +351,115 @@
         isReviewing = false;
 
         updateUI(); render();
+        mlSaveGame();
+    }
+
+    // ---- Auto-save / resume — mirrors Divided Loyalties' "Letztes Spiel
+    // fortsetzen" (Walter, 2026-06-30). A mis-tap by 2mm could lose a whole
+    // game; now the running game is persisted after every committed move (every
+    // saveSnapshot) and undo, and offered as a "▶ Resume last game" button in
+    // the setup panel. We store the FULL moveHistory, so Undo also survives a
+    // resume (better than DL, which resets its undo stack). Only the snapshotted
+    // (committed) game states are ever persisted: PLAY, DRAFT_PLACE,
+    // SACRIFICE_MOVE, END — SACRIFICE_SELECT is never the tail, so resume never
+    // has to rebuild the opponent-pick panel.
+    const ML_SAVEGAME_KEY = 'ml_savegame';
+
+    function mlSaveGame() {
+        if (!moveHistory.length || currentPosition == null) return;
+        try {
+            localStorage.setItem(ML_SAVEGAME_KEY, JSON.stringify({
+                version: 1,
+                currentPosition,
+                showLOS,
+                moveHistory
+            }));
+        } catch (e) { console.warn('mlSaveGame failed:', e); }
+    }
+
+    function mlHasSavedGame() { return !!localStorage.getItem(ML_SAVEGAME_KEY); }
+    function mlClearSavedGame() { localStorage.removeItem(ML_SAVEGAME_KEY); }
+
+    // Copy a snapshot back onto the live state — same field-for-field restore as
+    // undoMove, kept separate so undoMove's proven code stays untouched.
+    function mlRestoreLiveFromSnapshot(snap) {
+        for (let i = 0; i < 144; i++) cells[i] = snap.cells[i] ? {...snap.cells[i]} : null;
+        collectors = { 1: snap.collectors[1], 2: snap.collectors[2] };
+        scores = { 1: {...snap.scores[1]}, 2: {...snap.scores[2]} };
+        playerFlags = { 1: {...snap.playerFlags[1]}, 2: {...snap.playerFlags[2]} };
+        currentPlayer = snap.currentPlayer;
+        bag = (snap.bag || []).map(d => ({...d}));
+        gameState = snap.gameState || 'PLAY';
+        selectedIdx = (snap.selectedIdx == null) ? null : snap.selectedIdx;
+        relinquished = snap.relinquished
+            ? { 1: snap.relinquished[1], 2: snap.relinquished[2] } : { 1: false, 2: false };
+        relinquishCount = snap.relinquishCount
+            ? { 1: snap.relinquishCount[1], 2: snap.relinquishCount[2] } : { 1: 0, 2: 0 };
+        collectedDiscs = snap.collectedDiscs
+            ? { 1: snap.collectedDiscs[1].map(d => ({...d})), 2: snap.collectedDiscs[2].map(d => ({...d})) }
+            : { 1: [], 2: [] };
+        draftChosen = snap.draftChosen ? {...snap.draftChosen} : null;
+        pendingExtraTurn = !!snap.pendingExtraTurn;
+        sacrificeRange = snap.sacrificeRange || 0;
+        sacrificingPlayer = snap.sacrificingPlayer || 0;
+        isFirstMove = !!snap.isFirstMove;
+    }
+
+    function mlResumeSavedGame() {
+        const raw = localStorage.getItem(ML_SAVEGAME_KEY);
+        if (!raw) return false;
+        try {
+            const st = JSON.parse(raw);
+            if (!st || !Array.isArray(st.moveHistory) || !st.moveHistory.length) return false;
+            currentPosition = st.currentPosition != null ? st.currentPosition : 'random';
+            showLOS = !!st.showLOS;
+            moveHistory = st.moveHistory;
+            historyIndex = moveHistory.length - 1;
+            isReviewing = false;
+            mlRestoreLiveFromSnapshot(moveHistory[moveHistory.length - 1]);
+
+            // Leave setup; configure the in-game panels for the restored state.
+            setPositionTitle('');
+            document.getElementById('setup-panel').style.display = 'none';
+            document.getElementById('starter-panel').style.display = 'none';
+            document.getElementById('game-actions').style.display = 'block';
+            document.getElementById('csv-export-btn').style.display = '';
+            document.getElementById('sacrifice-panel').style.display = 'none';
+            if (gameState === 'DRAFT_PLACE' && draftChosen) {
+                showDraftPlacePanel(draftChosen);
+            } else {
+                document.getElementById('draft-panel').style.display = 'none';
+            }
+            const losBtn = document.getElementById('los-toggle');
+            if (losBtn) {
+                losBtn.innerText = showLOS ? 'Hide Line of Sight' : 'Show Line of Sight';
+                losBtn.style.background = showLOS ? '#27ae60' : '#7f8c8d';
+            }
+            updateUI(); render();
+            return true;
+        } catch (e) { console.error('mlResumeSavedGame failed:', e); return false; }
+    }
+
+    function mlRenderResume() {
+        const slot = document.getElementById('ml-resume-slot');
+        if (!slot) return;
+        slot.innerHTML = '';
+        if (!mlHasSavedGame()) return;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex; gap:8px; justify-content:center; align-items:stretch; margin-bottom:14px;';
+        const cont = document.createElement('button');
+        cont.className = 'btn';
+        cont.style.cssText = 'width:auto; flex:1; max-width:420px; padding:12px 18px; background:#00695c; color:white; font-size:1em; text-align:center; line-height:1.25;';
+        cont.innerHTML = '▶ Resume last game<br><span style="font-weight:normal; font-size:0.8em; opacity:0.9;">Continue from your last saved state</span>';
+        cont.onclick = () => { mlResumeSavedGame(); };
+        const drop = document.createElement('button');
+        drop.className = 'btn';
+        drop.textContent = '🗑';
+        drop.title = 'Discard saved game';
+        drop.style.cssText = 'width:auto; background:#8d6e63; color:white; padding:0 16px; font-size:1.1em;';
+        drop.onclick = () => { if (confirm('Discard the saved game?')) { mlClearSavedGame(); mlRenderResume(); } };
+        wrap.appendChild(cont); wrap.appendChild(drop);
+        slot.appendChild(wrap);
     }
 
     function stepHistory(delta) {
@@ -2099,6 +2210,7 @@
     }
 
     mlRefreshCustomList();
+    mlRenderResume();
 
     // #editor — opened from the central startpositionen.html hub: go
     // straight into a fresh disc-position editor. #loadopening — focus the

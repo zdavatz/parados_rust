@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Divided Loyalties: Epic Master Edition</title>
+    <title>Divided Loyalties: エピック・マスター・エディション</title>
     <style>
         :root {
             --bg: #3d5245; --panel: #4d6758;
@@ -104,31 +104,31 @@
 
     <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
         <h1 style="margin:5px 0;">DIVIDED LOYALTIES<span id="position-title" style="color:#bdbdbd; font-weight:normal;"></span></h1>
-        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">Auf WhatsApp teilen</button>
+        <button class="btn" style="width:auto; padding:8px 16px; background:#25D366; color:white; margin-top:0;" onclick="openShareDialog()">WhatsApp で共有</button>
     </div>
 
     <div id="share-modal" onclick="closeShareDialog()">
         <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;">
-            <h2>📤 Auf WhatsApp teilen</h2>
-            <p style="margin:10px 0 0;">Sendet einen Link zur aktuellen Stellung.</p>
+            <h2>📤 WhatsApp で共有</h2>
+            <p style="margin:10px 0 0;">現在の配置へのリンクを送信します。</p>
             <label id="share-include-row" style="display:flex; align-items:flex-start; gap:10px; padding:12px; background:#f5f3e8; border-radius:6px; cursor:pointer; margin:14px 0;">
                 <input type="checkbox" id="share-include-state" style="width:18px; height:18px; margin-top:3px;">
                 <div>
-                    <strong>Stellung als CSV mitsenden</strong>
-                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">Hängt die Startstellung als CSV-Datei an die WhatsApp-Nachricht an, damit der Empfänger dieselbe Stellung laden kann.</div>
+                    <strong>配置を CSV として添付</strong>
+                    <div style="font-size:0.85em; color:#5d4037; margin-top:4px;">スタート配置を CSV ファイルとして WhatsApp メッセージに添付し、受信者が同じ配置を読み込めるようにします。</div>
                 </div>
             </label>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">Abbrechen</button>
-                <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">Senden</button>
+                <button class="btn" style="width:auto; background:#8d6e63; margin-top:0;" onclick="closeShareDialog()">キャンセル</button>
+                <button class="btn" style="width:auto; background:#25D366; color:white; margin-top:0;" onclick="submitShareDialog()">送信</button>
             </div>
         </div>
     </div>
 
     <div id="setup-overlay">
         <div class="setup-box">
-            <h2>Startstellung wählen</h2>
-            <p style="margin:8px 0 0;">Wähle eine der 6 Startstellungen — die Board‑Teile werden entsprechend auf dem Raster platziert.</p>
+            <h2>スタート配置を選ぶ</h2>
+            <p style="margin:8px 0 0;">スタート配置を1つ選んでください。盤面上にボードのコマがそれに従って配置されます。</p>
             <div id="position-grid"></div>
         </div>
     </div>
@@ -140,21 +140,21 @@
         </div>
 
         <div id="ui-panel">
-            <button class="btn" onclick="toggleRules(true)">📜 AUSFÜHRLICHE REGELN</button>
-            <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">BLAU AM ZUG</div>
+            <button class="btn" onclick="toggleRules(true)">📜 詳しいルール</button>
+            <div id="turn-indicator" class="current-player blue-turn" style="margin-top:15px;">青のターン</div>
             <div id="bridge-hint" style="display:none; margin-top:8px; padding:8px 10px; border-radius:8px; background:#5d4037; color:#fff; font-size:0.85em; line-height:1.35; text-align:center;"></div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-weight:bold; font-size:0.9em;">
-                <div style="text-align:center;">BLAU<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="blue-score">0</span> · Regionen <span id="blue-region-score">0</span></div></div>
-                <div style="text-align:center;">GELB<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">Brücken <span id="yellow-score">0</span> · Regionen <span id="yellow-region-score">0</span></div></div>
+                <div style="text-align:center;">青<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">橋 <span id="blue-score">0</span> · 領域 <span id="blue-region-score">0</span></div></div>
+                <div style="text-align:center;">黄<div style="font-weight:normal; font-size:0.85em; margin-top:2px;">橋 <span id="yellow-score">0</span> · 領域 <span id="yellow-region-score">0</span></div></div>
             </div>
             <div id="inventory-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;"></div>
-            <button class="btn" style="background: #455a64;" onclick="endTurn()">ZUG ABSCHLIESSEN</button>
-            <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ ZUG ZURÜCK</button>
+            <button class="btn" style="background: #455a64;" onclick="endTurn()">ターン終了</button>
+            <button class="btn" id="undo-btn" style="background: #5d4037;" onclick="undo()">↶ 手を戻す</button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
-                <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="Spielstand als Datei speichern">💾 Sichern</button>
-                <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="Spielstand aus Datei laden">📂 Laden</button>
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="exportGameJSON()" title="ゲーム状態をファイルに保存">💾 保存</button>
+                <button class="btn" style="background: #00695c; margin-top:0;" onclick="triggerImportGame()" title="ゲーム状態をファイルから読み込み">📂 読込</button>
             </div>
-            <button class="btn" style="background: #3d5245;" onclick="showSetup()">NEUES SPIEL</button>
+            <button class="btn" style="background: #3d5245;" onclick="showSetup()">新しいゲーム</button>
             <input type="file" id="import-game-input" accept=".json,application/json" style="display:none;" onchange="handleImportGameFile(event)">
         </div>
     </div>
@@ -162,119 +162,119 @@
     <div id="editor-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:2500; overflow-y:auto; padding:15px 8px;">
         <div style="max-width:880px; margin:0 auto; background:#fdfcf0; color:#222; padding:18px; border-radius:10px;">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                <h2 style="margin:0; font-size:1.2em;">Editor — Eigene Startstellung</h2>
-                <input id="editor-name" type="text" placeholder="Name der Stellung" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
+                <h2 style="margin:0; font-size:1.2em;">エディター — カスタムスタート配置</h2>
+                <input id="editor-name" type="text" placeholder="配置名" style="flex:1; min-width:160px; padding:8px; font-size:1em; border:1px solid #ccc; border-radius:4px;">
                 <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
-                    Breite:
+                    幅:
                     <select id="editor-size-w" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('w', this.value)"></select>
                 </label>
                 <label style="font-size:0.9em; color:#444; display:flex; align-items:center; gap:6px;">
-                    Höhe:
+                    高さ:
                     <select id="editor-size-h" style="padding:6px; font-size:0.95em; border:1px solid #ccc; border-radius:4px;" onchange="setEditorGridDim('h', this.value)"></select>
                 </label>
             </div>
-            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">Wähle ein Board (S = 3×3 dunkel, W = Pyramide mittel, G = 3×4 hell), dann tippe Felder an. Mehrere Boards desselben Typs (z.B. S1, S2, …) bleiben getrennt. Breite und Höhe können unterschiedlich sein (z.B. 15×9). Mit dem <strong>• Punkt</strong>-Pinsel markierst du Felder, auf denen Steine gesetzt werden dürfen, wenn sie eine Brücke vervollständigen — sonst bleibt das Feld leer.</div>
+            <div style="font-size:0.85em; color:#555; margin-bottom:8px;">ボードを選び（S = 3×3 濃い、W = ピラミッド型 中間、G = 3×4 明るい）、セルをタップします。同じ種類のボードが複数あっても（例: S1, S2, …）それぞれ別々に扱われます。幅と高さは異なっていてもかまいません（例: 15×9）。<strong>• ドット</strong>ブラシを使うと、橋を完成させる場合に石を置けるセルを指定できます。指定しなければそのセルは空のままです。</div>
             <div id="editor-brush-bar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
             <div style="background:#fff; padding:10px; border-radius:6px; display:flex; justify-content:center; overflow:auto; border:1px solid #ccc;">
                 <div id="editor-grid" style="display:grid; gap:2px; background:transparent; padding:4px; border-radius:4px;"></div>
             </div>
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:center;">
-                <button class="btn" style="width:auto; background:#3d5245;" onclick="saveCustomPosition()">💾 Speichern (im Browser)</button>
-                <button class="btn" style="width:auto; background:#25D366;" onclick="shareEditorViaWhatsApp()">📤 Per WhatsApp senden</button>
-                <button class="btn" style="width:auto; background:#6d4c41;" onclick="exportEditorCSV()">📋 Als CSV exportieren</button>
-                <button class="btn" style="width:auto; background:#455a64;" onclick="closeEditor()">✕ Schliessen</button>
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="saveCustomPosition()">💾 保存（ブラウザ内）</button>
+                <button class="btn" style="width:auto; background:#25D366;" onclick="shareEditorViaWhatsApp()">📤 WhatsApp で共有</button>
+                <button class="btn" style="width:auto; background:#6d4c41;" onclick="exportEditorCSV()">📋 CSV として書き出し</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="closeEditor()">✕ 閉じる</button>
             </div>
             <p style="font-size:0.82em; color:#666; margin-top:12px; line-height:1.5;">
-                <strong>Speichern</strong> legt die Stellung lokal in deinem Browser ab — sie erscheint dann in der Auswahl mit ★. <strong>Als CSV</strong> erzeugt einen Block, den man an <code>divided_loyalties_starting_positions.csv</code> anfügen kann (für alle Spieler).
+                <strong>保存</strong>は配置をブラウザ内にローカル保存します。保存後、選択画面に ★ 付きで表示されます。<strong>CSV として</strong>は <code>divided_loyalties_starting_positions.csv</code> に追記できるブロックを作成します（すべてのプレイヤー向け）。
             </p>
         </div>
     </div>
 
     <div id="csv-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:3500; justify-content:center; align-items:center; padding:15px;">
         <div style="background:#fdfcf0; color:#222; padding:20px; border-radius:10px; max-width:720px; width:100%;">
-            <h3 style="margin-top:0;">CSV-Block</h3>
-            <p style="font-size:0.9em; margin:6px 0 10px;">Kopiere diesen Block und füge ihn an <code>divided_loyalties_starting_positions.csv</code> an. Passe ggf. <code>position_id</code> auf die nächste freie Nummer an.</p>
+            <h3 style="margin-top:0;">CSV ブロック</h3>
+            <p style="font-size:0.9em; margin:6px 0 10px;">このブロックをコピーして <code>divided_loyalties_starting_positions.csv</code> に追記してください。必要に応じて <code>position_id</code> を次の空き番号に調整してください。</p>
             <textarea id="csv-output" readonly style="width:100%; height:240px; font-family:monospace; font-size:0.85em; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
             <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
-                <button class="btn" style="width:auto; background:#3d5245;" onclick="copyCSVToClipboard()">In Zwischenablage kopieren</button>
-                <button class="btn" style="width:auto; background:#455a64;" onclick="document.getElementById('csv-modal').style.display='none'">Schliessen</button>
+                <button class="btn" style="width:auto; background:#3d5245;" onclick="copyCSVToClipboard()">クリップボードにコピー</button>
+                <button class="btn" style="width:auto; background:#455a64;" onclick="document.getElementById('csv-modal').style.display='none'">閉じる</button>
             </div>
         </div>
     </div>
 
     <div id="rules-modal" onclick="toggleRules(false)">
         <div class="modal-box" onclick="event.stopPropagation()">
-            <h2>📜 Die Regeln (Epic Version)</h2>
-            
-            <h3>1. Farbgruppen (Colour +)</h3>
-            [cite_start]<p>Jeder Spieler nutzt eine "Farbe +", die aus benachbarten Farben des Farbkreises besteht[cite: 8]:</p>
+            <h2>📜 ルール（エピック版）</h2>
+
+            <h3>1. カラーグループ（カラー +）</h3>
+            <p>各プレイヤーは、カラーホイール上で隣り合う色相からなる「カラー +」を使います:</p>
             <ul>
-                [cite_start]<li><strong>Blau +</strong>: <span class="badge" style="background:var(--blue)">Blau</span>, <span class="badge" style="background:var(--purple)">Violett</span>, <span class="badge" style="background:var(--green)">Grün</span>[cite: 9, 24].</li>
-                [cite_start]<li><strong>Gelb +</strong>: <span class="badge" style="background:var(--yellow); color:black">Gelb</span>, <span class="badge" style="background:var(--orange)">Orange</span>, <span class="badge" style="background:var(--green)">Grün</span>[cite: 9, 24].</li>
-                [cite_start]<li><strong>Red + (Zerstörung)</strong>: <span class="badge" style="background:var(--red)">Rot</span>, <span class="badge" style="background:var(--purple)">Violett</span>, <span class="badge" style="background:var(--orange)">Orange</span>[cite: 9].</li>
+                <li><strong>青 +</strong>: <span class="badge" style="background:var(--blue)">青</span>、<span class="badge" style="background:var(--purple)">紫</span>、<span class="badge" style="background:var(--green)">緑</span>。</li>
+                <li><strong>黄 +</strong>: <span class="badge" style="background:var(--yellow); color:black">黄</span>、<span class="badge" style="background:var(--orange)">オレンジ</span>、<span class="badge" style="background:var(--green)">緑</span>。</li>
+                <li><strong>赤 +（破壊）</strong>: <span class="badge" style="background:var(--red)">赤</span>、<span class="badge" style="background:var(--purple)">紫</span>、<span class="badge" style="background:var(--orange)">オレンジ</span>。</li>
             </ul>
 
-            <h3>2. Brückenbau & Wertung</h3>
+            <h3>2. 橋の建設と得点</h3>
             <ul>
-                [cite_start]<li><strong>Brückenpunkte:</strong> Reihen aus 3 Steinen ergeben 1 Punkt (3er-Brücke)[cite: 37], Reihen aus 4 Steinen 2 Punkte (4er-Brücke)[cite: 38].</li>
-                <li><strong>Region-Bonus:</strong> Jede Brücke, die für dich die <em>erste</em> in einer Region (Board wie S1, G4 …) ist, gibt 1 zusätzlichen Punkt — aber nur wenn die Brücke ein <em>inneres</em> Feld dieses Boards komplett überdeckt (Endfelder zählen nicht, da sie nur halb unter der Linie liegen).</li>
-                <li><strong>Getrennte Anzeige:</strong> Brücken- und Regionen-Punkte werden separat dargestellt — am Ende addierst du sie selbst.</li>
-                [cite_start]<li><strong>Wichtig:</strong> Zwei gleiche Farben dürfen nicht direkt hintereinander liegen[cite: 26].</li>
-                [cite_start]<li>Eine Brücke muss im selben Zug platziert werden wie der Stein, der die Reihe vervollständigt[cite: 33].</li>
-                <li><strong>Brücken können nicht später verlängert werden!</strong> — Walter. Eine neue Brücke darf mit keiner bereits liegenden (nicht geschnittenen) Brücke <em>zwei oder mehr Steine</em> teilen. Das verhindert nicht nur das nachträgliche Ausbauen einer 3er zur 4er, sondern auch überlappende 3er-Brücken in derselben Linie (z.B. bestehende <em>[A,B,C]</em> + neue <em>[B,C,D]</em> — sähe optisch aus wie eine 4er und ist deshalb verboten). Einzelne gemeinsame Steine sind nur als <em>Knotenpunkt</em> erlaubt — der geteilte Stein muss das <em>Ende</em> mindestens einer der beiden Brücken sein (Auffächern, L- oder T-Form, oder zwei 3er Ende-an-Ende in einer Linie, die nur den mittleren Stein teilen). Eine Brücke, die <em>quer durch</em> eine andere läuft (ein +/× mit dem geteilten Stein in der Mitte beider), ist <em>nicht</em> erlaubt — siehe Regel 3: niemand überdeckt oder kreuzt eine andere Brücke. Setzt du dagegen erstmal nur den vierten Stein an die Reihe (ohne 3er-Brücke), bleibt dir die Option auf eine direkte 4er-Brücke offen — du musst dann aber riskieren, dass der Gegner zwischendurch schneidet.</li>
-                <li><strong>So setzt du eine Brücke:</strong> <em>Doppelklick</em> (oder Doppel-Tipp) auf den ersten Stein der Reihe, danach <em>Doppelklick</em> auf den letzten Stein. Wenn die Reihe gültig ist (3 oder 4 Steine, alle in deiner Farbgruppe oder alle rot, keine zwei gleichen Farben hintereinander), wird die Brücke gezogen. Ein zweiter Doppelklick auf denselben Stein hebt die Auswahl wieder auf.</li>
-                <li><strong>Setzt du auf einen Punkt (Außenfeld), wird der Stein nur platziert — keine Brücke wird automatisch gezogen.</strong> Du ziehst die gewünschte Brücke selbst per Doppelklick, genau wie jede andere Brücke. So behältst du die volle Kontrolle, <em>welche</em> Brücke entsteht (z.B. eine kürzere 3er statt einer 4er, die eine bestehende Brücke kreuzen würde). Ein Punkt leuchtet nur dort auf — und nimmt nur dort einen Stein an — wo mindestens eine gültige Brücke möglich ist. <strong>Außenfeld-Regel:</strong> ein Stein auf einem Punkt ist nur erlaubt, wenn in diesem Zug tatsächlich eine Brücke durch ihn verläuft; beendest du den Zug ohne ihn zu verbrücken, wird der Stein zurückgenommen und der Spielstein zurückgelegt.</li>
+                <li><strong>橋の得点:</strong> 石3個の列は1点（3橋）、石4個の列は2点（4橋）になります。</li>
+                <li><strong>領域ボーナス:</strong> ある領域（S1、G4 … のようなボード）であなたが<em>最初</em>に架けた橋は1点の追加点になります。ただし、その橋がそのボードの<em>内側</em>のセルを完全に覆う場合に限ります（端点は線が半分しか覆わないためカウントされません）。</li>
+                <li><strong>別々の表示:</strong> 橋の点と領域の点は別々に表示されます。最後にご自分で合計してください。</li>
+                <li><strong>重要:</strong> 同じ色が2つ直接隣り合ってはいけません。</li>
+                <li>橋は、その列を完成させた石を置いたのと同じターンに架けなければなりません。</li>
+                <li><strong>橋は後から延長できません！</strong> — Walter。新しい橋は、既存の（切断されていない）橋と<em>2個以上の石</em>を共有できません。これは、後から3を4に伸ばすことだけでなく、同じ線上で3橋を重ねること（例: 既存の <em>[A,B,C]</em> ＋ 新しい <em>[B,C,D]</em> — 4のように見えるため禁止）も防ぎます。石1個だけの共有は<em>接合点</em>としてのみ許されます。共有される石は、2本の橋のうち少なくとも一方の<em>端</em>でなければなりません（扇形、L字やT字、あるいは中央の石だけを共有して一直線に端どうしでつながる2本の3橋）。ある橋がもう一方を一直線に<em>貫いて</em>通る（共有石が両方の中央にある +/× の形）のは<em>許されません</em> — ルール3を参照: 誰も他の橋を覆ったり横切ったりできません。代わりに列に4個目の石を加えるだけにすれば（先に3橋を架けずに）、直接4橋にする選択肢は残ります。ただしその場合、相手にその間を切断される危険があります。</li>
+                <li><strong>橋の架け方:</strong> 列の最初の石を<em>ダブルクリック</em>（またはダブルタップ）し、次に最後の石を<em>ダブルクリック</em>します。その列が有効なら（石3個か4個、すべて自分のカラーグループかすべて赤、同じ色が連続しない）、橋が描かれます。同じ石をもう一度ダブルクリックすると選択が解除されます。</li>
+                <li><strong>ドット（盤外のセル）に置いた場合、石が置かれるだけで、橋は自動的には描かれません。</strong> 他の橋と同じように、ダブルクリックで自分の望む橋を自分で架けます。これにより、<em>どの</em>橋を作るかを完全に自分でコントロールできます（例: 既存の橋を横切る4の代わりに、より短い3を選ぶ）。ドットが光って——そしてコマを受け入れて——くれるのは、少なくとも1本の有効な橋が可能な場所だけです。<strong>盤外ルール:</strong> ドット上の石は、そのターンに実際に橋がそこを通る場合にのみ有効です。橋を架けずにターンを終えると、石は取り戻され、コマは手元に戻されます。</li>
             </ul>
 
-            <h3>3. Rote Brücken & Schneiden ("Cut")</h3>
+            <h3>3. 赤い橋と切断（「カット」）</h3>
             <ul>
-                [cite_start]<li>Rote Brücken werden zur Verteidigung genutzt[cite: 43].</li>
-                [cite_start]<li>Wenn eine rote Brücke blaue/gelbe Brücken kreuzt, verlieren <em>alle</em> gekreuzten ihren Wert — Rot schneidet jede, die es im selben Zug kreuzt, nicht nur die erste[cite: 41].</li>
-                <li><strong>Niemand kreuzt eine bestehende Brücke:</strong> Blaue oder gelbe Brücken können <em>keine</em> rote (oder andere) Brücke nachträglich überqueren — sie müssen darum herum gebaut werden. Eine rote Brücke kann eine wertende nur <em>im Moment ihres Setzens</em> schneiden; einmal liegend, sperrt sie ihre Linie für alle (Walter, 2026-05-27).</li>
-                <li><strong>Rot kann Rot nicht schneiden:</strong> Eine neue rote Brücke wird abgewiesen, wenn sie eine bereits liegende rote Brücke kreuzen würde — sonst wären keine Verteidigungs­strukturen möglich (Walter).</li>
-                [cite_start]<li><strong>Geometrie:</strong> Brücken können nur an den <em>inneren</em> Feldern geschnitten werden; die Endfelder sind immun[cite: 42].</li>
-                <li>Eine Kreuzung entsteht nur an einem <em>inneren</em> Feld oder zwischen zwei Feldern — nie an einem Endfeld (dort berühren sich Brücken bloß: ein erlaubter Knotenpunkt). Nur Rot darf so kreuzen und schneidet dabei; eine rote Brücke wird zudem abgewiesen, wenn ihr Weg eine andere rote <em>oder</em> eine bereits geschnittene Brücke kreuzen würde.</li>
-                <li><strong>Geschnittene Brücken bleiben liegen:</strong> Eine durchgeschnittene Brücke wird grau und gestrichelt dargestellt — sie verliert sowohl die Brücken- als auch die Regionen-Punkte, bleibt aber physisch im Spiel und blockiert weiterhin alles, was über sie hinweg gebaut werden soll (egal ob wertende oder rote Brücke).</li>
+                <li>赤い橋は防御に使います。</li>
+                <li>赤い橋が青/黄の橋を横切ると、横切られた<em>すべて</em>の橋が得点を失います。赤はその配置で、最初の1本だけでなく、横切ったすべてを切断します。</li>
+                <li><strong>誰も既存の橋を横切れません:</strong> 青や黄の橋は、後から赤（や他の）橋を横切ることは<em>できません</em>。迂回しなければなりません。赤い橋が得点する橋を切断できるのは<em>赤が置かれた瞬間</em>だけです。盤上に置かれた後は、赤はその線を誰に対しても封鎖します（Walter、2026-05-27）。</li>
+                <li><strong>赤は赤を切断できません:</strong> 新しい赤い橋が既存の赤い橋を横切る場合は拒否されます。そうでなければ防御構造を築くことができなくなるためです（Walter）。</li>
+                <li><strong>幾何:</strong> 橋は<em>内側</em>のセルでのみ切断できます。端点は無敵です。</li>
+                <li>横切りは<em>内側</em>のセルかセルとセルの間でのみ起こり、端点では決して起こりません（そこでは橋は単に出会うだけ: 許される接合点です）。このように横切れるのは赤だけで、横切ると切断します。赤い橋は、その経路が別の赤<em>または</em>すでに切断された橋を横切る場合も拒否されます。</li>
+                <li><strong>切断された橋は盤上に残ります:</strong> 切断された橋は灰色の破線で描かれます。橋の点と領域の点の両方を失いますが、物理的には盤上に残り、その上に架けようとするもの（得点する橋でも赤でも）を依然として妨げます。</li>
             </ul>
 
-            <h3>4. Außenfelder & Boards</h3>
+            <h3>4. 盤外のセルとボード</h3>
             <ul>
-                <li><strong>Punkte (•):</strong> Die kleinen Punkte zeigen Felder außerhalb der Boards. Steine dürfen <em>nur</em> auf solche Punktfelder gesetzt werden, wenn sie damit <em>im selben Zug</em> eine Brücke vervollständigen.</li>
-                <li><strong>Mehrere Steine einer Reihe dürfen außerhalb liegen</strong> — sofern jeder Stein bei seinem Platzieren eine eigene Brücke vervollständigt hat. Eine spätere Reihe darf also ruhig durch zwei oder drei „dotted" Steine laufen.</li>
-                <li>Andres Kuusk (Weltmeister im abstrakten Spiel) nennt diese Regel „an excellent rule":-)</li>
+                <li><strong>ドット（•）:</strong> 小さなドットはボードの外側のセルを示します。そのようなドットのセルに石を置けるのは、<em>同じターンに橋を完成させる</em>場合<em>のみ</em>です。</li>
+                <li><strong>1つの列の石が複数、盤外にあってもかまいません</strong> — それぞれが自分自身の橋を完成させて置かれていれば。したがって、後の列が2つや3つの「ドットの」石を通って架かることもあります。</li>
+                <li>Andres Kuusk（抽象ゲームの世界チャンピオン）は、このルールを「素晴らしいルール」と呼んでいます :-)</li>
             </ul>
 
-            <h3>5. Drei Sätze (Vorrat)</h3>
+            <h3>5. 3つのセット（手持ち）</h3>
             <ul>
-                <li>Jeder Spieler bekommt seine 36 Steine nicht auf einmal, sondern in <strong>drei Sätzen zu je 12</strong>.</li>
-                <li><strong>Blau:</strong> 4 Blau, 3 Lila, 2 Grün, 2 Rot, 1 Orange — pro Satz.</li>
-                <li><strong>Gelb:</strong> 4 Gelb, 3 Orange, 2 Grün, 2 Rot, 1 Lila — pro Satz.</li>
-                <li>Sobald ein Spieler seine 12 Steine alle gesetzt hat, erhält er automatisch den nächsten Satz. Die Anzahl Sätze hängt von der Stellung ab: Die „4-Runden-Spiele" gehen über 4 Sätze (Anzeige „Satz 1/4 … 4/4"), die „3-Runden-Spiele" über 3. Die aktuelle Anzeige steht beim Spielerzug.</li>
-                <li>Endspiel-Tipp: Jeder Satzübergang (nach Zug 12, 24, …) verändert die Taktik deutlich — was nach dem letzten Satz noch im Vorrat ist, entscheidet oft die Partie.</li>
+                <li>各プレイヤーは36個の石を一度に受け取るのではなく、<strong>12個ずつ3セット</strong>に分けて受け取ります。</li>
+                <li><strong>青:</strong> 1セットあたり 青4、紫3、緑2、赤2、オレンジ1。</li>
+                <li><strong>黄:</strong> 1セットあたり 黄4、オレンジ3、緑2、赤2、紫1。</li>
+                <li>プレイヤーが12個すべての石を置くと、自動的に次のセットを受け取ります。セットの数は配置によって異なります。「4ラウンドゲーム」は4セットにわたり（表示は「Set 1/4 … 4/4」）、「3ラウンドゲーム」は3セットです。現在のカウントはプレイヤーのターンに表示されます。</li>
+                <li>終盤のヒント: セットの切り替えごと（12手目、24手目、… の後）に戦術が目に見えて変わります。最後のセットの後に手持ちに残っているものが、しばしば勝敗を決めます。</li>
             </ul>
 
-            <h3>6. Zug zurücknehmen & Spiel speichern</h3>
+            <h3>6. 手戻しと保存</h3>
             <ul>
-                <li><strong>↶ Zug zurück:</strong> Jeder Klick auf diesen Knopf macht eine Aktion rückgängig — Stein zurück ins Inventar, Brücke entfernt, Spieler wieder dran. Beliebig oft hintereinander bis zum Spielbeginn.</li>
-                <li><strong>Auto-Save:</strong> Das laufende Spiel wird automatisch im Browser gespeichert. Wenn du die Seite schließt und später wieder öffnest, erscheint „▶ Letztes Spiel fortsetzen" oben im Startmenü.</li>
-                <li><strong>💾 Sichern / 📂 Laden:</strong> Spielstand als JSON-Datei herunterladen oder eine zuvor gesicherte Datei wieder einspielen.</li>
-                <li><strong>Auf WhatsApp teilen (oben):</strong> Schickt einen Link zur aktuellen Stellung. Mit der Option „Stellung als CSV mitsenden" wird zusätzlich die Startstellung als CSV-Datei angehängt, damit der Empfänger dieselbe Stellung laden kann.</li>
+                <li><strong>↶ 手を戻す:</strong> このボタンをクリックするたびに、1つの操作が取り消されます — 石が手持ちに戻り、橋が取り除かれ、プレイヤーのターンが復元されます。好きなだけ、ゲームの最初まで遡って押せます。</li>
+                <li><strong>自動保存:</strong> 現在のゲームはブラウザに自動保存されます。ページを閉じて後で開き直すと、スタートメニューの一番上に「▶ 前回のゲームを再開」が表示されます。</li>
+                <li><strong>💾 保存 / 📂 読込:</strong> ゲーム状態を JSON ファイルとしてダウンロードしたり、以前保存したファイルを読み込んだりします。</li>
+                <li><strong>WhatsApp で共有（上部）:</strong> 現在の配置へのリンクを送信します。「配置を CSV として添付」オプションを使うと、スタート配置も CSV ファイルとして添付され、受信者が同じ配置を読み込めます。</li>
             </ul>
 
-            <button class="btn" onclick="toggleRules(false)">SCHLIESSEN</button>
+            <button class="btn" onclick="toggleRules(false)">閉じる</button>
         </div>
     </div>
 
     <script>
         let GRID_W = 11, GRID_H = 11;  // recomputed per position from CSV (max(x)+2, max(y)+2)
-        const COLOR_NAMES_DE = { blue:'Blau', yellow:'Gelb', purple:'Lila', orange:'Orange', green:'Grün', red:'Rot' };
+        const COLOR_NAMES_DE = { blue:'青', yellow:'黄', purple:'紫', orange:'オレンジ', green:'緑', red:'赤' };
         // Walter's "Sätze" rule: each player gets 12 stones at a time. Empties trigger an
         // auto-refill in endTurn until batch === TOTAL_BATCHES — creating inflection points
         // (around moves 12, 24, …) that change the late-game tactics.
-        // TOTAL_BATCHES varies by position group: the 4-round set (ids 1–6) plays FOUR Sätze
+        // TOTAL_BATCHES varies by position group: the 4-round set (ids 1–6) plays FOUR rounds
         // (4×12=48 stones), the 3-round set (ids 7–12) + customs play THREE (3×12=36). It is set
         // per game in startWithPosition() via roundsForPosition(). Walter, 2026-06-01: Wind wheel
-        // (a 4-round position) was wrongly stopping after 3 Sätze because this was hardcoded to 3.
+        // (a 4-round position) was wrongly stopping after 3 rounds because this was hardcoded to 3.
         const BLUE_BATCH = {blue:4, purple:3, green:2, red:2, orange:1};
         const YELLOW_BATCH = {yellow:4, orange:3, green:2, red:2, purple:1};
         // Built-ins split into a 4-round set (ids 1–6, index 0–5) and a 3-round set (ids 7–12);
@@ -580,26 +580,26 @@
                 cont.className = 'position-btn';
                 cont.style.flex = '1';
                 cont.style.background = '#00695c';
-                cont.innerHTML = '▶ Letztes Spiel fortsetzen<span class="sub">Aus deinem letzten Stand weiterspielen</span>';
+                cont.innerHTML = '▶ 前回のゲームを再開<span class="sub">前回のセーブから続ける</span>';
                 cont.onclick = () => { if (loadGameFromStorage()) document.getElementById('setup-overlay').style.display = 'none'; };
                 const drop = document.createElement('button');
                 drop.textContent = '🗑';
-                drop.title = 'Gespeicherten Stand verwerfen';
+                drop.title = '保存したゲームを破棄';
                 drop.style.cssText = 'background:#8d6e63; color:white; border:none; padding:0 14px; border-radius:8px; cursor:pointer; font-size:1.1em;';
-                drop.onclick = () => { if (confirm('Gespeicherten Stand wirklich verwerfen?')) { clearSavedGame(); showSetup(); } };
+                drop.onclick = () => { if (confirm('保存したゲームを本当に破棄しますか？')) { clearSavedGame(); showSetup(); } };
                 wrap.appendChild(cont); wrap.appendChild(drop);
                 g.appendChild(wrap);
             }
             const customs = loadCustomPositions();
             const all = STARTING_POSITIONS.concat(customs);
             // FOUR_ROUND_COUNT (module-level) splits the built-ins into the 4-round set
-            // (section header "4-Runden-Spiel") and the 3-round set ("3-Runden-Spiel").
+            // (section header "4-Round Game") and the 3-round set ("3-Round Game").
             all.forEach((p, i) => {
                 const isCustom = !!p.customId;
                 let hdrText = null;
-                if (i === 0) hdrText = '4-Runden-Spiel';
-                else if (i === FOUR_ROUND_COUNT && STARTING_POSITIONS.length > FOUR_ROUND_COUNT) hdrText = '3-Runden-Spiel';
-                else if (i === STARTING_POSITIONS.length && customs.length) hdrText = 'Eigene Stellungen';
+                if (i === 0) hdrText = '4ラウンドゲーム';
+                else if (i === FOUR_ROUND_COUNT && STARTING_POSITIONS.length > FOUR_ROUND_COUNT) hdrText = '3ラウンドゲーム';
+                else if (i === STARTING_POSITIONS.length && customs.length) hdrText = 'カスタム配置';
                 if (hdrText) {
                     const hdr = document.createElement('div');
                     hdr.textContent = hdrText;
@@ -617,18 +617,18 @@
                 wrapper.appendChild(b);
                 const editBtn = document.createElement('button');
                 editBtn.textContent = '✏';
-                editBtn.title = isCustom ? 'Bearbeiten' : 'Als Vorlage öffnen';
+                editBtn.title = isCustom ? '編集' : 'テンプレートとして開く';
                 editBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
                     if (isCustom) { openEditor(p); }
-                    else { openEditor({ name: p.name + ' (Kopie)', sub: 'Eigene Stellung', boards: p.boards, customId: null }); }
+                    else { openEditor({ name: p.name + ' (copy)', sub: 'Custom position', boards: p.boards, customId: null }); }
                 };
                 wrapper.appendChild(editBtn);
                 if (!isCustom) {
                     const linkBtn = document.createElement('button');
                     linkBtn.textContent = '🔗';
-                    linkBtn.title = 'Direktlink kopieren';
+                    linkBtn.title = '直接リンクをコピー';
                     linkBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.25); color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
                     linkBtn.onclick = (e) => { e.stopPropagation(); copyPositionLink(p); };
                     wrapper.appendChild(linkBtn);
@@ -638,17 +638,17 @@
                     editBtn.style.right = '62px';
                     const shareBtn = document.createElement('button');
                     shareBtn.textContent = '📤';
-                    shareBtn.title = 'Per WhatsApp senden';
+                    shareBtn.title = 'WhatsApp で共有';
                     shareBtn.style.cssText = 'position:absolute; top:6px; right:34px; background:#25D366; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer; font-size:0.85em; line-height:1;';
                     shareBtn.onclick = (e) => { e.stopPropagation(); shareCustomPositionViaWhatsApp(p); };
                     wrapper.appendChild(shareBtn);
                     const delBtn = document.createElement('button');
                     delBtn.textContent = '✕';
-                    delBtn.title = 'Löschen';
+                    delBtn.title = '削除';
                     delBtn.style.cssText = 'position:absolute; top:6px; right:6px; background:rgba(244,67,54,0.65); color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.9em; line-height:1;';
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
-                        if (confirm(`Stellung „${p.name}" löschen?`)) {
+                        if (confirm(`配置「${p.name}」を削除しますか？`)) {
                             deleteCustomPosition(p.customId);
                             showSetup();
                         }
@@ -660,7 +660,7 @@
             const newBtn = document.createElement('button');
             newBtn.className = 'position-btn';
             newBtn.style.cssText = 'background:#6d4c41; grid-column:1 / -1;';
-            newBtn.innerHTML = `➕ Neue Stellung erstellen<span class="sub">Editor öffnen</span>`;
+            newBtn.innerHTML = `➕ 新しい配置を作成<span class="sub">エディターを開く</span>`;
             newBtn.onclick = () => openEditor(null);
             g.appendChild(newBtn);
             document.getElementById('setup-overlay').style.display = 'flex';
@@ -670,7 +670,7 @@
             startWithPosition(STARTING_POSITIONS[idx]);
         }
 
-        // How many Sätze (batches of 12 stones) this position plays. Built-in positions
+        // How many rounds (batches of 12 stones) this position plays. Built-in positions
         // 1–6 are the 4-round set; the 3-round set (7–12) and all custom positions play 3.
         // Matched by name so it survives JSON round-trips — resume/import pass a *copy* of
         // the position object, not the STARTING_POSITIONS reference. Walter, 2026-06-01.
@@ -771,11 +771,11 @@
                 shareUrl += '#' + slugifyName(currentPosition.name);
             }
             const posLabel = currentPosition && !currentPosition.customId ? ` — ${currentPosition.name}` : '';
-            const msg = `Play Divided Loyalties${posLabel}: ${shareUrl}\n\nGet the Parados app:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
+            const msg = `Divided Loyalties をプレイ${posLabel}: ${shareUrl}\n\nParados アプリを入手:\niOS / Mac: https://apps.apple.com/us/app/parados/id6760842713\nAndroid: https://play.google.com/store/apps/details?id=com.ywesee.parados\nWindows: https://apps.microsoft.com/detail/9N7RTWZQQ0K7`;
             if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); return; }
             // No share API (Android WebView, in-app browsers): copy to clipboard.
             // Never wa.me — Android WebView can't dispatch whatsapp:// (ERR_UNKNOWN_URL_SCHEME).
-            const note = 'Nachricht in die Zwischenablage kopiert — bitte in WhatsApp einfügen.';
+            const note = 'メッセージをコピーしました。WhatsApp に貼り付けてください。';
             const fallback = () => { const ta = document.createElement('textarea'); ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if (ok) alert(note); else prompt(note, msg); };
             if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(() => alert(note)).catch(fallback);
             else fallback();
@@ -897,7 +897,7 @@
         }
 
         function exportGameJSON() {
-            if (!currentPosition) { alert('Kein laufendes Spiel zum Exportieren.'); return; }
+            if (!currentPosition) { alert('書き出せる進行中のゲームがありません。'); return; }
             const state = {
                 version: 1,
                 position: currentPosition,
@@ -920,7 +920,7 @@
         }
 
         async function shareGameJSONViaWhatsApp() {
-            if (!currentPosition) { alert('Kein laufendes Spiel zum Teilen.'); return; }
+            if (!currentPosition) { alert('共有できる進行中のゲームがありません。'); return; }
             const state = {
                 version: 1, position: currentPosition,
                 grid, blueInv, yellowInv,
@@ -955,7 +955,7 @@
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 5000);
-            alert(`Spielstand „${filename}" wurde heruntergeladen.\n\nÖffne WhatsApp manuell und füge die Datei als Anhang hinzu — das Spiel bleibt hier erhalten.`);
+            alert(`ゲーム状態「${filename}」をダウンロードしました。\n\n手動で WhatsApp を開き、ファイルを添付してください。ゲームはこのまま開いたままです。`);
         }
 
         function triggerImportGame() {
@@ -969,13 +969,13 @@
             reader.onload = e => {
                 try {
                     const state = JSON.parse(e.target.result);
-                    if (!state || !state.position) throw new Error('Ungültiges Format');
+                    if (!state || !state.position) throw new Error('Invalid format');
                     startWithPosition(state.position);
                     applySavedState(state);
                     undoStack = [];
                     saveGame();
                 } catch (err) {
-                    alert('Konnte Spielstand nicht laden: ' + err.message);
+                    alert('ゲーム状態を読み込めませんでした: ' + err.message);
                 }
                 ev.target.value = '';
             };
@@ -1223,7 +1223,7 @@
             // 3rd-click guard: with 2 already ringed, refuse a new one + flash hint.
             if (bridgeSelection.length >= 2) {
                 flashStoneInvalid(idx);
-                showBridgeHint('Schon zwei Steine gewählt — hebe zuerst einen auf (nochmals anklicken).');
+                showBridgeHint('すでに石を2つ選択しています。まず1つの選択を解除してください（もう一度クリック）。');
                 return;
             }
             // Add this stone to the selection.
@@ -1338,24 +1338,25 @@
 
         function tryFormBridge(s, e) {
             const row = getRow(s, e);
-            if (!row) { bridgeRefuseReason = 'Die beiden Steine liegen nicht in einer geraden Linie (waagrecht, senkrecht oder diagonal).'; return; }
-            if (row.length !== 3 && row.length !== 4) { bridgeRefuseReason = 'Eine Brücke verbindet genau 3 oder 4 Steine in einer Reihe.'; return; }
+            if (!row) { bridgeRefuseReason = '2つの石が一直線（横・縦・斜め）に並んでいません。'; return; }
+            if (row.length !== 3 && row.length !== 4) { bridgeRefuseReason = '橋はちょうど3個または4個の石を一列につなぎます。'; return; }
             const cls = classifyRow(row, currentPlayer);
-            if (!cls) { bridgeRefuseReason = 'Keine gültige Reihe: die Farben passen nicht zusammen oder zwei gleiche Farben liegen nebeneinander.'; return; }
+            if (!cls) { bridgeRefuseReason = '有効な列ではありません: 色の組み合わせが合わないか、同じ色が2つ隣り合っています。'; return; }
             // Walter, 2026-05-27: a new bridge cannot share 2+ stones with any
-            // active (non-cut) bridge. „Brücken können nicht später verlängert
-            // werden!" — Walter. This covers three cases at once: re-forming the
-            // same row, extending a 3 to a 4 (existing 3 ⊂ new 4), and overlapping
-            // 3-bridges along the same line (e.g., existing [A,B,C] + new [B,C,D]
-            // visually look like a 4). Single-stone overlap is still allowed,
-            // which is how perpendicular crosses and the multi-bridge case work.
+            // active (non-cut) bridge. "Bridges cannot be extended later!" —
+            // Walter. This covers three cases at once: re-forming the same row,
+            // extending a 3 to a 4 (existing 3 ⊂ new 4), and overlapping
+            // 3-bridges along the same line (e.g., existing [A,B,C] + new
+            // [B,C,D] visually look like a 4). Single-stone overlap is still
+            // allowed, which is how perpendicular crosses and the multi-bridge
+            // case work.
             const sharesTwoPlus = activeBridges.some(b => {
                 if (b.cut) return false;
                 let shared = 0;
                 for (const c of row) if (b.row.includes(c)) shared++;
                 return shared >= 2;
             });
-            if (sharesTwoPlus) { bridgeRefuseReason = 'Brücken können nicht verlängert oder über eine bestehende Brücke doppelt gebaut werden.'; return; }
+            if (sharesTwoPlus) { bridgeRefuseReason = '橋は延長できず、既存の橋の上に二度目を架けることもできません。'; return; }
             const step = cellSize + gapSize;
             const x1 = (s%GRID_W)*step+cellSize/2, y1 = Math.floor(s/GRID_W)*step+cellSize/2;
             const x2 = (e%GRID_W)*step+cellSize/2, y2 = Math.floor(e/GRID_W)*step+cellSize/2;
@@ -1376,7 +1377,7 @@
                 // by any other bridge"); if any crossing is such, the whole red placement is
                 // illegal and nothing is cut.
                 const hits = bridgesCrossedBy(row);
-                if (hits.some(h => h.cut || h.player === 'red')) { bridgeRefuseReason = 'Eine rote Brücke kann keine andere rote oder bereits geschnittene Brücke kreuzen.'; return; }
+                if (hits.some(h => h.cut || h.player === 'red')) { bridgeRefuseReason = '赤い橋は、別の赤い橋やすでに切断された橋を横切ることはできません。'; return; }
                 hits.forEach(h => destroyBridge(h.id));
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: 'red', coords: c, s, e, cut: false});
@@ -1389,7 +1390,7 @@
                 // red AT CONSTRUCTION TIME of the red bridge — once red is on
                 // the board, scoring lines must route around it.
                 const collision = checkCollision(row, false);
-                if (collision) { bridgeRefuseReason = 'Diese Brücke würde eine bestehende Brücke kreuzen — niemand darf eine andere Brücke überqueren.'; return; }  // can't cross any existing line (scoring, red, or cut)
+                if (collision) { bridgeRefuseReason = 'この橋は既存の橋を横切ってしまいます。誰も他の橋を横切ることはできません。'; return; }  // can't cross any existing line (scoring, red, or cut)
                 const bId = Date.now();
                 activeBridges.push({id: bId, row, player: currentPlayer, coords: c, s, e, cut: false});
                 drawBridge(c, currentPlayer, bId);
@@ -1571,8 +1572,8 @@
         function updateUI() {
             const turn = document.getElementById('turn-indicator');
             const batch = currentPlayer === 'blue' ? blueBatch : yellowBatch;
-            const batchLabel = `Satz ${batch}/${TOTAL_BATCHES}` + (batch === TOTAL_BATCHES ? ' (letzter)' : '');
-            turn.innerHTML = (currentPlayer === 'blue' ? "BLAU" : "GELB") + " AM ZUG"
+            const batchLabel = `Set ${batch}/${TOTAL_BATCHES}` + (batch === TOTAL_BATCHES ? '（最後）' : '');
+            turn.innerHTML = (currentPlayer === 'blue' ? "青" : "黄") + "のターン"
                 + `<div style="font-size:0.7em;font-weight:normal;opacity:0.85;margin-top:2px;">${batchLabel}</div>`;
             turn.className = `current-player ${currentPlayer}-turn`;
             const inv = document.getElementById('inventory-container');
@@ -1673,7 +1674,7 @@
 
         function saveCustomPositionsArr(arr) {
             try { localStorage.setItem('dl_custom_positions', JSON.stringify(arr)); }
-            catch (e) { alert('Speichern fehlgeschlagen: ' + e.message); }
+            catch (e) { alert('保存に失敗しました: ' + e.message); }
         }
 
         function deleteCustomPosition(customId) {
@@ -1756,7 +1757,7 @@
                 const x = i % oldW, y = Math.floor(i / oldW);
                 return x >= newW || y >= newH;
             });
-            if (wouldDrop && !confirm('Beim Verkleinern würden bemalte Felder verloren gehen. Trotzdem verkleinern?')) {
+            if (wouldDrop && !confirm('縮小すると塗ったセルが失われます。それでも縮小しますか？')) {
                 rebuildSizeSelectors();
                 return;
             }
@@ -1800,12 +1801,12 @@
             // completing a bridge (Walter's manual placement, replaces auto-dots).
             const dotBtn = document.createElement('button');
             dotBtn.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='DOT'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em; display:inline-flex; align-items:center; gap:5px;`;
-            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> Punkt';
+            dotBtn.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#000;"></span> ドット';
             dotBtn.onclick = () => { editorBrush = 'DOT'; renderBrushBar(); };
             bar.appendChild(dotBtn);
             const eraser = document.createElement('button');
             eraser.style.cssText = `background:#fff; color:#000; border:3px solid ${editorBrush==='erase'?'#FFEB3B':'rgba(0,0,0,0.2)'}; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;`;
-            eraser.textContent = '✕ Radieren';
+            eraser.textContent = '✕ 消去';
             eraser.onclick = () => { editorBrush = 'erase'; renderBrushBar(); };
             bar.appendChild(eraser);
         }
@@ -1875,17 +1876,17 @@
 
         function saveCustomPosition() {
             if (Object.keys(editorPaint).length === 0) {
-                alert('Bitte mindestens ein Board platzieren!');
+                alert('少なくとも1つボードを配置してください！');
                 return;
             }
             const nameInput = document.getElementById('editor-name');
             let name = (nameInput.value || '').trim();
-            if (!name) name = (prompt('Name der Stellung:', 'Meine Stellung') || '').trim();
+            if (!name) name = (prompt('配置名:', 'マイ配置') || '').trim();
             if (!name) return;
             const newPos = {
                 customId: editingCustomId || ('c' + Date.now()),
                 name: name,
-                sub: 'Eigene Stellung',
+                sub: 'Custom position',
                 boards: paintToBoards(),
                 dots: paintToDots()
             };
@@ -1896,7 +1897,7 @@
             editingCustomId = newPos.customId;
             editorPositionName = name;
             nameInput.value = name;
-            alert(`„${name}" gespeichert!`);
+            alert(`「${name}」を保存しました！`);
         }
 
         // gridW = grid stride (column count). The CSV format is row-keyed,
@@ -1956,7 +1957,7 @@
 
         function exportEditorCSV() {
             if (Object.keys(editorPaint).length === 0) {
-                alert('Bitte mindestens ein Board platzieren!');
+                alert('少なくとも1つボードを配置してください！');
                 return;
             }
             const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
@@ -2003,12 +2004,12 @@
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 5000);
-            alert(`CSV-Datei „${filename}" wurde heruntergeladen.\n\nBitte in WhatsApp auf die Büroklammer (📎) tippen → „Dokument" → die CSV-Datei aus dem Download-Ordner auswählen und versenden.`);
+            alert(`CSV ファイル「${filename}」をダウンロードしました。\n\nWhatsApp でクリップ（📎）→「ドキュメント」をタップし、ダウンロードフォルダから CSV を選んで送信してください。`);
         }
 
         async function shareEditorViaWhatsApp() {
             if (Object.keys(editorPaint).length === 0) {
-                alert('Bitte mindestens ein Board platzieren!');
+                alert('少なくとも1つボードを配置してください！');
                 return;
             }
             const name = (document.getElementById('editor-name').value || '').trim() || 'Custom';
@@ -2027,8 +2028,8 @@
             const text = ta.value;
             const fallback = () => { ta.select(); document.execCommand('copy'); };
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => alert('Kopiert!'), () => { fallback(); alert('Kopiert!'); });
-            } else { fallback(); alert('Kopiert!'); }
+                navigator.clipboard.writeText(text).then(() => alert('コピーしました！'), () => { fallback(); alert('コピーしました！'); });
+            } else { fallback(); alert('コピーしました！'); }
         }
 
         async function loadPositions() {
@@ -2053,7 +2054,7 @@
 
         function getPositionLink(pos) {
             const base = /^(file|parados):$/.test(window.location.protocol)
-                ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "divided_loyalties.html")
+                ? "https://game.ywesee.com/parados/" + (window.location.pathname.split("/").pop() || "divided_loyalties_en.html")
                 : window.location.href.split('#')[0];
             return base + '#' + slugifyName(pos.name);
         }
@@ -2079,21 +2080,14 @@
             };
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(link).then(
-                    () => alert('Direktlink kopiert:\n' + link),
-                    () => { fallback(); alert('Direktlink kopiert:\n' + link); }
+                    () => alert('直接リンクをコピーしました:\n' + link),
+                    () => { fallback(); alert('直接リンクをコピーしました:\n' + link); }
                 );
-            } else { fallback(); alert('Direktlink kopiert:\n' + link); }
+            } else { fallback(); alert('直接リンクをコピーしました:\n' + link); }
         }
 
         async function startup() {
             STARTING_POSITIONS = await loadPositions();
-            // #editor — opened from the central startpositionen.html hub:
-            // go straight into a fresh position editor.
-            if (location.hash === '#editor') {
-                showSetup();
-                openEditor(null);
-                return;
-            }
             if (location.hash === '#rules') {
                 showSetup();
                 toggleRules(true);

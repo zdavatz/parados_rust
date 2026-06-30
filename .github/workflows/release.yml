@@ -690,29 +690,36 @@ jobs:
           $submission.targetPublishMode = "Immediate"
           $submission.targetPublishDate = ""
           $submission.visibility = "Public"
-          # Microsoft requires the update to account for EVERY package the app
-          # already has — keep it, or mark it PendingDelete. The create body
-          # sends `applicationPackages = @()`, so the created submission comes
-          # back with no packages, and the published package (e.g. the prior
-          # 1.0.x MSIX) would be missing from the update → commit fails with
-          # "Please keep all file entries for existing packages ... missing in
-          # your update: <id>".  Gather packages from BOTH the created
-          # submission AND the last published submission, mark them all
-          # PendingDelete, then append the new MSIX. (Verified against the
-          # devcenter API by hand for the 1.0.11 release.)
-          $existing = @{}
+          # Key existing packages by their UNIQUE id, NOT by fileName (Walter,
+          # 2026-06-30 — the bug behind the 1.0.10-1.0.12 "missing in your
+          # update: <id>" rejections). Two distinct packages can share a
+          # fileName; a fileName-keyed map silently collapses them, dropping one
+          # id out of the PUT, which Microsoft rejects. Gather from the cloned
+          # submission AND the last published submission, dedupe by id, mark all
+          # PendingDelete, and log the set so any future miss is diagnosable.
+          $byId = [ordered]@{}
+          foreach ($p in @($submission.applicationPackages)) {
+            $key = if ($p.id) { [string]$p.id } else { [string]$p.fileName }
+            if ($key) { $byId[$key] = $p }
+          }
           $pubId = $appResp.lastPublishedApplicationSubmission.id
           if ($pubId) {
             $pubSub = Invoke-RestMethod -Method Get `
               -Uri "https://manage.devcenter.microsoft.com/v1.0/my/applications/$appId/submissions/$pubId" `
               -Headers $headers
-            foreach ($p in $pubSub.applicationPackages) { $existing[$p.fileName] = $p }
+            foreach ($p in @($pubSub.applicationPackages)) {
+              $key = if ($p.id) { [string]$p.id } else { [string]$p.fileName }
+              if ($key -and -not $byId.Contains($key)) { $byId[$key] = $p }
+            }
           }
-          foreach ($p in $submission.applicationPackages) { $existing[$p.fileName] = $p }
           $pkgList = @()
-          foreach ($p in $existing.Values) {
+          foreach ($p in $byId.Values) {
             $p.fileStatus = "PendingDelete"
             $pkgList += $p
+          }
+          Write-Host "Carrying forward $($pkgList.Count) existing package(s) as PendingDelete: $(@($byId.Keys) -join ', ')"
+          if ($pkgList.Count -eq 0) {
+            Write-Host "WARNING: no existing packages to carry forward; if the store still reports a missing package the clone/GET did not surface it."
           }
           # New MSIX. Explicit targetDeviceFamilies — Microsoft normally
           # auto-derives this from the AppxManifest's `<TargetDeviceFamily>`
